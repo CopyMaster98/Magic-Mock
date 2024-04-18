@@ -4,11 +4,9 @@ import { LaptopOutlined, NotificationOutlined, UserOutlined, MenuFoldOutlined,
 import type { MenuProps } from 'antd';
 import { Breadcrumb, Layout, Menu, theme } from 'antd';
 import './index.css'
-const { Header, Content, Sider } = Layout;
-const items1: MenuProps['items'] = ['1', '2', '3'].map((key) => ({
-  key,
-  label: `nav ${key}`,
-}));
+import Header from '../components/header';
+import { header } from '../constant/index'
+const { Content, Sider } = Layout;
 
 const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOutlined].map(
   (icon, index) => {
@@ -35,26 +33,15 @@ const Home: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  console.log(colorBgContainer)
-
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <Layout className='home-container'>
-      <Header style={{ display: 'flex', alignItems: 'center' }}>
-        <div className="demo-logo" />
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          defaultSelectedKeys={['2']}
-          items={items1}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      </Header>
+      <Header items={header.items} />
       <Layout>
         <Sider width={200} trigger={
           collapsed ? <MenuUnfoldOutlined className='collapsed-icon'/> : <MenuFoldOutlined className='collapsed-icon'/>
-        } style={{ background: colorBgContainer }} collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+        } style={{ background: colorBgContainer }} collapsible collapsed={collapsed} onCollapse={(value: boolean) => setCollapsed(value)}>
           <Menu
             mode="inline"
             defaultSelectedKeys={['1']}
