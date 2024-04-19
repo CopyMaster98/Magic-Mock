@@ -23,8 +23,13 @@ const Header: React.FC<{
       content: <AddProjectForm ref={formRef} />,
       ref: formRef, 
       handleConfirm: () => {
-        info.ref?.current?.onValidate().then(() => {
-          createFolderSync('C:\\Users\\Public\\MagicMockDataFolder')
+        info.ref?.current?.onValidate().then((formValue: {
+          projectName: string,
+          projectUrl: string
+        }) => {
+          console.log(formValue)
+          createFolderSync(formValue.projectName)
+          info.ref?.current?.onReset()
           closeDialog?.()
       }).catch((err: any) => console.log(err))
       },
@@ -42,7 +47,7 @@ const Header: React.FC<{
         <Menu
           theme="dark"
           mode="horizontal"
-          defaultSelectedKeys={['2']}
+          defaultSelectedKeys={['home']}
           items={items}
           style={{ flex: 1, minWidth: 0 }}
         />
