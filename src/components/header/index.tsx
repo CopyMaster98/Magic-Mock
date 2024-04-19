@@ -1,6 +1,7 @@
 
 import { Layout, Menu, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
+import { createFolderSync } from '../../utils'
 import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, } from 'react'
 import { ProviderContext } from '../../context'
 import AddProjectForm from '../add-project-form'
@@ -22,7 +23,10 @@ const Header: React.FC<{
       content: <AddProjectForm ref={formRef} />,
       ref: formRef, 
       handleConfirm: () => {
-        info.ref?.current?.onValidate().then(() => closeDialog?.()).catch((err: any) => console.log(err))
+        info.ref?.current?.onValidate().then(() => {
+          createFolderSync('C:\\Users\\Public\\MagicMockDataFolder')
+          closeDialog?.()
+      }).catch((err: any) => console.log(err))
       },
       handleClose: () => {
         info.ref?.current?.onReset()

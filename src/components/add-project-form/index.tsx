@@ -1,6 +1,6 @@
 import { Form, FormProps, Input } from "antd";
 import { forwardRef, useImperativeHandle } from "react";
-
+import { items } from "../../constant/header";
 
 const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
   const [form] = Form.useForm();
@@ -29,19 +29,19 @@ const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
     autoComplete="off"
   >
     <Form.Item
-      label="Username"
-      name="username"
-      rules={[{ required: true, message: 'Please input your username!' }]}
+      label="Project Name"
+      name="projectName"
+      rules={[{ required: true, message: 'Please input your project name!' }]}
     >
       <Input />
     </Form.Item>
 
     <Form.Item
-      label="Password"
-      name="password"
-      rules={[{ required: true, message: 'Please input your password!' }]}
+      label="Project Url"
+      name="projectUrl"
+      rules={[{ required: false, message: 'Please input your project url!' }]}
     >
-      <Input.Password />
+      <Input />
     </Form.Item>
     </Form>
 })
