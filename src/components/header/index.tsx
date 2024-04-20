@@ -1,7 +1,7 @@
 
 import { Layout, Menu, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
-import { createFolderSync } from '../../utils'
+import { requestFn } from '../../utils'
 import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, } from 'react'
 import { ProviderContext } from '../../context'
 import AddProjectForm from '../add-project-form'
@@ -23,12 +23,14 @@ const Header: React.FC<{
       content: <AddProjectForm ref={formRef} />,
       ref: formRef, 
       handleConfirm: () => {
-        info.ref?.current?.onValidate().then((formValue: {
+        info.ref?.current?.onValidate().then(async(formValue: {
           projectName: string,
           projectUrl: string
         }) => {
           console.log(formValue)
-          createFolderSync(formValue.projectName)
+          await requestFn.post('/create', {
+            folderName: formValue.projectName
+          })
           info.ref?.current?.onReset()
           closeDialog?.()
       }).catch((err: any) => console.log(err))
