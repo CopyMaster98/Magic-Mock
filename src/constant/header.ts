@@ -5,6 +5,9 @@ const items: Array<{
 }> = [{
   label: 'Home',
   key: 'home'
+}, {
+  label: 'Detail',
+  key: 'detail'
 }]
 
 export {

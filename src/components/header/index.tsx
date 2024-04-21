@@ -2,6 +2,7 @@
 import { Layout, Menu, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { requestFn } from '../../utils'
+import { Link } from 'react-router-dom'
 import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, } from 'react'
 import { ProviderContext } from '../../context'
 import AddProjectForm from '../add-project-form'
@@ -50,7 +51,10 @@ const Header: React.FC<{
           theme="dark"
           mode="horizontal"
           defaultSelectedKeys={['home']}
-          items={items}
+          items={items.map(item => ({
+            key: item.key,
+            label: <Link to={item.label}>{item.label}</Link>
+          }))}
           style={{ flex: 1, minWidth: 0 }}
         />
 
