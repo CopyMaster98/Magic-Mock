@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Breadcrumb, Layout, Menu, MenuProps, theme } from 'antd';
+import { headerItems } from "../../constant/header";
 import { LaptopOutlined, NotificationOutlined, UserOutlined, MenuFoldOutlined,
   MenuUnfoldOutlined } from '@ant-design/icons';
+import { useLocation } from "react-router-dom";
 const { Content, Sider } = Layout;
-
 const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOutlined].map(
   (icon, index) => {
     const key = String(index + 1);
@@ -24,12 +25,16 @@ const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOu
   },
 );
 
+
+
 const Detail: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+
   return  <><Sider width={200} trigger={
     collapsed ? <MenuUnfoldOutlined className='collapsed-icon'/> : <MenuFoldOutlined className='collapsed-icon'/>
   } style={{ background: colorBgContainer }} collapsible collapsed={collapsed} onCollapse={(value: boolean) => setCollapsed(value)}>
@@ -43,10 +48,10 @@ const Detail: React.FC = () => {
     
   </Sider>
   <Layout style={{ padding: '0 24px 24px' }}>
-    <Breadcrumb style={{ margin: '16px 0' }}>
-      <Breadcrumb.Item>Home</Breadcrumb.Item>
-      <Breadcrumb.Item>List</Breadcrumb.Item>
-      <Breadcrumb.Item>App</Breadcrumb.Item>
+  <Breadcrumb style={{ margin: '16px 0' }} items={location.pathname.split('/').filter(Boolean).map(item => ({
+    title: item.slice(0, 1).toUpperCase() + item.slice(1)
+  }))} separator=">">
+      {/* 如果需要自定义分隔符，可以在 Breadcrumb 组件中设置 separator 属性 */}
     </Breadcrumb>
     <Content
       style={{

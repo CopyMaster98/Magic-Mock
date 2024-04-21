@@ -1,5 +1,5 @@
 
-const items: Array<{
+const headerItems: Array<{
   label: string,
   key: string | number
 }> = [{
@@ -11,5 +11,5 @@ const items: Array<{
 }]
 
 export {
-  items
+  headerItems
 }

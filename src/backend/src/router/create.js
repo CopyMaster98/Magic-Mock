@@ -14,9 +14,17 @@ router.post('/', async (ctx) => {
 
     if(!isExist) {
       createFolder(path)
+      ctx.response.body = {
+        message: '项目创建成功',
+        statusCode: 0
+      }
+    } else {
+      ctx.response.body = {
+        message: '项目名字已存在',
+        statusCode: -1
+      }
     }
   }
-  ctx.body = 'Hello World!';
 });
 
 

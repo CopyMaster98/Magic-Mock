@@ -2,8 +2,13 @@ import qs from 'qs';
 import { message } from 'antd';
 const { stringify, parse } = qs;
 
-const checkStatus = (res: Response) => {
+const checkStatus = async (res: Response) => {
+  const cloneRes = await res.clone().json(); 
   if (200 >= res.status && res.status < 300) {
+    if(cloneRes?.statusCode === 0)
+        message.success(cloneRes?.message)
+    else
+        message.error(cloneRes?.message)
     return res;
   }
   message.error(`网络请求失败,${res.status}`);
