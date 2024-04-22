@@ -15,12 +15,10 @@ const DetailInfo: React.FC<{
   } = theme.useToken();
 
   const { setSpinning } = useData()
-  console.log(setSpinning)
   const location = useLocation();
 
   useEffect(() => {
     return () => {
-      console.log(setSpinning)
       get(`/folder/project/${pathname}`, {}, setSpinning).then(res => {
         console.log(res)
       })

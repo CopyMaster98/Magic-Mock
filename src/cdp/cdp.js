@@ -1,12 +1,32 @@
 const CDP = require('chrome-remote-interface')
-const args = process.argv.slice(2)
-async function intercept(url) {
+const puppeteer = require('puppeteer');
+const args = process.argv.slice(2);
+
+(async() => {
+  const browser = await puppeteer.launch({ headless: false, args: [`--remote-debugging-port=${args[1]}`]  });
+  const page = await browser.newPage();
+
+  // 设置页面视口大小为屏幕大小
+  await page.setViewport({
+    width: 0, // 设置为0表示自动调整为浏览器窗口宽度
+    height: 0, // 设置为0表示自动调整为浏览器窗口高度
+    deviceScaleFactor: 1, // 设置设备像素比
+  });
+
+  const pages = await browser.pages(); // 获取所有打开的页面
+
+  pages[0].close()
+  intercept(args[0] ?? 'about:blank', args[1], page)
+})()
+
+async function intercept(url, port, page) {
   let client;
 
   try {
-    client = await CDP()
+    client = await CDP({ port })
     
-    const {Network, Page, Fetch, Target } = client
+    const {Network, Page, Fetch } = client
+
     await Promise.all([
       Network.enable(),
       Page.enable(),
@@ -47,26 +67,21 @@ async function intercept(url) {
     
     Page.on('loadEventFired', async () => {
       console.log('Page load event fired: page has finished loading.');
-      // await Target.createTarget({
-      //   url: 'about:blank'
-      // })
       // 在这里执行页面加载完成后的操作
     });
+
 
     await Page.setLifecycleEventsEnabled({
       enabled: true
     })
 
-    await Page.navigate({ url })
-    // 等待页面加载
-    await Page.loadEventFired()
+    // await Page.navigate({ url })
 
-   
+    // 在页面加载前执行你的操作
+    await page.goto(url);
+
     process.stdout.write('url:' + url);
-    
   } catch (error) {
     console.log(error)
   }
 }
-
-intercept(args[0] ?? 'about:blank')

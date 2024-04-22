@@ -35,7 +35,7 @@ const Detail: React.FC = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const [collapsed, setCollapsed] = useState(false);
-  const { refresh, setSpinning } = useData()
+  const { refresh } = useData()
   const [projectData, setProjectData] = useState()
   const pathname = url.usePathname()
   const isDetailInfo = useMemo(() => pathname.length > 1, [pathname.length])
