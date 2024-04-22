@@ -1,5 +1,5 @@
 const { spawn } = require('child_process');
-const child = spawn('npm', ['run', 'cdp'], { shell: true });
+const child = spawn('npm', ['run', 'cdp', '--url', 'https://www.baidu.com'], { shell: true });
 const child2 = spawn('npm', ['run', 'backend-client-websocket'], { shell: true })
 let url = ''
 

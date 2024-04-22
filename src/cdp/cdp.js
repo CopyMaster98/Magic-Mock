@@ -1,12 +1,12 @@
 const CDP = require('chrome-remote-interface')
-
+const args = process.argv.slice(2)
 async function intercept(url) {
   let client;
 
   try {
     client = await CDP()
     
-    const {Network, Page, Fetch } = client
+    const {Network, Page, Fetch, Target } = client
     await Promise.all([
       Network.enable(),
       Page.enable(),
@@ -44,13 +44,24 @@ async function intercept(url) {
         console.log('Page is about to close');
       }
     });
+    
+    Page.on('loadEventFired', async () => {
+      console.log('Page load event fired: page has finished loading.');
+      // await Target.createTarget({
+      //   url: 'about:blank'
+      // })
+      // 在这里执行页面加载完成后的操作
+    });
+
     await Page.setLifecycleEventsEnabled({
       enabled: true
     })
-    await Page.navigate({ url },)
+
+    await Page.navigate({ url })
     // 等待页面加载
     await Page.loadEventFired()
 
+   
     process.stdout.write('url:' + url);
     
   } catch (error) {
@@ -58,4 +69,4 @@ async function intercept(url) {
   }
 }
 
-intercept('https://www.baidu.com')
+intercept(args[0] ?? 'about:blank')
