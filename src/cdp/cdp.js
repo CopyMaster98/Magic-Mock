@@ -5,8 +5,15 @@ async function intercept(url) {
 
   try {
     client = await CDP()
-
+    
     const {Network, Page, Fetch } = client
+    await Promise.all([
+      Network.enable(),
+      Page.enable(),
+      Fetch.enable({
+        patterns:[]
+      })
+    ]);
 
     Fetch.requestPaused(async params => {
       const res = await Fetch.getResponseBody({
@@ -24,29 +31,31 @@ async function intercept(url) {
 
     // 网络请求发出前触发
     Network.requestWillBeSent(params => {
-      console.log(params.request.url)
+      // console.log(params.request.url.slice(0, 100))
     })
 
     Network.responseReceived(async params => {
     })
 
-    await Fetch.enable({
-      patterns:[]
+    Page.lifecycleEvent((params) => {
+      const { name } = params;
+      // console.log(params)
+      if (name === 'networkAlmostIdle') {
+        console.log('Page is about to close');
+      }
+    });
+    await Page.setLifecycleEventsEnabled({
+      enabled: true
     })
-    // 允许跟踪网络 这时网络事件可以发送到客户端
-    await Network.enable()
-    await Page.enable()
+    await Page.navigate({ url },)
     // 等待页面加载
     await Page.loadEventFired()
 
-    const history = await Page.getNavigationHistory()
-
-    await Page.navigateToHistoryEntry({
-      entryId: history.entries[history.entries.length - 2].id
-    })
+    process.stdout.write('url:' + url);
+    
   } catch (error) {
     console.log(error)
   }
 }
 
-intercept('http://127.0.0.1:3000/')
+intercept('https://www.baidu.com')

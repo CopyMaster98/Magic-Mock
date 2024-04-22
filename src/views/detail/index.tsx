@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { Breadcrumb, Layout, Menu, MenuProps, theme } from 'antd';
-import { headerItems } from "../../constant/header";
+import React, { useEffect, useMemo, useState } from "react";
+import { Layout, Menu, MenuProps, theme } from 'antd';
 import { LaptopOutlined, NotificationOutlined, UserOutlined, MenuFoldOutlined,
-  MenuUnfoldOutlined } from '@ant-design/icons';
-import { useLocation } from "react-router-dom";
+  MenuUnfoldOutlined, FolderOutlined } from '@ant-design/icons';
+import { Link } from "react-router-dom";
+import { get } from "../../utils/fetch";
+import { useData } from "../../context";
+import DetailInfo from "./detail-info";
+import { url } from "../../hooks";
 const { Content, Sider } = Layout;
 const items2: MenuProps['items'] = [UserOutlined, LaptopOutlined, NotificationOutlined].map(
   (icon, index) => {
@@ -31,29 +34,42 @@ const Detail: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
+  const { refresh, setSpinning } = useData()
+  const [projectData, setProjectData] = useState()
+  const pathname = url.usePathname()
+  const isDetailInfo = useMemo(() => pathname.length > 1, [pathname.length])
+  const currentPathname = useMemo(() => {
+    return pathname[pathname.length - 1]
+  }, [pathname])
+
+  useEffect(() => {
+    return () => {
+      get('/folder/info').then((res: any) => {
+        const data = res.project.map((item: any) => ({
+          icon: React.createElement(FolderOutlined),
+          key: item.name,
+          label: <Link to={`/detail/${item.name}`}>{item.name}</Link>,
+        }))
+
+        setProjectData(data)
+      })
+    }
+  }, [refresh])
 
   return  <><Sider width={200} trigger={
     collapsed ? <MenuUnfoldOutlined className='collapsed-icon'/> : <MenuFoldOutlined className='collapsed-icon'/>
   } style={{ background: colorBgContainer }} collapsible collapsed={collapsed} onCollapse={(value: boolean) => setCollapsed(value)}>
     <Menu
       mode="inline"
-      defaultSelectedKeys={['1']}
-      defaultOpenKeys={['sub1']}
+      defaultSelectedKeys={[currentPathname]}
+      // defaultOpenKeys={['sub1']}
       style={{ height: '100%', borderRight: 0 }}
-      items={items2}
+      items={projectData}
     />
-    
   </Sider>
   <Layout style={{ padding: '0 24px 24px' }}>
-  <Breadcrumb style={{ margin: '16px 0' }} items={location.pathname.split('/').filter(Boolean).map(item => ({
-    title: item.slice(0, 1).toUpperCase() + item.slice(1)
-  }))} separator=">">
-      {/* 如果需要自定义分隔符，可以在 Breadcrumb 组件中设置 separator 属性 */}
-    </Breadcrumb>
-    <Content
+  {isDetailInfo ? <DetailInfo pathname={currentPathname}  /> : <Content
       style={{
         padding: 24,
         margin: 0,
@@ -63,7 +79,7 @@ const Detail: React.FC = () => {
       }}
     >
       Content
-    </Content>
+    </Content>}
   </Layout></>
 }
 

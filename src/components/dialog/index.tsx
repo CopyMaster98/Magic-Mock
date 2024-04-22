@@ -1,5 +1,5 @@
 import { Modal } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { DraggableData, DraggableEvent } from 'react-draggable';
 import Draggable from 'react-draggable';
 import { DialogType } from "../../types";

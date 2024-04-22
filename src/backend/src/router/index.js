@@ -1,11 +1,14 @@
 const Router = require('koa-router');
 const router = new Router();
-const createRouter = require('./create');
+const createRouter = require('./folder');
+const folderRouter = require('./project');
 
 router.get('/', async (ctx) => {
   ctx.body = 'Hello';
 });
 
-router.use('/create', createRouter)
+router.use('/folder', createRouter)
+
+router.use('/project', folderRouter)
 
 module.exports = router

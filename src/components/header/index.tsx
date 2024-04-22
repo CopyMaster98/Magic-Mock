@@ -2,13 +2,14 @@
 import { Layout, Menu, Button } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import { requestFn } from '../../utils'
-import { Link, useLocation } from 'react-router-dom'
-import { useCallback, useContext, useMemo, useRef, } from 'react'
-import { ProviderContext } from '../../context'
+import { Link } from 'react-router-dom'
+import { useCallback, useMemo, useRef } from 'react'
+import { useData } from '../../context'
 import { headerItems } from '../../constant/header'
 import AddProjectForm from '../add-project-form'
 import { IDialogInfo } from '../../types/dialog'
-const { Header: LayoutHeader,  } = Layout
+import { url } from '../../hooks'
+const { Header: LayoutHeader } = Layout
 const Header: React.FC<{
   items: any[]
 }> = (props) => {
@@ -17,16 +18,15 @@ const Header: React.FC<{
     onReset: (arg?: any) => any
   }
   const { items } = props
-  const { openDialog, updateDialogInfo, closeDialog } = useContext(ProviderContext)
-  const location = useLocation();
+  const { openDialog, updateDialogInfo, closeDialog, setRefresh } = useData()
+  const pathnames = url.usePathname();
   const defaultKey = useMemo(() => {
-    const pathname = location.pathname
 
-    if(pathname === '/' || !headerItems.find(item => pathname.slice(1) === item.key))
-        return 'home'
-    
-    return pathname.slice(1)
-  }, [location.pathname])
+  if(!pathnames.length|| !headerItems.find(item => pathnames[0] === item.key))
+      return 'home'
+  
+  return pathnames[0]
+  }, [pathnames])
   const formRef = useRef<IFormRefProps>()
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
@@ -38,10 +38,10 @@ const Header: React.FC<{
           projectName: string,
           projectUrl: string
         }) => {
-          console.log(formValue)
-          await requestFn.post('/create', {
+          await requestFn.post('/folder/create', {
             folderName: formValue.projectName
           })
+          setRefresh()
           info.ref?.current?.onReset()
           closeDialog?.()
       }).catch((err: any) => console.log(err))
@@ -52,7 +52,7 @@ const Header: React.FC<{
     }
     updateDialogInfo?.(info)
     openDialog?.()
-  }, [closeDialog, openDialog, updateDialogInfo])
+  }, [closeDialog, openDialog, setRefresh, updateDialogInfo])
 
   return <>
     <LayoutHeader style={{ display: 'flex', alignItems: 'center' }}>

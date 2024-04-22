@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { useContext } from "react";
 import { DialogType } from "../types";
 
 
@@ -9,3 +9,5 @@ export const ProviderContext = React.createContext<{
   updateDialogInfo?: (data: DialogType.IDialogInfo) => void,
   [key: string]: any
 }>({})
+
+export const useData = () => useContext(ProviderContext)

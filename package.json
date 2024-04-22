@@ -23,15 +23,18 @@
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "ws": "^7.5.9"
   },
   "scripts": {
-    "start": "react-scripts start & npm run backend",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "cdp": "nodemon ./src/cdp/cdp.js",
-    "backend": "nodemon ./src/backend/app.js"
+    "backend": "nodemon ./src/backend/app.js",
+    "spawn": "nodemon ./src/cdp/createExec.js",
+    "backend-client-websocket": "nodemon ./src/cdp/client-websocket.js"
   },
   "eslintConfig": {
     "extends": [

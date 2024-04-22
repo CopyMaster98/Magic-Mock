@@ -5,9 +5,9 @@ import './index.css'
 import Header from '../../components/header';
 import { header } from '../../constant/index'
 import Detail from '../detail';
+import HomeDetail from './home-detail';
 
 const Home: React.FC = () => {
-  const HomeContainer: React.FC = () => <div>Hello</div>
 
   return (
       <Router>
@@ -15,9 +15,10 @@ const Home: React.FC = () => {
           <Header items={header.headerItems} />
           <Layout>
           <Routes>
-                <Route path="/" Component={HomeContainer} />
-                <Route path='/home' Component={HomeContainer} />
+                <Route path="/" Component={HomeDetail} />
+                <Route path='/home' Component={HomeDetail} />
                 <Route path='/detail' Component={Detail}></Route>
+                <Route path='/detail/:id' Component={Detail}></Route>
                 <Route path="*" element={<Navigate to="/" />} />
               </Routes>
           </Layout>

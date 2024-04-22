@@ -1,14 +1,20 @@
 import qs from 'qs';
 import { message } from 'antd';
+import { useData } from '../context';
 const { stringify, parse } = qs;
 
-const checkStatus = async (res: Response) => {
+const checkStatus = async (res: Response, callback?: any) => {
+  // callback && callback(false)
   const cloneRes = await res.clone().json(); 
+  const isAllowNotification = res.headers.has('notification')
   if (200 >= res.status && res.status < 300) {
-    if(cloneRes?.statusCode === 0)
+    if(isAllowNotification) {
+      if(cloneRes?.statusCode === 0)
         message.success(cloneRes?.message)
-    else
+      else
         message.error(cloneRes?.message)
+    }
+    
     return res;
   }
   message.error(`网络请求失败,${res.status}`);
@@ -55,7 +61,8 @@ class http {
    * @param options
    * @returns {Promise<unknown>}
    */
-  static async staticFetch(url = '', options: RequestInit = {}) {
+  static async staticFetch(url = '', options: RequestInit = {}, callback?: any) {
+    console.log(callback)
     const prefix = 'http://localhost:9000'
     // let defaultOptions: RequestInit = {
     //   /*允许携带cookies*/
@@ -77,11 +84,14 @@ class http {
     }
     const newOptions: RequestInit = { ...defaultOptions, ...options };
 
+    callback && callback(true)
+    
     return fetch(prefix + url, newOptions)
       .then(checkStatus)
       .then(judgeOkState)
       .then(res => res.json())
-      .catch(handleError);
+      .catch(handleError)
+      .finally(() => callback && callback(false));
   }
 
   /**
@@ -102,6 +112,7 @@ class http {
       }
       options.body = params;
     }
+
     return http.staticFetch(url, options); //类的静态方法只能通过类本身调用
   }
 
@@ -121,9 +132,9 @@ class http {
    * @param url
    * @param option
    */
-  get(url: string, option = {}) {
+  get(url: string, option = {}, callback?: any) {
     const options = Object.assign({ method: 'GET' }, option);
-    return http.staticFetch(url, options);
+    return http.staticFetch(url, options, callback);
   }
 }
 
