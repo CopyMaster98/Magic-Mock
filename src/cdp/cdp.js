@@ -3,7 +3,7 @@ const puppeteer = require('puppeteer');
 const args = process.argv.slice(2);
 
 (async() => {
-  const browser = await puppeteer.launch({ headless: false, args: [`--remote-debugging-port=${args[1]}`]  });
+  const browser = await puppeteer.launch({ headless: false, args: [`--remote-debugging-port=${args[2]}`]  });
   const page = await browser.newPage();
 
   // 设置页面视口大小为屏幕大小
@@ -16,12 +16,16 @@ const args = process.argv.slice(2);
   const pages = await browser.pages(); // 获取所有打开的页面
 
   pages[0].close()
-  intercept(args[0] ?? 'about:blank', args[1], page)
+  intercept({
+    name: args[0],
+    url: args[1],
+    port: args[2]
+  }, page)
 })()
 
-async function intercept(url, port, page) {
+async function intercept(data, page) {
   let client;
-
+  const { name, url, port } = data
   try {
     client = await CDP({ port })
     
@@ -31,7 +35,10 @@ async function intercept(url, port, page) {
       Network.enable(),
       Page.enable(),
       Fetch.enable({
-        patterns:[]
+        patterns:[{
+          urlPattern: '*todos*',
+          requestStage: 'Response'
+        }]
       })
     ]);
 
@@ -40,6 +47,8 @@ async function intercept(url, port, page) {
         requestId: params.requestId
       })
       let responseData = JSON.parse(atob(res.body))
+
+      responseData.id = Math.random()
 
       Fetch.fulfillRequest({
         requestId: params.requestId,
@@ -80,7 +89,7 @@ async function intercept(url, port, page) {
     // 在页面加载前执行你的操作
     await page.goto(url);
 
-    process.stdout.write('url:' + url);
+    process.stdout.write(`projectName=${name}&url=${url}`);
   } catch (error) {
     console.log(error)
   }

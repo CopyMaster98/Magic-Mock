@@ -5,7 +5,7 @@ const ws = new WebSocket('ws://localhost:9090');
 
 ws.onopen = function(event) {
   // 发送消息给服务器
-  ws.send('Hello, server!');
+  ws.send('Spawn: open');
 };
 
 // 当收到服务器回复时

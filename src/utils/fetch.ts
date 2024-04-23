@@ -62,7 +62,6 @@ class http {
    * @returns {Promise<unknown>}
    */
   static async staticFetch(url = '', options: RequestInit = {}, callback?: any) {
-    console.log(callback)
     const prefix = 'http://localhost:9000'
     // let defaultOptions: RequestInit = {
     //   /*允许携带cookies*/

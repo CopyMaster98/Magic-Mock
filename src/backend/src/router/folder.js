@@ -7,14 +7,19 @@ const router = new Router();
 const { folderPath, folderExists, createFolder, folderInfo, folderContent } = folderUtils
 
 router.post('/create', async (ctx) => {
-  const folderName = ctx.request.body.folderName;
+  const { url, name } = ctx.request.body;
   
-  if(folderName) {
-    const path = folderPath(folderName)
+  if(name) {
+    const path = folderPath(`${name}@@${encodeURIComponent(url)}`)
     const isExist = folderExists(path)
 
     if(!isExist) {
       createFolder(path)
+      global.projectStatus.set(name, {
+        url: url,
+        name: name,
+        status: false
+      })
       ctx.response.body = {
         message: '项目创建成功',
         statusCode: 0
@@ -32,20 +37,28 @@ router.post('/create', async (ctx) => {
 router.get('/info', async(ctx, next) => {
   const path = folderPath('')
   const isExist = folderExists(path)
-  const items = fs.readdirSync(path)
   let folder = []
 
-  items.forEach(item => {
-    try {
-      const stats = folderInfo(`${path}/${item}`);
-      folder.push({
-        name: item,
-        stats
-      })
-    } catch (err) {
-      console.error(err);
-    }
-  })
+  if(isExist) {
+    const items = fs.readdirSync(path)
+    items.forEach(item => {
+      try {
+        const stats = folderInfo(`${path}/${item}`);
+        
+        const [name, url] = item.split('@@')
+        const currentProjectStatus = global.projectStatus.get(name)
+        
+        folder.push({
+          name,
+          url: decodeURIComponent(url),
+          status: currentProjectStatus?.status,
+          stats
+        })
+      } catch (err) {
+        console.error(err);
+      }
+    })
+  }
 
   folder = folder.sort((a, b) => a.stats.birthtimeMs - b.stats.birthtimeMs)
 

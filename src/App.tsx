@@ -5,6 +5,7 @@ import Dialog from './components/dialog';
 import { ProviderContext } from './context/index'
 import { DialogType } from './types/index'
 import { Spin } from 'antd';
+import { websocket } from './hooks';
 
 function App() {
   const [openDialog, setOpenDialog] = useState(false)
@@ -19,22 +20,12 @@ function App() {
     return setSpinning(spinning)
   }, []) 
   
-  useEffect(() => {
-    const ws = new WebSocket('ws://localhost:9090');
+  const handleUpdateProjectInfo = useCallback(() => {
+    return setRefresh(oldValue => oldValue + 1)
+  }, [])
 
-    ws.onopen = function() {
-      console.log('Connected to server');
-      ws.send('pageOpened');
-    };
-
-    ws.onmessage = function(event) {
-      console.log('Received message from server:', event.data);
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, []);
+  websocket.useCreateWebSocket(handleUpdateProjectInfo)
+  
   return (
     <ProviderContext.Provider value={{
       theme: 'light',

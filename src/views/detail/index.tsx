@@ -46,7 +46,7 @@ const Detail: React.FC = () => {
   useEffect(() => {
     return () => {
       get('/folder/info').then((res: any) => {
-        const data = res.project.map((item: any) => ({
+        const data = res.project?.map((item: any) => ({
           icon: React.createElement(FolderOutlined),
           key: item.name,
           label: <Link to={`/detail/${item.name}`}>{item.name}</Link>,

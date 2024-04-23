@@ -39,7 +39,8 @@ const Header: React.FC<{
           projectUrl: string
         }) => {
           await requestFn.post('/folder/create', {
-            folderName: formValue.projectName
+            name: formValue.projectName,
+            url: formValue.projectUrl
           })
           setRefresh()
           info.ref?.current?.onReset()
