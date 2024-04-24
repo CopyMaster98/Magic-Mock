@@ -36,26 +36,41 @@ async function intercept(data, page) {
       Page.enable(),
       Fetch.enable({
         patterns:[{
-          urlPattern: '*todos*',
+          urlPattern: '*posts*',
+          requestStage: 'Request'
+        }, {
+          urlPattern: '*posts*',
           requestStage: 'Response'
         }]
       })
     ]);
 
     Fetch.requestPaused(async params => {
-      const res = await Fetch.getResponseBody({
-        requestId: params.requestId
-      })
-      let responseData = JSON.parse(atob(res.body))
+      if(params.responseStatusCode) {
+        const res = await Fetch.getResponseBody({
+          requestId: params.requestId
+        })
+        let responseData = JSON.parse(atob(res.body))
+        
+        // modify responseData
+        
+        responseData.id = Math.random()
+  
+        Fetch.fulfillRequest({
+          requestId: params.requestId,
+          responseHeaders: params.responseHeaders,
+          responseCode: params.responseStatusCode,
+          body: btoa(JSON.stringify(responseData))
+        })
+      } else if(params.request.method !== 'OPTIONS') {
+        const data = JSON.parse(params.request.postData)
 
-      responseData.id = Math.random()
+        // modify requestData
 
-      Fetch.fulfillRequest({
-        requestId: params.requestId,
-        responseHeaders: params.responseHeaders,
-        responseCode: params.responseStatusCode,
-        body: btoa(JSON.stringify(responseData))
-      })
+        Fetch.continueRequest({ requestId: params.requestId, postData: btoa(JSON.stringify(data)) })
+      } else {
+        Fetch.continueRequest({ requestId: params.requestId })
+      }
     })
 
     // 网络请求发出前触发

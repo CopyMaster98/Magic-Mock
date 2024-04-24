@@ -12,7 +12,6 @@ router.get('/status', async(ctx) => {
 router.post('/start', async(ctx) => {
   const { name, url } = ctx.request.body;
 
-  console.log(name, url)
   let port = portUtils.getRandomPort()
 
   while(portUtils.handleExistPort(port)) {
@@ -20,11 +19,6 @@ router.post('/start', async(ctx) => {
   }
 
   try {
-    console.log({
-      name,
-      url,
-      port
-    })
     createChildProcess({
       name,
       url,
