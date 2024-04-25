@@ -9,6 +9,7 @@ import { headerItems } from '../../constant/header'
 import AddProjectForm from '../add-project-form'
 import { IDialogInfo } from '../../types/dialog'
 import { url } from '../../hooks'
+import { FolderAPI } from '../../api'
 const { Header: LayoutHeader } = Layout
 const Header: React.FC<{
   items: any[]
@@ -38,7 +39,7 @@ const Header: React.FC<{
           projectName: string,
           projectUrl: string
         }) => {
-          await requestFn.post('/folder/create', {
+          await FolderAPI.createFolder({
             name: formValue.projectName,
             url: formValue.projectUrl
           })

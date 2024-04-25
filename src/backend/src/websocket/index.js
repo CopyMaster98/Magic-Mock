@@ -30,7 +30,7 @@ const createWebSocket = () => {
           timer: moment().format('YYYY-MM-DD HH:mm:ss')
         })
         
-        map.get('React').send(message)
+        map.get('React')?.send(message)
       }
     });
 

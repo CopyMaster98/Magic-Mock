@@ -9,31 +9,47 @@ router.get('/status', async(ctx) => {
   console.log(ctx)
 })
 
-router.post('/start', async(ctx) => {
+router.post('/start', async(ctx, next) => {
   const { name, url } = ctx.request.body;
+  
+  let port = null;
 
-  let port = portUtils.getRandomPort()
+  if(global.projectStatus.has(name)) {
+    port = global.projectStatus.get(name).port
+  } else {
+    port = portUtils.getRandomPort()
+  }
 
   while(portUtils.handleExistPort(port)) {
     port = portUtils.getRandomPort()
   }
 
-  try {
+  await new Promise((resolve, reject) => {
     createChildProcess({
       name,
       url,
       port
-    })
+    }, resolve, reject)
+  }).then(() => {
     ctx.response.body = {
       message: '启动成功',
-      statusCode: 1
+      statusCode: 0
     }
-  } catch(err) {
+  }).catch(err => {
     ctx.response.body = {
       message: '启动失败',
-      statusCode: 500
+      statusCode: -1
     }
-  }
+
+    ctx.response.status = 500
+  })
+})
+
+router.post('/stop', async(ctx) => {
+  const { name } = ctx.request.body;
+
+  if(global.projectStatus.has(name))
+    global.projectStatus.get(name).close()
 })
 
 module.exports = router.routes()

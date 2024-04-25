@@ -1,10 +1,7 @@
 const { spawn } = require('child_process');
-// const child = spawn('npm', ['run', 'cdp', '--projectInfo', '11', 'https://www.jd.com', 9222], { shell: true });
-// let child3 = null;
-// let child4 = null;
-const websocket = spawn('npm', ['run', 'backend-client-websocket'], { shell: true })
+const websocket = spawn('npm', ['run', 'backend-client-websocket'], { shell: true });
 
-const createChildProcess = (projectInfo) => {
+const createChildProcess = (projectInfo, resolve, reject) => {
   const { url, name, port } = projectInfo
   const child = spawn('npm', ['run', 'cdp', '--projectInfo', name, url, port], { shell: true });
   child.stdout.on('data', (data) => {
@@ -14,19 +11,22 @@ const createChildProcess = (projectInfo) => {
       const projectName = projectNameKeyValue.split('projectName=')[1]
       const url = urlKeyValue.split('url=')[1]
       
-      projectInfo.projectName = projectName
+      projectInfo.name = projectName
       projectInfo.url = url
+      resolve && resolve()
       websocket.stdin.write(`open:projectName=${projectName}&url=${url}&port=${port}`)
     }
     
     console.log(`stdout: ${data}`);
-    if(data.includes('clean exit')) {
-      websocket.stdin.write(`close:projectName=${projectInfo.projectName}&url=${projectInfo.url}&port=${port}`);
+    if(data.includes('clean exit') || data.includes('Page: close')) {
+      websocket.stdin.write(`close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`);
     }
+
   });
   
   child.stderr.on('data', (data) => {
     console.error(`stderr: ${data}`);
+    reject && reject(data)
   });
   
   child.on('close', (code) => {
@@ -37,7 +37,7 @@ const createChildProcess = (projectInfo) => {
 // createChildProcess({
 //   name: '123',
 //   url: 'https://www.baidu.com',
-//   port: 9222
+//   port: 9333
 // })
 
 module.exports = {

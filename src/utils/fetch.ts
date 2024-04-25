@@ -17,7 +17,9 @@ const checkStatus = async (res: Response, callback?: any) => {
     
     return res;
   }
-  message.error(`网络请求失败,${res.status}`);
+
+  const tip = cloneRes.message ?? '网络请求失败'
+  message.error(`${tip} ${res.status}`);
 
   const error: any = new Error(res.statusText);
   error['response'] = error;
@@ -84,7 +86,7 @@ class http {
     const newOptions: RequestInit = { ...defaultOptions, ...options };
 
     callback && callback(true)
-    
+
     return fetch(prefix + url, newOptions)
       .then(checkStatus)
       .then(judgeOkState)

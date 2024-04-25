@@ -12,6 +12,7 @@
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",
     "antd": "^5.16.2",
+    "chrome-finder": "^1.0.7",
     "chrome-remote-interface": "^0.33.0",
     "koa": "^2.15.3",
     "koa-bodyparser": "^4.4.1",

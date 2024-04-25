@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PoweroffOutlined, EditOutlined, UnorderedListOutlined, ChromeOutlined } from '@ant-design/icons'
 import { useData } from "../../../context";
 import { get, post } from "../../../utils/fetch";
+import { FolderAPI, ProjectAPI } from "../../../api";
 
 const HomeDetail: React.FC = () => {
   const {
@@ -12,26 +13,35 @@ const HomeDetail: React.FC = () => {
   
   const { refresh } = useData()
   const [projectData, setProjectData] = useState([])
-  const [loadings, setLoadings] = useState<boolean[]>([]);
+  const [loadings, setLoadings] = useState<any>({});
 
   const handleStart = useCallback(async (project: any) => {
-    console.log(project)
-    post('/project/start', {
+    setLoadings((oldValue: any) => ({
+      ...oldValue,
+      [project.name]: true
+    }))
+    ProjectAPI.startProject({
       name: project.name,
       url: project.url
     }).then(res => {
       console.log(res)
+    }).finally(() => {
+      setLoadings((oldValue: any) => ({
+        ...oldValue,
+        [project.name]: false
+      }))
     })
   }, [])
 
   useEffect(() => {
     return () => {
-      get('/folder/info').then((res: any) => {
-        setLoadings(res.project.map(() => false))
+      FolderAPI.getFolderInfo().then((res: any) => {
+        // setLoadings(res.project?.map(() => false))
         setProjectData(res.project)
       })
     }
   }, [refresh])
+  
 
   const CardTitle = useCallback((item: any) => {
     return <>
@@ -53,7 +63,7 @@ const HomeDetail: React.FC = () => {
   }}
 >
   {
-    projectData?.map((item: any) => {
+    projectData?.map((item: any, index) => {
       return <Card
       key={item.name} 
       hoverable
@@ -66,12 +76,15 @@ const HomeDetail: React.FC = () => {
       <>
         <Button icon={<EditOutlined />} style={{marginRight: '20px'}} />  
       <Button
+        danger={item.status ? true: false}
         type="primary"
         icon={<PoweroffOutlined />}
-        loading={loadings[1]}
+        loading={loadings[item.name]}
         onClick={() => handleStart(item)}
       >
-        Start
+        {
+          item.status ? 'Stop' : 'Start'
+        }
       </Button>
       </>
     }

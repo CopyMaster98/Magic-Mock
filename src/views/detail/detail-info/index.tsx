@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { get } from "../../../utils/fetch";
 import { useData } from "../../../context";
+import { FolderAPI } from "../../../api";
 
 
 const DetailInfo: React.FC<{
@@ -19,8 +20,9 @@ const DetailInfo: React.FC<{
 
   useEffect(() => {
     return () => {
-      get(`/folder/project/${pathname}`, {}, setSpinning).then(res => {
+      FolderAPI.getFolderDetail(pathname, {} , setSpinning).then(res => {
         console.log(res)
+
       })
     }
   }, [pathname, setSpinning])

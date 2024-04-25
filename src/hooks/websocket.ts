@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-
+let timer: any = null
 const initWebSocket = (callback: any) => {
   const ws = new WebSocket('ws://localhost:9090');
 
@@ -16,8 +16,10 @@ const initWebSocket = (callback: any) => {
 
     ws.onclose = function(event) {
       console.log('Connection closed');
+      if(timer)
+          clearTimeout(timer)
       // 重连逻辑
-      setTimeout(() => initWebSocket(callback)); // 5秒后尝试重新连接
+      timer = setTimeout(() => initWebSocket(callback));
     };
 
     return ws

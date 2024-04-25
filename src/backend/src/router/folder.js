@@ -69,11 +69,10 @@ router.get('/info', async(ctx, next) => {
 })
 
 router.get('/project/:projectName', async(ctx, next) => {
-  const path = folderPath('') + '/' + ctx.params.projectName
-  const projectInfo = fs.readdirSync(path)
-  // const content = folderContent(path)
-
-  console.log(projectInfo)
+  const projectName = (fs.readdirSync(folderPath('')) ?? []).find(item => item.split('@@')[0] === ctx.params.projectName)
+  const projectPath = folderPath('') + '/' + projectName
+  
+  const projectInfo = fs.readdirSync(projectPath)
   
   if(!projectInfo.length)
     ctx.response.body = {

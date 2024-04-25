@@ -4,6 +4,7 @@ import { LaptopOutlined, NotificationOutlined, UserOutlined, MenuFoldOutlined,
   MenuUnfoldOutlined, FolderOutlined } from '@ant-design/icons';
 import { Link } from "react-router-dom";
 import { get } from "../../utils/fetch";
+import { FolderAPI } from '../../api'
 import { useData } from "../../context";
 import DetailInfo from "./detail-info";
 import { url } from "../../hooks";
@@ -45,7 +46,7 @@ const Detail: React.FC = () => {
 
   useEffect(() => {
     return () => {
-      get('/folder/info').then((res: any) => {
+      FolderAPI.getFolderInfo().then((res: any) => {
         const data = res.project?.map((item: any) => ({
           icon: React.createElement(FolderOutlined),
           key: item.name,

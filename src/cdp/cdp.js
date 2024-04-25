@@ -1,9 +1,19 @@
 const CDP = require('chrome-remote-interface')
 const puppeteer = require('puppeteer');
 const args = process.argv.slice(2);
+const findChrome = require('chrome-finder');
 
 (async() => {
-  const browser = await puppeteer.launch({ headless: false, args: [`--remote-debugging-port=${args[2]}`]  });
+  const chromePath = findChrome();
+
+  // 如果找到了 Chrome，启动 Puppeteer 并指定 Chrome 可执行文件的路径
+  if(!chromePath) {
+    // console.log('Chrome not found, please install it first.')
+    process.stderr.write(`Error: Chrome not found.`);
+    return;
+  }
+
+  const browser = await puppeteer.launch({ executablePath: chromePath, headless: false, args: [`--remote-debugging-port=${args[2]}`]});
   const page = await browser.newPage();
 
   // 设置页面视口大小为屏幕大小
@@ -36,10 +46,10 @@ async function intercept(data, page) {
       Page.enable(),
       Fetch.enable({
         patterns:[{
-          urlPattern: '*posts*',
+          urlPattern: '*todos*',
           requestStage: 'Request'
         }, {
-          urlPattern: '*posts*',
+          urlPattern: '*todos*',
           requestStage: 'Response'
         }]
       })
@@ -50,7 +60,7 @@ async function intercept(data, page) {
         const res = await Fetch.getResponseBody({
           requestId: params.requestId
         })
-        let responseData = JSON.parse(atob(res.body))
+        let responseData = res.body && JSON.parse(atob(res.body))
         
         // modify responseData
         
@@ -63,7 +73,7 @@ async function intercept(data, page) {
           body: btoa(JSON.stringify(responseData))
         })
       } else if(params.request.method !== 'OPTIONS') {
-        const data = JSON.parse(params.request.postData)
+        const data = params.request.postData && JSON.parse(params.request.postData)
 
         // modify requestData
 
@@ -83,12 +93,11 @@ async function intercept(data, page) {
 
     Page.lifecycleEvent((params) => {
       const { name } = params;
-      // console.log(params)
-      if (name === 'networkAlmostIdle') {
-        console.log('Page is about to close');
-      }
+     
     });
     
+
+
     Page.on('loadEventFired', async () => {
       console.log('Page load event fired: page has finished loading.');
       // 在这里执行页面加载完成后的操作
@@ -105,6 +114,13 @@ async function intercept(data, page) {
     await page.goto(url);
 
     process.stdout.write(`projectName=${name}&url=${url}`);
+    page.on('close', () => {
+      console.log('Page: close');
+      // 在这里执行页面关闭时的操作
+      // 例如执行清理操作或者关闭浏览器等
+    });
+
+    global.projectStatus.get(name).close = (callback) => Page.on('close', callback)
   } catch (error) {
     console.log(error)
   }
