@@ -81,4 +81,39 @@ router.get('/project/:projectName', async(ctx, next) => {
     }
 })
 
+router.put('/project/:projectName', async (ctx) => {
+  const { url, name } = ctx.request.body;
+  const projectName = (fs.readdirSync(folderPath('')) ?? []).find(item => item.split('@@')[0] === ctx.params.projectName)
+  const projectPath = folderPath('') + '/' + projectName
+  const newProjectName = [name, encodeURIComponent(url)].join('@@')
+  const newProjectPath = folderPath('') + '/' + newProjectName
+  const isExist = folderExists(newProjectPath)
+  
+  if(isExist) {
+    ctx.response.status = 500
+    ctx.response.body = {
+      message: '项目名字已存在',
+      statusCode: -1
+    }
+
+    return;
+  }
+  try {
+    fs.renameSync(projectPath, newProjectPath);
+    console.log('文件已成功重命名为:', newProjectName);
+    ctx.response.body = {
+      message: '修改成功',
+      statusCode: 0
+    }
+  } catch (err) {
+    console.error('重命名文件失败:', err);
+    ctx.response.status = 500
+    ctx.response.body = {
+      message: '修改失败',
+      statusCode: -1
+    }
+  }
+  ctx.set('notification', true);
+})
+
 module.exports = router.routes()

@@ -1,19 +1,26 @@
 import { Form, FormProps, Input } from "antd";
-import { forwardRef, useImperativeHandle } from "react";
+import { forwardRef, useEffect, useImperativeHandle } from "react";
 
 const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
+  const { data } = props
   const [form] = Form.useForm();
   const onFinish: FormProps["onFinish"] = (values) => {
     console.log('Success:', values);
   };
-  
   const onFinishFailed: FormProps["onFinishFailed"] = (errorInfo) => {
     console.log('Failed:', errorInfo);
   };
 
+  useEffect(() => {
+    form.resetFields()
+  }, )
   useImperativeHandle(ref, () => ({
     onValidate: form.validateFields,
-    onReset: form.resetFields
+    onReset: () => form.setFieldsValue({
+      projectName: '',
+      projectUrl: ''
+    }),
+    onInit: form.resetFields
   }));
 
   return <Form
@@ -22,7 +29,7 @@ const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
     labelCol={{ span: 8 }}
     wrapperCol={{ span: 16 }}
     style={{ maxWidth: 600 }}
-    initialValues={{ remember: true }}
+    initialValues={data}
     onFinish={onFinish}
     onFinishFailed={onFinishFailed}
     autoComplete="off"
@@ -38,7 +45,7 @@ const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
     <Form.Item
       label="Project Url"
       name="projectUrl"
-      rules={[{ required: false, message: 'Please input your project url!' }]}
+      rules={[{ required: true, message: 'Please input your project url!' }]}
     >
       <Input />
     </Form.Item>

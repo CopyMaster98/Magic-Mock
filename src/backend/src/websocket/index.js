@@ -23,10 +23,8 @@ const createWebSocket = () => {
         const port = +portKeyValue.split('port=')[1]
         
         global.projectStatus.set(name, {
-          name,
-          url,
+          ...global.projectStatus.get(name),
           status,
-          port,
           timer: moment().format('YYYY-MM-DD HH:mm:ss')
         })
         

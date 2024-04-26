@@ -36,6 +36,7 @@ router.post('/start', async(ctx, next) => {
       statusCode: 0
     }
   }).catch(err => {
+    console.log(err)
     ctx.response.body = {
       message: '启动失败',
       statusCode: -1
@@ -48,8 +49,12 @@ router.post('/start', async(ctx, next) => {
 router.post('/stop', async(ctx) => {
   const { name } = ctx.request.body;
 
-  if(global.projectStatus.has(name))
-    global.projectStatus.get(name).close()
+  global.projectStatus.get(name).childProcess.stdin.write('Page: close')
+
+  ctx.response.body = {
+    message: '关闭成功',
+    statusCode: 0
+  }
 })
 
 module.exports = router.routes()

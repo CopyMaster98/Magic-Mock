@@ -14,6 +14,7 @@
     "antd": "^5.16.2",
     "chrome-finder": "^1.0.7",
     "chrome-remote-interface": "^0.33.0",
+    "crypto": "^1.0.1",
     "koa": "^2.15.3",
     "koa-bodyparser": "^4.4.1",
     "koa-router": "^12.0.1",

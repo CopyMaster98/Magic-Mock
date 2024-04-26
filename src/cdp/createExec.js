@@ -4,6 +4,7 @@ const websocket = spawn('npm', ['run', 'backend-client-websocket'], { shell: tru
 const createChildProcess = (projectInfo, resolve, reject) => {
   const { url, name, port } = projectInfo
   const child = spawn('npm', ['run', 'cdp', '--projectInfo', name, url, port], { shell: true });
+
   child.stdout.on('data', (data) => {
     const info = data.toString()
     if(info.includes('url=') && info.includes('projectName=')) {
@@ -32,6 +33,14 @@ const createChildProcess = (projectInfo, resolve, reject) => {
   child.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
   });
+
+  if(!global.projectStatus.has(name))
+    global.projectStatus.set(name, {
+      url,
+      name,
+      port,
+      childProcess: child,
+    })
 }
 
 // createChildProcess({

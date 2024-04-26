@@ -113,14 +113,17 @@ async function intercept(data, page) {
     // 在页面加载前执行你的操作
     await page.goto(url);
 
+    process.stdin.on('data', (data) => {
+      if(data.includes('Page: close'))
+        Page.close()
+    });
+
     process.stdout.write(`projectName=${name}&url=${url}`);
     page.on('close', () => {
       console.log('Page: close');
       // 在这里执行页面关闭时的操作
       // 例如执行清理操作或者关闭浏览器等
     });
-
-    global.projectStatus.get(name).close = (callback) => Page.on('close', callback)
   } catch (error) {
     console.log(error)
   }

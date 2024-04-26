@@ -7,17 +7,14 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useData } from '../../context'
 import { headerItems } from '../../constant/header'
 import AddProjectForm from '../add-project-form'
-import { IDialogInfo } from '../../types/dialog'
+import { IDialogInfo, IFormRefProps } from '../../types/dialog'
 import { url } from '../../hooks'
 import { FolderAPI } from '../../api'
 const { Header: LayoutHeader } = Layout
 const Header: React.FC<{
   items: any[]
 }> = (props) => {
-  type IFormRefProps = {
-    onValidate: (arg?: any) => any,
-    onReset: (arg?: any) => any
-  }
+ 
   const { items } = props
   const { openDialog, updateDialogInfo, closeDialog, setRefresh } = useData()
   const pathnames = url.usePathname();
@@ -41,7 +38,7 @@ const Header: React.FC<{
         }) => {
           await FolderAPI.createFolder({
             name: formValue.projectName,
-            url: formValue.projectUrl
+            url: formValue.projectUrl ?? ''
           })
           setRefresh()
           info.ref?.current?.onReset()

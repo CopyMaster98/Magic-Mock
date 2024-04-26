@@ -1,26 +1,32 @@
 import { Button, Card, Tag, theme } from "antd";
 import { Content } from "antd/es/layout/layout"
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PoweroffOutlined, EditOutlined, UnorderedListOutlined, ChromeOutlined } from '@ant-design/icons'
 import { useData } from "../../../context";
 import { get, post } from "../../../utils/fetch";
 import { FolderAPI, ProjectAPI } from "../../../api";
+import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
+import AddProjectForm from "../../../components/add-project-form";
 
 const HomeDetail: React.FC = () => {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   
-  const { refresh } = useData()
+  const { openDialog, updateDialogInfo, refresh, setRefresh, closeDialog } = useData()
   const [projectData, setProjectData] = useState([])
   const [loadings, setLoadings] = useState<any>({});
+  const formRef = useRef<IFormRefProps>()
 
-  const handleStart = useCallback(async (project: any) => {
+  const handleChangeStatus = useCallback(async (project: any, status: boolean) => {
     setLoadings((oldValue: any) => ({
       ...oldValue,
-      [project.name]: true
+      [project.name]: status
     }))
-    ProjectAPI.startProject({
+
+    const fn = status ? ProjectAPI.startProject : ProjectAPI.stopProject
+
+    fn({
       name: project.name,
       url: project.url
     }).then(res => {
@@ -32,6 +38,40 @@ const HomeDetail: React.FC = () => {
       }))
     })
   }, [])
+
+  const handleEditDialog = useCallback((data = {
+    name: '',
+    url: ''
+  }) => {
+    const info: IDialogInfo<IFormRefProps | undefined> = {
+      title: 'Add Project',
+      content: <AddProjectForm data={{
+        projectName: data.name,
+        projectUrl: data.url
+      }} ref={formRef} />,
+      ref: formRef, 
+      handleConfirm: () => {
+        info.ref?.current?.onValidate().then(async(formValue: {
+          projectName: string,
+          projectUrl: string
+        }) => {
+          await FolderAPI.updateFolder({
+            pathname: data.name,
+            name: formValue.projectName,
+            url: formValue.projectUrl
+          })
+          setRefresh()
+          info.ref?.current?.onReset()
+          closeDialog?.()
+      }).catch((err: any) => console.log(err))
+      },
+      handleClose: () => {
+        info.ref?.current?.onReset()
+      }
+    }
+    updateDialogInfo?.(info)
+    openDialog?.()
+  }, [closeDialog, openDialog, setRefresh, updateDialogInfo, projectData])
 
   useEffect(() => {
     return () => {
@@ -74,18 +114,18 @@ const HomeDetail: React.FC = () => {
       title={CardTitle(item)}
       extra={  
       <>
-        <Button icon={<EditOutlined />} style={{marginRight: '20px'}} />  
-      <Button
-        danger={item.status ? true: false}
-        type="primary"
-        icon={<PoweroffOutlined />}
-        loading={loadings[item.name]}
-        onClick={() => handleStart(item)}
-      >
-        {
-          item.status ? 'Stop' : 'Start'
-        }
-      </Button>
+        <Button onClick={() => handleEditDialog(item)} icon={<EditOutlined />} style={{marginRight: '20px'}} />  
+        <Button
+          danger={item.status ? true: false}
+          type="primary"
+          icon={<PoweroffOutlined />}
+          loading={loadings[item.name]}
+          onClick={() => handleChangeStatus(item, !item.status)}
+        >
+          {
+            item.status ? 'Stop' : 'Start'
+          }
+        </Button>
       </>
     }
     > 
