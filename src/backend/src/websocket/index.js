@@ -34,6 +34,8 @@ const createWebSocket = () => {
 
     ws.send('connected');
   });
+
+  return map
 }
 
 module.exports = createWebSocket

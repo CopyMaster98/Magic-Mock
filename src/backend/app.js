@@ -2,6 +2,8 @@ const Koa = require('koa')
 const app = new Koa()
 const bodyParser = require('koa-bodyparser')
 const cors = require('@koa/cors')
+const { folderUtils } = require('./src/utils/index.js')
+const { MAGIC_MOCK_ROOT_PATH } = require('./src/constants/index.js')
 const router = require('./src/router/index.js')
 const createWebSocket = require('./src/websocket/index.js')
 global.projectStatus = new Map()
@@ -18,7 +20,9 @@ app.use(async (ctx, next) => {
 });
 app.use(router.routes())
 
-createWebSocket()
+const clients = createWebSocket()
+
+folderUtils.watchFolder(MAGIC_MOCK_ROOT_PATH, clients)
 
 app.listen(9000, () => {
   console.log('server is running at http://localhost:9000')

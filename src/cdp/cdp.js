@@ -36,6 +36,7 @@ const findChrome = require('chrome-finder');
 async function intercept(data, page) {
   let client;
   const { name, url, port } = data
+  
   try {
     client = await CDP({ port })
     

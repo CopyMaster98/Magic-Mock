@@ -1,6 +1,7 @@
 
 const Router = require('koa-router');
 const fs = require('fs')
+const crypto = require('crypto')
 const { folderUtils, } = require('../utils/index');
 const router = new Router();
 
@@ -49,10 +50,11 @@ router.get('/info', async(ctx, next) => {
         const currentProjectStatus = global.projectStatus.get(name)
         
         folder.push({
+          id: crypto.createHash('sha256').update(name + url).digest('hex').slice(0, 16),
           name,
           url: decodeURIComponent(url),
           status: currentProjectStatus?.status,
-          stats
+          stats,
         })
       } catch (err) {
         console.error(err);

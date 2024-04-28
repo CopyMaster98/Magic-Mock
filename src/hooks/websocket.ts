@@ -10,7 +10,7 @@ const initWebSocket = (callback: any) => {
 
     ws.onmessage = function(event) {
       console.log('Received message from server:', event.data);
-      if(event.data.includes('open:') || event.data.includes('close:'))
+      if(event.data.includes('open:') || event.data.includes('close:') || event.data.includes('update'))
         callback && callback()
     };
 

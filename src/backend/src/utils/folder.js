@@ -1,11 +1,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const chokidar = require('chokidar');
 
 const folderExists = (path) => {
     return fs.existsSync(path)
 }
-
 
 const createFolder = (path) => {
   try {
@@ -29,10 +29,26 @@ const folderContent = (folderPath) => {
   }
 }
 
+const watchFolder = (folderPath, clients) => {
+  const watcher = chokidar.watch(folderPath, {
+    ignored: /(^|[/\\])\../, // 忽略隐藏文件
+    persistent: true // 持续监听
+  });
+  watcher.on('all', (event, path) => {
+    console.log(event, path);
+    if(['unlinkDir', 'addDir'].includes(event)) {
+      const reactClient = clients.get('React')
+      if(reactClient)
+        reactClient.send('update')
+    }
+  });
+}
+
 module.exports = {
   createFolder,
   folderExists,
   folderPath,
   folderInfo,
-  folderContent
+  folderContent,
+  watchFolder
 }
