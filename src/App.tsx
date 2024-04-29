@@ -6,7 +6,6 @@ import { ProviderContext } from "./context/index";
 import { DialogType } from "./types/index";
 import { Spin } from "antd";
 import { websocket } from "./hooks";
-import RightClickMenu from "./components/right-click-menu";
 
 function App() {
   const [openDialog, setOpenDialog] = useState(false);
@@ -41,7 +40,6 @@ function App() {
     >
       <div className="App">
         <Home />
-        <RightClickMenu />
         <Dialog
           open={openDialog}
           handleClose={() => handleDialog(false)}

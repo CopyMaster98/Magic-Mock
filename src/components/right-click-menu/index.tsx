@@ -1,16 +1,31 @@
-import { Dropdown, Menu } from "antd";
+import { Button, Dropdown, Menu } from "antd";
 import { useState } from "react";
 
-const RightClickMenu: React.FC = () => {
+const RightClickMenu: React.FC<{
+  item: any;
+}> = (props) => {
+  const { item } = props;
   const handleMenuClick = (e: any) => {
-    console.log("点击了菜单项", e);
+    e.domEvent.stopPropagation();
+    console.log("点击了菜单项", item);
   };
 
   const menu = (
     <Menu onClick={handleMenuClick}>
-      <Menu.Item key="1">菜单项1</Menu.Item>
-      <Menu.Item key="2">菜单项2</Menu.Item>
-      <Menu.Item key="3">菜单项3</Menu.Item>
+      <Menu.Item key="1">
+        <Button
+          danger={true}
+          type="primary"
+          // icon={<PoweroffOutlined />}
+          // loading={loadings[item.name]}
+          // onClick={(e) => {
+          //   e.stopPropagation();
+          //   handleChangeStatus(item, !item.status);
+          // }}
+        >
+          Delete
+        </Button>
+      </Menu.Item>
     </Menu>
   );
 
@@ -19,15 +34,15 @@ const RightClickMenu: React.FC = () => {
       <div
         onContextMenu={(e) => e.preventDefault()}
         style={{
-          width: 100,
-          height: 100,
+          position: "absolute",
+          width: "100%",
+          height: "100%",
           background: "#f0f0f0",
           textAlign: "center",
-          lineHeight: "100px",
+          top: 0,
+          backgroundColor: "transparent",
         }}
-      >
-        右键点击这里显示菜单
-      </div>
+      ></div>
     </Dropdown>
   );
 };

@@ -51,8 +51,7 @@ const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
           {
             required: true,
             validator: async (rule, value) => {
-              const reg =
-                /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/.*)?$/;
+              const reg = /^(http|https):\/\/(\S+)$/;
               if (!reg.test(value)) {
                 throw new Error("Please enter the correct url address!");
               }

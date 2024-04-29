@@ -1,4 +1,4 @@
-import { Button, Card, Tag, theme } from "antd";
+import { Button, Card, Dropdown, Menu, Tag, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -13,6 +13,7 @@ import { FolderAPI, ProjectAPI } from "../../../api";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import AddProjectForm from "../../../components/add-project-form";
 import { useNavigate } from "../../../hooks/navigate";
+import RightClickMenu from "../../../components/right-click-menu";
 
 const HomeDetail: React.FC = () => {
   const {
@@ -107,6 +108,18 @@ const HomeDetail: React.FC = () => {
     });
   }, [refresh]);
 
+  const handleMenuClick = (e: any) => {
+    console.log("点击了菜单项", e);
+  };
+
+  const menu = (
+    <Menu onClick={handleMenuClick}>
+      <Menu.Item key="1">菜单项1</Menu.Item>
+      <Menu.Item key="2">菜单项2</Menu.Item>
+      <Menu.Item key="3">菜单项3</Menu.Item>
+    </Menu>
+  );
+
   const CardTitle = useCallback((item: any) => {
     return (
       <>
@@ -140,6 +153,11 @@ const HomeDetail: React.FC = () => {
             style={{ marginBottom: 16 }}
             styles={{
               body: { padding: "10px 24px" },
+              extra: {
+                position: "absolute",
+                right: "24px",
+                zIndex: 99,
+              },
             }}
             title={CardTitle(item)}
             onClick={() => navigate(`/detail/${item.name}`)}
@@ -155,13 +173,17 @@ const HomeDetail: React.FC = () => {
                   type="primary"
                   icon={<PoweroffOutlined />}
                   loading={loadings[item.name]}
-                  onClick={() => handleChangeStatus(item, !item.status)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleChangeStatus(item, !item.status);
+                  }}
                 >
                   {item.status ? "Stop" : "Start"}
                 </Button>
               </>
             }
           >
+            <RightClickMenu item={item} />
             <div style={{ marginBottom: "10px" }}>
               <ChromeOutlined style={{ marginRight: "10px" }} />
               <span>{item.url}</span>
@@ -170,7 +192,6 @@ const HomeDetail: React.FC = () => {
               <UnorderedListOutlined style={{ marginRight: "10px" }} />
               <span>12 Rules</span>{" "}
             </div>
-            {/* <span>12 data</span> */}
           </Card>
         );
       })}

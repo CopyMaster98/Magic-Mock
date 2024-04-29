@@ -1,11 +1,17 @@
-import { Breadcrumb, Button, theme } from "antd";
+import { Avatar, Breadcrumb, Button, Card, Skeleton, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import {
+  SettingOutlined,
+  EllipsisOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import { get } from "../../../utils/fetch";
 import { useData } from "../../../context";
 import { FolderAPI } from "../../../api";
 import "./index.css";
+import Meta from "antd/es/card/Meta";
 
 const DetailInfo: React.FC<{
   pathname: string;
@@ -54,6 +60,27 @@ const DetailInfo: React.FC<{
           >
             Add Rule
           </Button>
+        </div>
+
+        <div className="container">
+          <Card
+            style={{ width: 300, marginTop: 16 }}
+            actions={[
+              <SettingOutlined key="setting" />,
+              // <EditOutlined key="edit" />,
+              // <EllipsisOutlined key="ellipsis" />,
+            ]}
+          >
+            <Skeleton loading={false} avatar active>
+              <Meta
+                avatar={
+                  <Avatar src="https://api.dicebear.com/7.x/miniavs/svg?seed=2" />
+                }
+                title="Card title"
+                description="This is the description"
+              />
+            </Skeleton>
+          </Card>
         </div>
       </Content>
     </>
