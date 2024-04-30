@@ -1,28 +1,36 @@
-import { Modal } from "antd";
+import { Modal, ModalProps } from "antd";
 import { useRef, useState } from "react";
-import type { DraggableData, DraggableEvent } from 'react-draggable';
-import Draggable from 'react-draggable';
+import type { DraggableData, DraggableEvent } from "react-draggable";
+import Draggable from "react-draggable";
 import { DialogType } from "../../types";
+import { useData } from "../../context";
 
 const Dialog: React.FC<{
-  open: boolean,
-  handleClose: (arg?: any) => any
-  dialogConfig?: DialogType.IDialogInfo
+  open: boolean;
+  handleClose: (arg?: any) => any;
+  dialogConfig?: DialogType.IDialogInfo;
+  modalConfig?: ModalProps;
 }> = (props) => {
-  const { open, handleClose, dialogConfig } = props
+  const { open, handleClose, dialogConfig, modalConfig } = props;
   const [disabled, setDisabled] = useState(true);
-  const [bounds, setBounds] = useState({ left: 0, top: 0, bottom: 0, right: 0 });
+  const { updateDialogInfo, updateModalConfig } = useData();
+  const [bounds, setBounds] = useState({
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
+  });
   const draggleRef = useRef<HTMLDivElement>(null);
   const handleOk = async (e: React.MouseEvent<HTMLElement>) => {
-    if(dialogConfig?.handleConfirm) 
-      dialogConfig.handleConfirm()
+    if (dialogConfig?.handleConfirm) dialogConfig.handleConfirm();
   };
   const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
-    if(dialogConfig?.handleClose)
-      dialogConfig.handleClose()
-    handleClose()
-  };
+    if (dialogConfig?.handleClose) dialogConfig.handleClose();
 
+    handleClose();
+    updateDialogInfo?.();
+    updateModalConfig?.();
+  };
 
   const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
     const { clientWidth, clientHeight } = window.document.documentElement;
@@ -42,8 +50,8 @@ const Dialog: React.FC<{
       title={
         <div
           style={{
-            width: '100%',
-            cursor: 'move',
+            width: "100%",
+            cursor: "move",
           }}
           onMouseOver={() => {
             if (disabled) {
@@ -57,24 +65,27 @@ const Dialog: React.FC<{
           onBlur={() => {}}
           // end
         >
-          {dialogConfig?.title ?? 'Draggable Modal'}
+          {dialogConfig?.title ?? "Draggable Modal"}
         </div>
       }
-        open={open}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        modalRender={(modal) => (
-          <Draggable
-            disabled={disabled}
-            bounds={bounds}
-            nodeRef={draggleRef}
-            onStart={(event, uiData) => onStart(event, uiData)}
-          >
-            <div ref={draggleRef}>{modal}</div>
-          </Draggable>
-        )}
-      >{dialogConfig?.content}</Modal>
-  )
-}
+      open={open}
+      onOk={handleOk}
+      onCancel={handleCancel}
+      modalRender={(modal) => (
+        <Draggable
+          disabled={disabled}
+          bounds={bounds}
+          nodeRef={draggleRef}
+          onStart={(event, uiData) => onStart(event, uiData)}
+        >
+          <div ref={draggleRef}>{modal}</div>
+        </Draggable>
+      )}
+      {...modalConfig}
+    >
+      {dialogConfig?.content}
+    </Modal>
+  );
+};
 
-export default Dialog
+export default Dialog;

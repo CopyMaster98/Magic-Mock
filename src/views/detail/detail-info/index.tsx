@@ -1,6 +1,6 @@
 import { Avatar, Breadcrumb, Button, Card, Skeleton, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import {
   SettingOutlined,
@@ -12,6 +12,9 @@ import { useData } from "../../../context";
 import { FolderAPI } from "../../../api";
 import "./index.css";
 import Meta from "antd/es/card/Meta";
+import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
+import AddProjectForm from "../../../components/add-project-form";
+import AddRuleForm from "../../../components/add-rule-form";
 
 const DetailInfo: React.FC<{
   pathname: string;
@@ -21,7 +24,15 @@ const DetailInfo: React.FC<{
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const { setSpinning } = useData();
+  const {
+    openDialog,
+    updateDialogInfo,
+    updateModalConfig,
+    closeDialog,
+    setRefresh,
+    setSpinning,
+  } = useData();
+
   const location = useLocation();
 
   useEffect(() => {
@@ -29,6 +40,45 @@ const DetailInfo: React.FC<{
       console.log(res);
     });
   }, [pathname, setSpinning]);
+
+  const formRef = useRef<IFormRefProps>();
+  const handleOpenDialog = useCallback(() => {
+    const info: IDialogInfo<IFormRefProps | undefined> = {
+      title: "Add Project",
+      content: <AddRuleForm width ref={formRef} />,
+      ref: formRef,
+      handleConfirm: () => {
+        info.ref?.current
+          ?.onValidate()
+          .then(
+            async (formValue: { projectName: string; projectUrl: string }) => {
+              await FolderAPI.createFolder({
+                name: formValue.projectName,
+                url: formValue.projectUrl ?? "",
+              });
+              setRefresh();
+              info.ref?.current?.onReset();
+              closeDialog?.();
+            }
+          )
+          .catch((err: any) => console.log(err));
+      },
+      handleClose: () => {
+        info.ref?.current?.onReset();
+      },
+    };
+    updateDialogInfo?.(info);
+    updateModalConfig?.({
+      width: "40vw",
+    });
+    openDialog?.();
+  }, [
+    closeDialog,
+    openDialog,
+    setRefresh,
+    updateDialogInfo,
+    updateModalConfig,
+  ]);
 
   return (
     <>
@@ -55,7 +105,7 @@ const DetailInfo: React.FC<{
           <span>{pathname}</span>
           <Button
             type="primary"
-            // onClick={handleOpenDialog}
+            onClick={handleOpenDialog}
             // icon={<PlusOutlined />}
           >
             Add Rule
@@ -65,20 +115,10 @@ const DetailInfo: React.FC<{
         <div className="container">
           <Card
             style={{ width: 300, marginTop: 16 }}
-            actions={[
-              <SettingOutlined key="setting" />,
-              // <EditOutlined key="edit" />,
-              // <EllipsisOutlined key="ellipsis" />,
-            ]}
+            actions={[<SettingOutlined key="setting" />]}
           >
             <Skeleton loading={false} avatar active>
-              <Meta
-                avatar={
-                  <Avatar src="https://api.dicebear.com/7.x/miniavs/svg?seed=2" />
-                }
-                title="Card title"
-                description="This is the description"
-              />
+              <Meta title="Card title" description="This is the description" />
             </Skeleton>
           </Card>
         </div>

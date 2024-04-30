@@ -6,11 +6,13 @@ import { ProviderContext } from "./context/index";
 import { DialogType } from "./types/index";
 import { Spin } from "antd";
 import { websocket } from "./hooks";
+import { ModalConfig } from "antd/es/config-provider/context";
 
 function App() {
   const [openDialog, setOpenDialog] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [dialogConfig, setDialogInfo] = useState<DialogType.IDialogInfo>();
+  const [modalConfig, setModalConfig] = useState<ModalConfig>();
   const [spinning, setSpinning] = useState(false);
   const handleDialog = useCallback((flag: boolean) => {
     setOpenDialog(flag);
@@ -35,7 +37,9 @@ function App() {
         setSpinning: updateSpinning,
         openDialog: () => handleDialog(true),
         closeDialog: () => handleDialog(false),
-        updateDialogInfo: (data: DialogType.IDialogInfo) => setDialogInfo(data),
+        updateDialogInfo: (data?: DialogType.IDialogInfo) =>
+          setDialogInfo(data ?? {}),
+        updateModalConfig: (data?: ModalConfig) => setModalConfig(data ?? {}),
       }}
     >
       <div className="App">
@@ -43,6 +47,7 @@ function App() {
         <Dialog
           open={openDialog}
           handleClose={() => handleDialog(false)}
+          modalConfig={modalConfig}
           dialogConfig={dialogConfig}
         />
         <Spin spinning={spinning} fullscreen />
