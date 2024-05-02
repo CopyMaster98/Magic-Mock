@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import { get } from "../../../utils/fetch";
 import { useData } from "../../../context";
-import { FolderAPI } from "../../../api";
+import { FolderAPI, RuleAPI } from "../../../api";
 import "./index.css";
 import Meta from "antd/es/card/Meta";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
@@ -18,8 +18,9 @@ import AddRuleForm from "../../../components/add-rule-form";
 
 const DetailInfo: React.FC<{
   pathname: string;
+  projectId: string;
 }> = (props) => {
-  const { pathname } = props;
+  const { pathname, projectId } = props;
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -31,34 +32,56 @@ const DetailInfo: React.FC<{
     closeDialog,
     setRefresh,
     setSpinning,
+    projectInfo,
   } = useData();
 
   const location = useLocation();
 
   useEffect(() => {
-    FolderAPI.getFolderDetail(pathname, {}, setSpinning).then((res) => {
-      console.log(res);
-    });
-  }, [pathname, setSpinning]);
+    projectId &&
+      FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
+        console.log(res);
+      });
+  }, [pathname, projectId, setSpinning]);
 
   const formRef = useRef<IFormRefProps>();
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
-      title: "Add Project",
+      title: "Add Rule",
       content: <AddRuleForm width ref={formRef} />,
       ref: formRef,
       handleConfirm: () => {
         info.ref?.current
           ?.onValidate()
           .then(
-            async (formValue: { projectName: string; projectUrl: string }) => {
-              await FolderAPI.createFolder({
-                name: formValue.projectName,
-                url: formValue.projectUrl ?? "",
+            async (formValue: {
+              ruleName: string;
+              rulePattern: string;
+              requestHeader?: any[];
+              responseData?: any[];
+            }) => {
+              console.log(formValue, projectId);
+              await RuleAPI.createRule({
+                projectId,
+                ruleName: formValue.ruleName,
+                rulePattern: formValue.rulePattern,
+                requestHeader:
+                  !formValue.requestHeader ||
+                  formValue.requestHeader.length === 0
+                    ? []
+                    : formValue.requestHeader,
+                responseData:
+                  !formValue.responseData || formValue.responseData.length === 0
+                    ? []
+                    : formValue.responseData,
               });
-              setRefresh();
-              info.ref?.current?.onReset();
-              closeDialog?.();
+              // await FolderAPI.createFolder({
+              //   name: formValue.projectName,
+              //   url: formValue.projectUrl ?? "",
+              // });
+              // setRefresh();
+              // info.ref?.current?.onReset();
+              // closeDialog?.();
             }
           )
           .catch((err: any) => console.log(err));

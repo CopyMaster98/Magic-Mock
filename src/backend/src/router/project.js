@@ -1,5 +1,4 @@
 const Router = require("koa-router");
-const fs = require("fs");
 const { portUtils } = require("../utils/index");
 const router = new Router();
 const { createChildProcess } = require("../../../cdp/createExec.js");
@@ -54,7 +53,9 @@ router.post("/start", async (ctx, next) => {
 router.post("/stop", async (ctx) => {
   const { name } = ctx.request.body;
 
-  global.projectStatus.get(name).childProcess.stdin.write("Page: close");
+  const projectStatus = global.projectStatus.get(name);
+
+  if (projectStatus) projectStatus.childProcess.stdin.write("Page: close");
 
   ctx.response.body = {
     message: "关闭成功",

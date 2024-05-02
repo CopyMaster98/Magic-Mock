@@ -47,9 +47,10 @@ const HomeDetail: React.FC = () => {
             ...oldValue,
             [project.name]: false,
           }));
+          setRefresh();
         });
     },
-    []
+    [setRefresh]
   );
 
   const handleEditDialog = useCallback(

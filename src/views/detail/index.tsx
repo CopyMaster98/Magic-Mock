@@ -43,19 +43,26 @@ const Detail: React.FC = () => {
   } = theme.useToken();
   const [collapsed, setCollapsed] = useState(false);
   const { refresh } = useData();
-  const [projectData, setProjectData] = useState([]);
+  const [projectData, setProjectData] = useState<any>([]);
   const pathname = url.usePathname();
   const isDetailInfo = useMemo(() => pathname.length > 1, [pathname.length]);
   const currentPathname = useMemo(() => {
     return pathname[pathname.length - 1];
   }, [pathname]);
 
+  const projectId = useMemo(() => {
+    return projectData?.find((item: any) => item.key === currentPathname)?.id;
+  }, [currentPathname, projectData]);
+
   useEffect(() => {
     FolderAPI.getFolderInfo().then((res: any) => {
       const data = res.project?.map((item: any) => ({
         icon: React.createElement(FolderOutlined),
         key: item.name,
-        label: <Link to={`/detail/${item.name}`}>{item.name}</Link>,
+        label: (
+          <Link to={`/detail/${item.name}?id=${item.id}`}>{item.name}</Link>
+        ),
+        id: item.id,
       }));
 
       setProjectData(data);
@@ -88,7 +95,7 @@ const Detail: React.FC = () => {
       </Sider>
       <Layout style={{ padding: "0 24px 24px" }}>
         {isDetailInfo ? (
-          <DetailInfo pathname={currentPathname} />
+          <DetailInfo pathname={currentPathname} projectId={projectId} />
         ) : (
           <Content
             style={{
