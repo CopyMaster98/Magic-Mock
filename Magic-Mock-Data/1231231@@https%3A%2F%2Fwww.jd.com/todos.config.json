@@ -1,0 +1,12 @@
+{
+  "id": "9bbd9e4b89773d4d",
+  "ruleName": "todos",
+  "rulePattern": "*todos*",
+  "requestHeader": [],
+  "responseData": [
+    {
+      "dataKey": "id",
+      "newDataValue": "99"
+    }
+  ]
+}

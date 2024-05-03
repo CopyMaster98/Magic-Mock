@@ -1,6 +1,6 @@
 import { Avatar, Breadcrumb, Button, Card, Skeleton, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
   SettingOutlined,
@@ -15,12 +15,15 @@ import Meta from "antd/es/card/Meta";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import AddProjectForm from "../../../components/add-project-form";
 import AddRuleForm from "../../../components/add-rule-form";
+import DetailRule from "./detail-rule";
+import AllRule from "./all-rule";
 
 const DetailInfo: React.FC<{
-  pathname: string;
+  pathname: any;
   projectId: string;
+  rules: any[];
 }> = (props) => {
-  const { pathname, projectId } = props;
+  const { pathname, projectId, rules } = props;
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -75,13 +78,9 @@ const DetailInfo: React.FC<{
                     ? []
                     : formValue.responseData,
               });
-              // await FolderAPI.createFolder({
-              //   name: formValue.projectName,
-              //   url: formValue.projectUrl ?? "",
-              // });
-              // setRefresh();
-              // info.ref?.current?.onReset();
-              // closeDialog?.();
+              setRefresh();
+              info.ref?.current?.onReset();
+              closeDialog?.();
             }
           )
           .catch((err: any) => console.log(err));
@@ -98,6 +97,7 @@ const DetailInfo: React.FC<{
   }, [
     closeDialog,
     openDialog,
+    projectId,
     setRefresh,
     updateDialogInfo,
     updateModalConfig,
@@ -125,7 +125,10 @@ const DetailInfo: React.FC<{
         }}
       >
         <div className="sub-title">
-          <span>{pathname}</span>
+          <span>
+            {pathname[pathname.length - 1].slice(0, 1).toUpperCase() +
+              pathname[pathname.length - 1].slice(1)}
+          </span>
           <Button
             type="primary"
             onClick={handleOpenDialog}
@@ -136,14 +139,7 @@ const DetailInfo: React.FC<{
         </div>
 
         <div className="container">
-          <Card
-            style={{ width: 300, marginTop: 16 }}
-            actions={[<SettingOutlined key="setting" />]}
-          >
-            <Skeleton loading={false} avatar active>
-              <Meta title="Card title" description="This is the description" />
-            </Skeleton>
-          </Card>
+          {pathname.length > 1 ? <DetailRule /> : <AllRule rules={rules} />}
         </div>
       </Content>
     </>

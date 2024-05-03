@@ -161,7 +161,9 @@ const HomeDetail: React.FC = () => {
               },
             }}
             title={CardTitle(item)}
-            onClick={() => navigate(`/detail/${item.name}`)}
+            onClick={() =>
+              navigate(`/detail/project_${item.name}?projectId=${item.id}`)
+            }
             extra={
               <>
                 <Button
@@ -191,7 +193,7 @@ const HomeDetail: React.FC = () => {
             </div>
             <div>
               <UnorderedListOutlined style={{ marginRight: "10px" }} />
-              <span>12 Rules</span>{" "}
+              <span>{item.rules.length} Rules</span>{" "}
             </div>
           </Card>
         );

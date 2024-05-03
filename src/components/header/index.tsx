@@ -15,16 +15,16 @@ const Header: React.FC<{
 }> = (props) => {
   const { items } = props;
   const { openDialog, updateDialogInfo, closeDialog, setRefresh } = useData();
-  const pathnames = url.usePathname();
+  const { pathname } = url.usePathname();
   const defaultKey = useMemo(() => {
     if (
-      !pathnames.length ||
-      !headerItems.find((item) => pathnames[0] === item.key)
+      !pathname.length ||
+      !headerItems.find((item) => pathname[0] === item.key)
     )
       return "home";
 
-    return pathnames[0];
-  }, [pathnames]);
+    return pathname[0];
+  }, [pathname]);
 
   const formRef = useRef<IFormRefProps>();
   const handleOpenDialog = useCallback(() => {

@@ -1,7 +1,9 @@
 const CDP = require("chrome-remote-interface");
 const puppeteer = require("puppeteer");
+const fs = require("fs");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
+const { folderUtils } = require("../backend/src/utils");
 
 (async () => {
   const chromePath = findChrome();
@@ -39,19 +41,36 @@ const findChrome = require("chrome-finder");
   );
 })();
 
+const updateConfig = (configPath) => {
+  const newConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+
+  return {
+    responseData: newConfig.responseData,
+    patterns: [
+      {
+        urlPattern: newConfig.rulePattern,
+        requestStage: "Request",
+      },
+      {
+        urlPattern: newConfig.rulePattern,
+        requestStage: "Response",
+      },
+    ],
+  };
+};
+
 async function intercept(data, page) {
   let client;
-  const urlPatterns = [
-    {
-      urlPattern: "*todos*",
-      requestStage: "Request",
-    },
-    {
-      urlPattern: "*todos*",
-      requestStage: "Response",
-    },
-  ];
+  let config = {};
+  let urlPatterns = [];
   const { name, url, port } = data;
+  const projectName = folderUtils.folderPath(
+    `${name}@@${encodeURIComponent(url)}`
+  );
+  const rules = fs.readdirSync(projectName);
+  const configFile = rules.filter((item) => item.endsWith(".config.json"));
+
+  console.log(configFile);
 
   try {
     client = await CDP({ port });
@@ -65,6 +84,32 @@ async function intercept(data, page) {
         patterns: urlPatterns,
       }),
     ]);
+
+    if (configFile.length) {
+      const handleUpdate = async (configPath) => {
+        const { patterns, responseData } = updateConfig(configPath);
+
+        config.responseData = responseData;
+        urlPatterns = patterns;
+        await Fetch.enable({
+          patterns: urlPatterns,
+        });
+        process.stdout.write(fs.readFileSync(configPath, "utf8"));
+      };
+      await new Promise((resolve) => {
+        configFile.forEach(async (item) => {
+          const configPath = `${projectName}/${item}`;
+
+          await handleUpdate(configPath);
+
+          fs.watchFile(configPath, async () => {
+            await handleUpdate(configPath);
+          });
+        });
+
+        resolve();
+      });
+    }
 
     Fetch.requestPaused(async (params) => {
       const requestUrl = params.request.url;
@@ -84,36 +129,41 @@ async function intercept(data, page) {
       if (matchedPattern) {
         console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
         // 根据需要执行相应的逻辑
+        if (params.responseStatusCode) {
+          const res = await Fetch.getResponseBody({
+            requestId: params.requestId,
+          });
+          let responseData = res.body && JSON.parse(atob(res.body));
+
+          // modify responseData
+
+          responseData.id = Math.random();
+
+          config.responseData.forEach((item) => {
+            responseData[item.dataKey] = item.newDataValue;
+          });
+
+          Fetch.fulfillRequest({
+            requestId: params.requestId,
+            responseHeaders: params.responseHeaders,
+            responseCode: params.responseStatusCode,
+            body: btoa(JSON.stringify(responseData)),
+          });
+        } else if (params.request.method !== "OPTIONS") {
+          const data =
+            params.request.postData && JSON.parse(params.request.postData);
+
+          // modify requestData
+
+          Fetch.continueRequest({
+            requestId: params.requestId,
+            postData: btoa(JSON.stringify(data)),
+          });
+        } else {
+          Fetch.continueRequest({ requestId: params.requestId });
+        }
       } else {
-        console.log(`请求 ${requestUrl} 不匹配任何模式`);
-      }
-      if (params.responseStatusCode) {
-        const res = await Fetch.getResponseBody({
-          requestId: params.requestId,
-        });
-        let responseData = res.body && JSON.parse(atob(res.body));
-
-        // modify responseData
-
-        responseData.id = Math.random();
-
-        Fetch.fulfillRequest({
-          requestId: params.requestId,
-          responseHeaders: params.responseHeaders,
-          responseCode: params.responseStatusCode,
-          body: btoa(JSON.stringify(responseData)),
-        });
-      } else if (params.request.method !== "OPTIONS") {
-        const data =
-          params.request.postData && JSON.parse(params.request.postData);
-
-        // modify requestData
-
-        Fetch.continueRequest({
-          requestId: params.requestId,
-          postData: btoa(JSON.stringify(data)),
-        });
-      } else {
+        // console.log(`请求 ${requestUrl} 不匹配任何模式`);
         Fetch.continueRequest({ requestId: params.requestId });
       }
     });

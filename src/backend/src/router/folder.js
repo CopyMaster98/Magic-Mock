@@ -43,8 +43,13 @@ router.get("/info", async (ctx, next) => {
     const items = fs.readdirSync(path);
     items.forEach((item) => {
       try {
-        const stats = folderInfo(`${path}/${item}`);
-
+        const folderPath = `${path}/${item}`;
+        const stats = folderInfo(folderPath);
+        const rules = fs.readdirSync(folderPath).map((item) => ({
+          id: hashUtils.getHash(item),
+          name: item,
+          stats: folderInfo(`${folderPath}/${item}`),
+        }));
         const [name, url] = item.split("@@");
         const currentProjectStatus = global.projectStatus.get(name);
 
@@ -54,6 +59,7 @@ router.get("/info", async (ctx, next) => {
           url: decodeURIComponent(url),
           status: currentProjectStatus?.status,
           stats,
+          rules,
         });
       } catch (err) {
         console.error(err);
@@ -73,15 +79,15 @@ router.get("/project/:projectId", async (ctx, next) => {
   const projectName = (fs.readdirSync(folderPath("")) ?? []).find((item) => {
     return hashUtils.getHash(item) === ctx.params.projectId;
   });
+
   const projectPath = folderPath("") + "/" + projectName;
 
   const projectInfo = fs.readdirSync(projectPath);
 
-  if (!projectInfo.length)
-    ctx.response.body = {
-      statusCode: 0,
-      projectInfo: [],
-    };
+  ctx.response.body = {
+    statusCode: 0,
+    projectInfo: !projectInfo.length ? [] : projectInfo,
+  };
 });
 
 router.put("/project/:projectName", async (ctx) => {

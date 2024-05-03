@@ -23,6 +23,7 @@ const Home: React.FC = () => {
             <Route path="/home" Component={HomeDetail} />
             <Route path="/detail" Component={Detail}></Route>
             <Route path="/detail/:id" Component={Detail}></Route>
+            <Route path="/detail/:projectId/:ruleId" Component={Detail}></Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>

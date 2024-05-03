@@ -26,6 +26,10 @@ function App() {
     return setRefresh((oldValue) => oldValue + 1);
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    setRefresh((oldValue) => oldValue + 1);
+  }, []);
+
   websocket.useCreateWebSocket(handleUpdateProjectInfo);
 
   return (
@@ -33,7 +37,7 @@ function App() {
       value={{
         theme: "light",
         refresh,
-        setRefresh: () => setRefresh((oldValue) => oldValue + 1),
+        setRefresh: handleRefresh,
         setSpinning: updateSpinning,
         openDialog: () => handleDialog(true),
         closeDialog: () => handleDialog(false),

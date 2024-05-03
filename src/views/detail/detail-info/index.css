@@ -1,4 +1,6 @@
-
+.container {
+  display: flex;
+}
 .sub-title {
   display: flex;
   justify-content: space-between;

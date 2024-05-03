@@ -14,6 +14,8 @@ router.post("/create", async (ctx) => {
     (item) => hashUtils.getHash(item) === projectId
   );
 
+  console.log(projectId);
+
   if (!isExistParentFolder) {
     ctx.response.body = {
       message: "项目不存在",
@@ -22,7 +24,6 @@ router.post("/create", async (ctx) => {
   } else {
     const path = folderPath(`${isExistParentFolder}/${ruleName}`);
     const isExist = folderExists(path);
-    console.log(path);
 
     if (isExist) {
       ctx.response.body = {
@@ -32,7 +33,7 @@ router.post("/create", async (ctx) => {
     } else {
       try {
         createFile(
-          `${folderPath(`${isExistParentFolder}`)}/${ruleName}.json`,
+          `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,
           JSON.stringify(
             {
               id: hashUtils.getHash(
@@ -70,6 +71,12 @@ router.post("/create", async (ctx) => {
   // }
 
   ctx.set("notification", true);
+});
+
+router.get("/info/:ruleId", async (ctx) => {
+  const { ruleId } = ctx.request.body;
+
+  console.log(ruleId);
 });
 
 module.exports = router.routes();
