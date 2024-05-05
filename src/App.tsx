@@ -23,11 +23,11 @@ function App() {
   }, []);
 
   const handleUpdateProjectInfo = useCallback(() => {
-    return setRefresh((oldValue) => oldValue + 1);
+    setTimeout(() => setRefresh((oldValue) => oldValue + 1));
   }, []);
 
   const handleRefresh = useCallback(() => {
-    setRefresh((oldValue) => oldValue + 1);
+    setTimeout(() => setRefresh((oldValue) => oldValue + 1));
   }, []);
 
   websocket.useCreateWebSocket(handleUpdateProjectInfo);

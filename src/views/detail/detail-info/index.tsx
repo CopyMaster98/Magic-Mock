@@ -1,7 +1,15 @@
-import { Avatar, Breadcrumb, Button, Card, Skeleton, theme } from "antd";
+import {
+  Avatar,
+  Breadcrumb,
+  BreadcrumbProps,
+  Button,
+  Card,
+  Skeleton,
+  theme,
+} from "antd";
 import { Content } from "antd/es/layout/layout";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   SettingOutlined,
   EllipsisOutlined,
@@ -102,6 +110,30 @@ const DetailInfo: React.FC<{
     updateDialogInfo,
     updateModalConfig,
   ]);
+  const itemRender: BreadcrumbProps["itemRender"] = (
+    currentRoute,
+    params,
+    items,
+    paths
+  ) => {
+    const isLast = currentRoute?.path === items[items.length - 1]?.path;
+
+    return isLast ? (
+      <span>{currentRoute.title}</span>
+    ) : (
+      <Link to={`/${paths.join("/")}?${(currentRoute as any).search}`}>
+        {currentRoute.title}
+      </Link>
+    );
+  };
+
+  const mapSearch = (item: string) => {
+    const searchArray = location.search?.slice(1).split("&");
+
+    if (item.includes("project")) return searchArray[0];
+    else if (item.includes("rule")) return searchArray.join("&");
+    else return "";
+  };
 
   return (
     <>
@@ -112,7 +144,10 @@ const DetailInfo: React.FC<{
           .filter(Boolean)
           .map((item) => ({
             title: item.slice(0, 1).toUpperCase() + item.slice(1),
+            path: item,
+            search: mapSearch(item),
           }))}
+        itemRender={itemRender}
         separator=">"
       />
       <Content

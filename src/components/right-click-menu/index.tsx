@@ -12,7 +12,12 @@ const RightClickMenu: React.FC<{
 
   const menu = (
     <Menu onClick={handleMenuClick}>
-      <Menu.Item key="1">
+      <Menu.Item
+        key="1"
+        style={{
+          padding: 0,
+        }}
+      >
         <Button
           danger={true}
           type="primary"
