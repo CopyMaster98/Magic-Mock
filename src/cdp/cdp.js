@@ -45,6 +45,8 @@ const updateConfig = (configPath) => {
   const newConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
   return {
+    ruleName: newConfig.ruleName,
+    rulePattern: newConfig.rulePattern,
     responseData: newConfig.responseData,
     patterns: [
       {
@@ -70,50 +72,78 @@ async function intercept(data, page) {
   const rules = fs.readdirSync(projectName);
   const configFile = rules.filter((item) => item.endsWith(".config.json"));
 
-  console.log(configFile);
+  // console.log(configFile);
 
   try {
     client = await CDP({ port });
 
-    const { Network, Page, Fetch } = client;
+    let { Network, Page, Fetch } = client;
 
     await Promise.all([
       Network.enable(),
       Page.enable(),
       Fetch.enable({
-        patterns: urlPatterns,
+        patterns: urlPatterns.map((item) => item.value).flat(Infinity),
       }),
     ]);
 
     if (configFile.length) {
-      const handleUpdate = async (configPath) => {
-        const { patterns, responseData } = updateConfig(configPath);
+      const handleUpdate = async (configPath, isInit = false) => {
+        if (isInit) {
+          config.responseData = [];
+          urlPatterns = [];
+        }
 
-        config.responseData = responseData;
-        urlPatterns = patterns;
-        await Fetch.enable({
-          patterns: urlPatterns,
+        const { patterns, responseData, ruleName, rulePattern } =
+          updateConfig(configPath);
+
+        config.responseData = config.responseData.filter(
+          (item) => item.ruleName !== ruleName
+        );
+        config.responseData.push({
+          ruleName,
+          rulePattern,
+          path: configPath,
+          value: responseData,
         });
-        process.stdout.write(fs.readFileSync(configPath, "utf8"));
+        urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
+        urlPatterns.push({
+          ruleName,
+          rulePattern,
+          path: configPath,
+          value: patterns,
+        });
+
+        // todos need delete
+        process.stdout.write(JSON.stringify(config.responseData));
       };
-      await new Promise((resolve) => {
-        configFile.forEach(async (item) => {
+      await new Promise(async (resolve) => {
+        configFile.forEach(async (item, index) => {
           const configPath = `${projectName}/${item}`;
 
-          await handleUpdate(configPath);
-
+          await handleUpdate(configPath, index === 0);
           fs.watchFile(configPath, async () => {
-            await handleUpdate(configPath);
+            await handleUpdate(configPath, false);
+
+            await Fetch.enable({
+              patterns: urlPatterns.map((item) => item.value).flat(Infinity),
+            });
           });
         });
 
+        await Fetch.enable({
+          patterns: urlPatterns.map((item) => item.value).flat(Infinity),
+        });
         resolve();
       });
     }
 
     Fetch.requestPaused(async (params) => {
       const requestUrl = params.request.url;
-      const matchedPattern = urlPatterns.find((pattern) => {
+      const allUrlPatterns = urlPatterns
+        .map((item) => item.value)
+        .flat(Infinity);
+      const matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*?]([^*?]+)[*?]$/g;
 
         let match;
@@ -122,7 +152,6 @@ async function intercept(data, page) {
 
           if (res) return true;
         }
-
         return false;
       });
 
@@ -139,9 +168,17 @@ async function intercept(data, page) {
 
           responseData.id = Math.random();
 
-          config.responseData.forEach((item) => {
-            responseData[item.dataKey] = item.newDataValue;
-          });
+          const matchedResponseData = config.responseData.find(
+            (item) => item.rulePattern === matchedPattern.urlPattern
+          );
+
+          if (matchedResponseData && matchedResponseData.value)
+            matchedResponseData.value.forEach((item) => {
+              Object.keys(item).forEach((key) => {
+                if (responseData.hasOwnProperty(key))
+                  responseData[key] = item[key];
+              });
+            });
 
           Fetch.fulfillRequest({
             requestId: params.requestId,

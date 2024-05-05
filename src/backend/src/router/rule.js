@@ -14,15 +14,13 @@ router.post("/create", async (ctx) => {
     (item) => hashUtils.getHash(item) === projectId
   );
 
-  console.log(projectId);
-
   if (!isExistParentFolder) {
     ctx.response.body = {
       message: "项目不存在",
       statusCode: -1,
     };
   } else {
-    const path = folderPath(`${isExistParentFolder}/${ruleName}`);
+    const path = folderPath(`${isExistParentFolder}/${ruleName}.config.json`);
     const isExist = folderExists(path);
 
     if (isExist) {
@@ -47,7 +45,9 @@ router.post("/create", async (ctx) => {
               ruleName,
               rulePattern,
               requestHeader,
-              responseData,
+              responseData: responseData.map((item) => ({
+                [item.dataKey]: item.newDataValue,
+              })),
             },
             null,
             2

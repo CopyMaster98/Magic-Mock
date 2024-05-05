@@ -4,6 +4,7 @@
 /node_modules
 /.pnp
 .pnp.js
+/Magic-Mock-Data
 
 # testing
 /coverage

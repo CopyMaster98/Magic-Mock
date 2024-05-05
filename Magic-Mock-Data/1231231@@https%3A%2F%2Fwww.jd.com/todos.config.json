@@ -1,12 +1,11 @@
 {
-  "id": "9bbd9e4b89773d4d",
-  "ruleName": "todos",
-  "rulePattern": "*todos*",
+  "id": "6010d2e0185dcf88",
+  "ruleName": "123",
+  "rulePattern": "*comments*",
   "requestHeader": [],
   "responseData": [
     {
-      "dataKey": "id",
-      "newDataValue": "99"
+      "email": "121212"
     }
   ]
 }
