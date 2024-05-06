@@ -11,7 +11,7 @@ import { useData } from "../../../context";
 import { get, post } from "../../../utils/fetch";
 import { FolderAPI, ProjectAPI } from "../../../api";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import AddProjectForm from "../../../components/add-project-form";
+import AddProjectForm from "../../../components/project-form";
 import { useNavigate } from "../../../hooks/navigate";
 import RightClickMenu from "../../../components/right-click-menu";
 
@@ -108,18 +108,6 @@ const HomeDetail: React.FC = () => {
       setProjectData(res.project);
     });
   }, [refresh]);
-
-  const handleMenuClick = (e: any) => {
-    console.log("点击了菜单项", e);
-  };
-
-  const menu = (
-    <Menu onClick={handleMenuClick}>
-      <Menu.Item key="1">菜单项1</Menu.Item>
-      <Menu.Item key="2">菜单项2</Menu.Item>
-      <Menu.Item key="3">菜单项3</Menu.Item>
-    </Menu>
-  );
 
   const CardTitle = useCallback((item: any) => {
     return (

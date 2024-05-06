@@ -73,10 +73,29 @@ router.post("/create", async (ctx) => {
   ctx.set("notification", true);
 });
 
-router.get("/info/:ruleId", async (ctx) => {
-  const { ruleId } = ctx.request.body;
+router.get("/info/:projectId/:ruleId", async (ctx) => {
+  const { ruleId, projectId } = ctx.params;
+  const folder = (fs.readdirSync(folderPath("")) ?? []).find(
+    (item) => hashUtils.getHash(item) === projectId
+  );
+  const rule = (fs.readdirSync(folderPath(folder)) ?? []).find(
+    (item) => hashUtils.getHash(item) === ruleId
+  );
 
-  console.log(ruleId);
+  if (rule) {
+    ctx.response.body = {
+      message: "规则信息获取成功",
+      statusCode: 0,
+      data: JSON.parse(fs.readFileSync(folderPath(`${folder}/${rule}`))),
+    };
+  } else {
+    ctx.response.body = {
+      message: "规则信息获取失败",
+      statusCode: -1,
+      data: null,
+    };
+    ctx.set("notification", true);
+  }
 });
 
 module.exports = router.routes();

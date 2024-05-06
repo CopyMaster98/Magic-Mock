@@ -1,28 +1,12 @@
-import {
-  Avatar,
-  Breadcrumb,
-  BreadcrumbProps,
-  Button,
-  Card,
-  Skeleton,
-  theme,
-} from "antd";
+import { Breadcrumb, BreadcrumbProps, Button, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  SettingOutlined,
-  EllipsisOutlined,
-  EditOutlined,
-} from "@ant-design/icons";
-import { get } from "../../../utils/fetch";
 import { useData } from "../../../context";
 import { FolderAPI, RuleAPI } from "../../../api";
 import "./index.css";
-import Meta from "antd/es/card/Meta";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import AddProjectForm from "../../../components/add-project-form";
-import AddRuleForm from "../../../components/add-rule-form";
+import RuleForm from "../../../components/rule-form";
 import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 
@@ -43,23 +27,23 @@ const DetailInfo: React.FC<{
     closeDialog,
     setRefresh,
     setSpinning,
-    projectInfo,
   } = useData();
 
   const location = useLocation();
 
   useEffect(() => {
     projectId &&
+      !location.search.includes("ruleId") &&
       FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
         console.log(res);
       });
-  }, [pathname, projectId, setSpinning]);
+  }, [location, pathname, projectId, setSpinning]);
 
   const formRef = useRef<IFormRefProps>();
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
       title: "Add Rule",
-      content: <AddRuleForm width ref={formRef} />,
+      content: <RuleForm width ref={formRef} />,
       ref: formRef,
       handleConfirm: () => {
         info.ref?.current
@@ -71,7 +55,6 @@ const DetailInfo: React.FC<{
               requestHeader?: any[];
               responseData?: any[];
             }) => {
-              console.log(formValue, projectId);
               await RuleAPI.createRule({
                 projectId,
                 ruleName: formValue.ruleName,
@@ -99,7 +82,7 @@ const DetailInfo: React.FC<{
     };
     updateDialogInfo?.(info);
     updateModalConfig?.({
-      width: "40vw",
+      width: "45vw",
     });
     openDialog?.();
   }, [
@@ -152,6 +135,8 @@ const DetailInfo: React.FC<{
       />
       <Content
         style={{
+          display: "flex",
+          flexDirection: "column",
           padding: 24,
           margin: 0,
           minHeight: 280,
@@ -166,14 +151,24 @@ const DetailInfo: React.FC<{
           </span>
           <Button
             type="primary"
-            onClick={handleOpenDialog}
-            // icon={<PlusOutlined />}
+            onClick={
+              location.search.includes("ruleId") ? () => {} : handleOpenDialog
+            }
           >
-            Add Rule
+            {location.search.includes("ruleId") ? "Save" : "Add Rule"}
           </Button>
         </div>
 
-        <div className="container">
+        <div
+          className="container"
+          style={
+            pathname.length > 1
+              ? {
+                  flex: 1,
+                }
+              : {}
+          }
+        >
           {pathname.length > 1 ? <DetailRule /> : <AllRule rules={rules} />}
         </div>
       </Content>

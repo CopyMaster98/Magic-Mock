@@ -7,7 +7,7 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 
-const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
+const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data } = props;
   const [form] = Form.useForm();
   const onFinish: FormProps["onFinish"] = (values) => {
@@ -74,6 +74,10 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
         </Tooltip>
       </Form.Item>
 
+      <Form.Item label="Rule Method" name="ruleMethod">
+        <Input />
+      </Form.Item>
+
       <Form.Item label="Request Header">
         <Form.List name={["requestHeader"]}>
           {(subFields, { add, remove }, { errors }) => (
@@ -128,7 +132,7 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
                 }}
               />
               <Button type="dashed" onClick={() => add()} block>
-                + Add Sub Item
+                + Add Request Header
               </Button>
               {/* <Form.ErrorList errors={errors} /> */}
             </div>
@@ -165,7 +169,7 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
                   >
                     <Input placeholder="Data Key" />
                   </Form.Item>
-                  <SyncOutlined style={{ transform: "translateY(-80%)" }} />
+                  <SyncOutlined style={{ transform: "translateY(70%)" }} />
                   <Form.Item
                     name={[subField.name, "newDataValue"]}
                     style={{ width: "45%" }}
@@ -173,7 +177,7 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
                     <Input placeholder="New Data Value" />
                   </Form.Item>
                   <MinusCircleOutlined
-                    style={{ transform: "translateY(-80%)" }}
+                    style={{ transform: "translateY(70%)" }}
                     onClick={() => {
                       remove(subField.name);
                     }}
@@ -189,7 +193,7 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
                 }}
               />
               <Button type="dashed" onClick={() => add()} block>
-                + Add Sub Item
+                + Add Response Data
               </Button>
               {/* <Form.ErrorList errors={errors} /> */}
             </div>
@@ -200,4 +204,4 @@ const AddRuleForm: React.FC<any> = forwardRef((props, ref) => {
   );
 });
 
-export default AddRuleForm;
+export default RuleForm;

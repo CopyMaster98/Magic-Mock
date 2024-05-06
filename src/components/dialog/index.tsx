@@ -47,6 +47,12 @@ const Dialog: React.FC<{
   };
   return (
     <Modal
+      styles={{
+        body: {
+          maxHeight: "50vh",
+          overflowY: "auto",
+        },
+      }}
       title={
         <div
           style={{
