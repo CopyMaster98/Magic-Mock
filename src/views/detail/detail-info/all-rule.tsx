@@ -40,7 +40,7 @@ const AllRule: React.FC<{
                   />
                 </>
               }
-              description="This is the description"
+              // description="This is the description"
             />
           </Skeleton>
         </Card>

@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
-const { folderUtils } = require("../backend/src/utils");
+const { folderUtils, commonUtils } = require("../backend/src/utils");
 
 (async () => {
   const chromePath = findChrome();
@@ -175,8 +175,7 @@ async function intercept(data, page) {
           if (matchedResponseData && matchedResponseData.value)
             matchedResponseData.value.forEach((item) => {
               Object.keys(item).forEach((key) => {
-                if (responseData.hasOwnProperty(key))
-                  responseData[key] = item[key];
+                commonUtils.deepUpdateValue(responseData, key, item[key]);
               });
             });
 

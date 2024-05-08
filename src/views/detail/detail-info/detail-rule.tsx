@@ -42,7 +42,6 @@ const DetailRule: React.FC = () => {
         })
         .flat(Infinity);
 
-      console.log(formValue);
       setRuleForm(formValue);
     });
   }, [location]);
