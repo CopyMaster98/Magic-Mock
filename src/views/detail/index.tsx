@@ -77,6 +77,8 @@ const Detail: React.FC = () => {
                   rule_{ruleName}
                 </Link>
               ),
+              content: rule?.content,
+              parent: item,
             };
 
             return ruleInfo;

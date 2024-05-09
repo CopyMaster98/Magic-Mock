@@ -1,0 +1,15 @@
+.container {
+
+}
+
+@property --direc {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotate {
+  to {
+    --direc: 360deg
+  }
+}

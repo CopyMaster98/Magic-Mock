@@ -72,8 +72,6 @@ async function intercept(data, page) {
   const rules = fs.readdirSync(projectName);
   const configFile = rules.filter((item) => item.endsWith(".config.json"));
 
-  // console.log(configFile);
-
   try {
     client = await CDP({ port });
 

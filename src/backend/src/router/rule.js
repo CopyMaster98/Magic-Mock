@@ -2,12 +2,20 @@ const Router = require("koa-router");
 const fs = require("fs");
 const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
+const { resolve } = require("path");
 const { folderPath, folderExists, createFolder, createFile, folderContent } =
   folderUtils;
 
 router.post("/create", async (ctx) => {
-  const { projectId, ruleName, rulePattern, requestHeader, responseData } =
-    ctx.request.body;
+  const {
+    projectId,
+    ruleName,
+    rulePattern,
+    requestHeader,
+    responseData,
+    ruleMethod,
+    ruleStatus,
+  } = ctx.request.body;
   const folders = fs.readdirSync(folderPath("")) ?? [];
 
   const isExistParentFolder = folders.find(
@@ -40,11 +48,15 @@ router.post("/create", async (ctx) => {
                   rulePattern,
                   requestHeader,
                   responseData,
+                  ruleMethod,
+                  ruleStatus,
                 ])
               ),
               ruleName,
               rulePattern,
               requestHeader,
+              ruleMethod,
+              ruleStatus,
               responseData: responseData.map((item) => ({
                 [item.dataKey]: item.newDataValue,
               })),
@@ -96,6 +108,14 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
     };
     ctx.set("notification", true);
   }
+});
+
+router.put("/info/:projectId/:ruleId", async (ctx) => {
+  const { ruleId, projectId } = ctx.params;
+  const data = ctx.request.body;
+
+  ctx.set("notification", true);
+  console.log(ruleId, projectId, data);
 });
 
 module.exports = router.routes();

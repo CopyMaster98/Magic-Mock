@@ -48,53 +48,104 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     responseDataJSON: "",
   });
 
-  const requestHeaderSwap = useCallback(() => {
-    const requestHeader = form.getFieldValue("requestHeader");
-    const requestHeaderJSON = form.getFieldValue("requestHeaderJSON");
-    const label = requestHeaderInputType
-      ? "requestHeaderJSON"
-      : ("requestHeader" as const);
-    setTimeout(() => form.setFieldValue(label, requestHeaderValue[label]));
-    if (requestHeader)
-      setRequestHeaderValue((oldValue) => ({
-        ...oldValue,
-        requestHeader: requestHeader,
-      }));
-    if (requestHeaderJSON)
-      setRequestHeaderValue((oldValue) => ({
-        ...oldValue,
-        requestHeaderJSON: requestHeaderJSON,
-      }));
+  const handleUpdateForm = useCallback(
+    (type: "request" | "response") => {
+      const baseFormItem = {
+        ruleName: form.getFieldValue("ruleName"),
+        rulePattern: form.getFieldValue("rulePattern"),
+        ruleMethod: form.getFieldValue("ruleMethod"),
+      };
 
-    setRequestHeaderInputType((oldValue) => !oldValue);
-  }, [form, requestHeaderInputType, requestHeaderValue]);
+      setTimeout(() => {
+        Object.keys(baseFormItem).forEach((key) => {
+          form.setFieldValue(
+            key,
+            baseFormItem[key as keyof typeof baseFormItem]
+          );
+        });
+      });
+
+      if (type === "request") {
+        const requestHeader = form.getFieldValue("requestHeader");
+        const requestHeaderJSON = form.getFieldValue("requestHeaderJSON");
+        const requestLabel = requestHeaderInputType
+          ? "requestHeaderJSON"
+          : "requestHeader";
+        setTimeout(() =>
+          form.setFieldValue(requestLabel, requestHeaderValue[requestLabel])
+        );
+        if (requestHeader)
+          setRequestHeaderValue((oldValue) => ({
+            ...oldValue,
+            requestHeader: requestHeader,
+          }));
+        if (requestHeaderJSON)
+          setRequestHeaderValue((oldValue) => ({
+            ...oldValue,
+            requestHeaderJSON: requestHeaderJSON,
+          }));
+
+        const responseLabel = responseDataInputType
+          ? "responseData"
+          : "responseDataJSON";
+
+        const responseValue = form.getFieldValue(responseLabel);
+
+        setTimeout(() => form.setFieldValue(responseLabel, responseValue));
+
+        setRequestHeaderInputType((oldValue) => !oldValue);
+      } else {
+        const responseData = form.getFieldValue("responseData");
+        const responseDataJSON = form.getFieldValue("responseDataJSON");
+        const responseLabel = responseDataInputType
+          ? "responseDataJSON"
+          : "responseData";
+        setTimeout(() =>
+          form.setFieldValue(responseLabel, responseDataValue[responseLabel])
+        );
+        if (responseData)
+          setResponseDataValue((oldValue) => ({
+            ...oldValue,
+            responseData: responseData,
+          }));
+        if (responseDataJSON)
+          setResponseDataValue((oldValue) => ({
+            ...oldValue,
+            responseDataJSON: responseDataJSON,
+          }));
+
+        const requestLabel = requestHeaderInputType
+          ? "requestHeader"
+          : "requestHeaderJSON";
+
+        const requestValue = form.getFieldValue(requestLabel);
+        setTimeout(() => form.setFieldValue(requestLabel, requestValue));
+
+        setResponseDataInputType((oldValue) => !oldValue);
+      }
+    },
+    [
+      form,
+      requestHeaderInputType,
+      requestHeaderValue,
+      responseDataInputType,
+      responseDataValue,
+    ]
+  );
+
+  const requestHeaderSwap = useCallback(() => {
+    handleUpdateForm("request");
+  }, [handleUpdateForm]);
 
   const responseDataSwap = useCallback(() => {
-    const responseData = form.getFieldValue("responseData");
-    const responseDataJSON = form.getFieldValue("responseDataJSON");
-    const label = responseDataInputType
-      ? "responseDataJSON"
-      : ("responseData" as const);
-    setTimeout(() => form.setFieldValue(label, responseDataValue[label]));
-    if (responseData)
-      setResponseDataValue((oldValue) => ({
-        ...oldValue,
-        responseData: responseData,
-      }));
-    if (responseDataJSON)
-      setResponseDataValue((oldValue) => ({
-        ...oldValue,
-        responseDataJSON: responseDataJSON,
-      }));
-
-    setResponseDataInputType((oldValue) => !oldValue);
-  }, [form, responseDataInputType, responseDataValue]);
+    handleUpdateForm("response");
+  }, [handleUpdateForm]);
 
   return (
     <Form
       name="basic"
       form={form}
-      labelCol={{ span: 5 }}
+      labelCol={{ span: 7 }}
       wrapperCol={{ span: 18 }}
       initialValues={data}
       onFinish={onFinish}

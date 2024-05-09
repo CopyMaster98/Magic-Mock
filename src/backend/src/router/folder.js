@@ -43,12 +43,15 @@ router.get("/info", async (ctx, next) => {
     const items = fs.readdirSync(path);
     items.forEach((item) => {
       try {
-        const folderPath = `${path}/${item}`;
-        const stats = folderInfo(folderPath);
-        const rules = fs.readdirSync(folderPath).map((item) => ({
+        const _folderPath = `${path}/${item}`;
+        const stats = folderInfo(_folderPath);
+        const rules = fs.readdirSync(_folderPath).map((item) => ({
           id: hashUtils.getHash(item),
           name: item,
-          stats: folderInfo(`${folderPath}/${item}`),
+          stats: folderInfo(`${_folderPath}/${item}`),
+          content: JSON.parse(
+            fs.readFileSync(folderPath(`${_folderPath}/${item}`))
+          ),
         }));
         const [name, url] = item.split("@@");
         const currentProjectStatus = global.projectStatus.get(name);

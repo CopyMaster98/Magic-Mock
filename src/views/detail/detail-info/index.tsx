@@ -52,6 +52,7 @@ const DetailInfo: React.FC<{
             async (formValue: {
               ruleName: string;
               rulePattern: string;
+              ruleMethod: string;
               requestHeader?: any[];
               responseData?: any[];
             }) => {
@@ -59,6 +60,7 @@ const DetailInfo: React.FC<{
                 projectId,
                 ruleName: formValue.ruleName,
                 rulePattern: formValue.rulePattern,
+                ruleMethod: formValue.ruleMethod,
                 requestHeader:
                   !formValue.requestHeader ||
                   formValue.requestHeader.length === 0
@@ -68,6 +70,7 @@ const DetailInfo: React.FC<{
                   !formValue.responseData || formValue.responseData.length === 0
                     ? []
                     : formValue.responseData,
+                ruleStatus: true,
               });
               setRefresh();
               info.ref?.current?.onReset();
@@ -83,6 +86,9 @@ const DetailInfo: React.FC<{
     updateDialogInfo?.(info);
     updateModalConfig?.({
       width: "45vw",
+      style: {
+        minWidth: "650px",
+      },
     });
     openDialog?.();
   }, [

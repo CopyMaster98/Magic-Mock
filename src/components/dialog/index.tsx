@@ -51,6 +51,7 @@ const Dialog: React.FC<{
         body: {
           maxHeight: "50vh",
           overflowY: "auto",
+          padding: "20px 30px",
         },
       }}
       title={
