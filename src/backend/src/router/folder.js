@@ -41,18 +41,22 @@ router.get("/info", async (ctx, next) => {
 
   if (isExist) {
     const items = fs.readdirSync(path);
+
     items.forEach((item) => {
       try {
         const _folderPath = `${path}/${item}`;
         const stats = folderInfo(_folderPath);
-        const rules = fs.readdirSync(_folderPath).map((item) => ({
-          id: hashUtils.getHash(item),
-          name: item,
-          stats: folderInfo(`${_folderPath}/${item}`),
-          content: JSON.parse(
-            fs.readFileSync(folderPath(`${_folderPath}/${item}`))
-          ),
-        }));
+        const rules = fs.readdirSync(_folderPath).map((item) => {
+          const content = folderUtils.folderContent(
+            folderPath(`${_folderPath}/${item}`)
+          );
+          return {
+            id: hashUtils.getHash(item),
+            name: item,
+            stats: folderInfo(`${_folderPath}/${item}`),
+            content: content.length ? JSON.parse(content) : {},
+          };
+        });
         const [name, url] = item.split("@@");
         const currentProjectStatus = global.projectStatus.get(name);
 
@@ -79,12 +83,8 @@ router.get("/info", async (ctx, next) => {
 });
 
 router.get("/project/:projectId", async (ctx, next) => {
-  const projectName = (fs.readdirSync(folderPath("")) ?? []).find((item) => {
-    return hashUtils.getHash(item) === ctx.params.projectId;
-  });
-
+  const projectName = folderUtils.findFile(ctx.params.projectId);
   const projectPath = folderPath("") + "/" + projectName;
-
   const projectInfo = fs.readdirSync(projectPath);
 
   ctx.response.body = {
@@ -94,11 +94,11 @@ router.get("/project/:projectId", async (ctx, next) => {
 });
 
 router.put("/project/:projectName", async (ctx) => {
-  const { url, name } = ctx.request.body;
+  const { url, name, id } = ctx.request.body;
   const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
-    (item) => item.split("@@")[0] === ctx.params.projectName
+    (item) => hashUtils.getHash(item) === id
   );
-  const projectPath = folderPath("") + "/" + projectName;
+  const projectPath = folderPath(projectName);
   const newProjectName = [name, encodeURIComponent(url)].join("@@");
   const newProjectPath = folderPath("") + "/" + newProjectName;
   const isExist = folderExists(newProjectPath);
@@ -124,6 +124,26 @@ router.put("/project/:projectName", async (ctx) => {
     ctx.response.status = 500;
     ctx.response.body = {
       message: "修改失败",
+      statusCode: -1,
+    };
+  }
+  ctx.set("notification", true);
+});
+
+router.delete("/project/:projectId", async (ctx) => {
+  const { projectId } = ctx.params;
+  const folderName = folderUtils.findFile(projectId);
+  const _folderPath = folderPath(`${folderName}`);
+
+  try {
+    folderUtils.deleteFolderRecursive(_folderPath);
+    ctx.response.body = {
+      message: "删除成功",
+      statusCode: 0,
+    };
+  } catch (error) {
+    ctx.response.body = {
+      message: "删除成功",
       statusCode: -1,
     };
   }

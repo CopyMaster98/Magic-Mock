@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons";
 import { useData } from "../../../context";
 import { get, post } from "../../../utils/fetch";
-import { FolderAPI, ProjectAPI } from "../../../api";
+import { FolderAPI, ProjectAPI, RuleAPI } from "../../../api";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import AddProjectForm from "../../../components/project-form";
 import { useNavigate } from "../../../hooks/navigate";
@@ -58,15 +58,17 @@ const HomeDetail: React.FC = () => {
       data = {
         name: "",
         url: "",
+        id: "",
       }
     ) => {
       const info: IDialogInfo<IFormRefProps | undefined> = {
-        title: "Add Project",
+        title: "Edit Project",
         content: (
           <AddProjectForm
             data={{
               projectName: data.name,
               projectUrl: data.url,
+              id: data.id,
             }}
             ref={formRef}
           />
@@ -84,6 +86,7 @@ const HomeDetail: React.FC = () => {
                   pathname: data.name,
                   name: formValue.projectName,
                   url: formValue.projectUrl,
+                  id: data.id,
                 });
                 setRefresh();
                 info.ref?.current?.onReset();
@@ -124,6 +127,26 @@ const HomeDetail: React.FC = () => {
     );
   }, []);
 
+  const openConfirmDialog = useCallback(
+    (item: any) => {
+      const info: IDialogInfo<IFormRefProps | undefined> = {
+        title: "确认删除",
+        handleConfirm: async () => {
+          await FolderAPI.deleteFolder({
+            projectId: item.id,
+          });
+
+          setRefresh();
+          closeDialog?.();
+        },
+      };
+
+      updateDialogInfo?.(info);
+      openDialog?.();
+    },
+    [closeDialog, openDialog, setRefresh, updateDialogInfo]
+  );
+
   return (
     <Content
       style={{
@@ -155,7 +178,10 @@ const HomeDetail: React.FC = () => {
             extra={
               <>
                 <Button
-                  onClick={() => handleEditDialog(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditDialog(item);
+                  }}
                   icon={<EditOutlined />}
                   style={{ marginRight: "20px" }}
                 />
@@ -174,7 +200,7 @@ const HomeDetail: React.FC = () => {
               </>
             }
           >
-            <RightClickMenu item={item} />
+            <RightClickMenu item={item} handleClick={openConfirmDialog} />
             <div style={{ marginBottom: "10px" }}>
               <ChromeOutlined style={{ marginRight: "10px" }} />
               <span>{item.url}</span>

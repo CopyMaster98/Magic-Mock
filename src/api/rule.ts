@@ -1,4 +1,4 @@
-import { get, post, put } from "../utils/fetch";
+import { _delete, get, post, put } from "../utils/fetch";
 
 const createRule = (
   data: {
@@ -46,4 +46,16 @@ const updateRuleInfo = (
   );
 };
 
-export { createRule, getRuleInfo, updateRuleInfo };
+const deleteRule = (
+  data: {
+    projectId: string;
+    ruleId: string;
+  },
+  config = {}
+) => {
+  const { projectId, ruleId } = data;
+
+  return _delete(`/rule/info/${projectId}/${ruleId}`, config);
+};
+
+export { createRule, getRuleInfo, updateRuleInfo, deleteRule };

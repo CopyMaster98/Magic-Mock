@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import RuleForm from "../../../components/rule-form";
 import "./detail-rule.css";
 import { useLocation } from "react-router-dom";
 import { get } from "../../../utils/fetch";
 import { RuleAPI } from "../../../api";
 
-const DetailRule: React.FC = () => {
+const DetailRule: React.FC<any> = forwardRef((props, ref) => {
   const location = useLocation();
   const [ruleForm, setRuleForm] = useState({});
 
@@ -20,7 +20,7 @@ const DetailRule: React.FC = () => {
     }).then((res) => {
       const formValue = res.data;
 
-      formValue.requestHeader = formValue.requestHeader
+      formValue.requestHeader = (formValue.requestHeader || [])
         .map((item: any) => {
           const keys = Object.keys(item);
 
@@ -31,7 +31,7 @@ const DetailRule: React.FC = () => {
         })
         .flat(Infinity);
 
-      formValue.responseData = formValue.responseData
+      formValue.responseData = (formValue.responseData || [])
         .map((item: any) => {
           const keys = Object.keys(item);
 
@@ -48,9 +48,9 @@ const DetailRule: React.FC = () => {
 
   return (
     <div className="detail-rule-container">
-      <RuleForm data={ruleForm}> </RuleForm>
+      <RuleForm data={ruleForm} ref={ref}></RuleForm>
     </div>
   );
-};
+});
 
 export default DetailRule;

@@ -3,10 +3,12 @@ import { useState } from "react";
 
 const RightClickMenu: React.FC<{
   item: any;
+  handleClick?: (arg: any) => void;
 }> = (props) => {
-  const { item } = props;
+  const { item, handleClick } = props;
   const handleMenuClick = (e: any) => {
     e.domEvent.stopPropagation();
+    handleClick && handleClick(item);
     console.log("点击了菜单项", item);
   };
 

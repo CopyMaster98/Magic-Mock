@@ -9,6 +9,7 @@ import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import RuleForm from "../../../components/rule-form";
 import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
+import { useNavigate } from "../../../hooks/navigate";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -30,16 +31,18 @@ const DetailInfo: React.FC<{
   } = useData();
 
   const location = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    projectId &&
-      !location.search.includes("ruleId") &&
-      FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
-        console.log(res);
-      });
-  }, [location, pathname, projectId, setSpinning]);
+  // useEffect(() => {
+  //   projectId &&
+  //     !location.search.includes("ruleId") &&
+  //     FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
+  //       console.log(res);
+  //     });
+  // }, [location, pathname, projectId, setSpinning]);
 
   const formRef = useRef<IFormRefProps>();
+  const ruleFormRef = useRef<IFormRefProps>();
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
       title: "Add Rule",
@@ -124,6 +127,44 @@ const DetailInfo: React.FC<{
     else return "";
   };
 
+  const handleUpdateRule = useCallback(() => {
+    ruleFormRef.current
+      ?.onValidate()
+      .then(
+        async (formValue: {
+          ruleName: string;
+          rulePattern: string;
+          ruleMethod: string;
+          requestHeader?: any[];
+          responseData?: any[];
+        }) => {
+          await RuleAPI.updateRuleInfo({
+            projectId,
+            ruleId: location.search.slice(1).split("&")[1].split("=")[1],
+            ruleInfo: {
+              ruleName: formValue.ruleName,
+              rulePattern: formValue.rulePattern,
+              ruleMethod: formValue.ruleMethod,
+              requestHeader:
+                !formValue.requestHeader || formValue.requestHeader.length === 0
+                  ? []
+                  : formValue.requestHeader,
+              responseData:
+                !formValue.responseData || formValue.responseData.length === 0
+                  ? []
+                  : formValue.responseData,
+            },
+          });
+
+          navigate(
+            `${location.pathname.split("/").slice(0, -1).join("/")}${
+              location.search.split("&")[0]
+            }`
+          );
+        }
+      );
+  }, [location, navigate, projectId]);
+
   return (
     <>
       <Breadcrumb
@@ -158,7 +199,9 @@ const DetailInfo: React.FC<{
           <Button
             type="primary"
             onClick={
-              location.search.includes("ruleId") ? () => {} : handleOpenDialog
+              location.search.includes("ruleId")
+                ? handleUpdateRule
+                : handleOpenDialog
             }
           >
             {location.search.includes("ruleId") ? "Save" : "Add Rule"}
@@ -175,7 +218,11 @@ const DetailInfo: React.FC<{
               : {}
           }
         >
-          {pathname.length > 1 ? <DetailRule /> : <AllRule rules={rules} />}
+          {pathname.length > 1 ? (
+            <DetailRule ref={ruleFormRef} />
+          ) : (
+            <AllRule rules={rules} />
+          )}
         </div>
       </Content>
     </>

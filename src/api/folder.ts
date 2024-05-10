@@ -1,4 +1,4 @@
-import { get, post, put } from "../utils/fetch";
+import { _delete, get, post, put } from "../utils/fetch";
 
 const createFolder = (data: any, config = {}) => {
   return post("/folder/create", data, config);
@@ -12,8 +12,13 @@ const getFolderDetail = (projectId: string, config = {}, callback: any) => {
   return get(`/folder/project/${projectId}`, config, callback);
 };
 
+const deleteFolder = ({ projectId }: any, config = {}) => {
+  return _delete(`/folder/project/${projectId}`, config);
+};
+
 const updateFolder = (
   data: {
+    id: string;
     pathname: string;
     name: string;
     url: string;
@@ -24,4 +29,10 @@ const updateFolder = (
   return put(`/folder/project/${data.pathname}`, data, config);
 };
 
-export { createFolder, getFolderInfo, getFolderDetail, updateFolder };
+export {
+  createFolder,
+  getFolderInfo,
+  getFolderDetail,
+  updateFolder,
+  deleteFolder,
+};

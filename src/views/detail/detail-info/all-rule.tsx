@@ -6,15 +6,16 @@ import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
 import { useCallback, useState } from "react";
-import { RuleAPI } from "../../../api";
+import { FolderAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
+import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 const AllRule: React.FC<{
   rules: any[];
 }> = (props) => {
   const { rules } = props;
   const navigate = useNavigate();
   const { pathname, search } = url.usePathname();
-  const { setRefresh } = useData();
+  const { setRefresh, openDialog, updateDialogInfo, closeDialog } = useData();
   const [switchLoading, setSwitchLoading] = useState(false);
   const handleNavigate = (item: any) => {
     navigate(`/${pathname.join("/")}/${item.key}${search}&ruleId=${item.id}`);
@@ -27,13 +28,34 @@ const AllRule: React.FC<{
         ruleId: rule.id,
         projectId: rule.parent.id,
         ruleInfo: {
-          ruleStatus: rule?.content?.ruleStatus,
+          ruleStatus: !rule?.content?.ruleStatus,
         },
       });
       setSwitchLoading(false);
       setRefresh();
+      closeDialog?.();
     },
-    [setRefresh]
+    [closeDialog, setRefresh]
+  );
+
+  const openConfirmDialog = useCallback(
+    (item: any) => {
+      const info: IDialogInfo<IFormRefProps | undefined> = {
+        title: "确认删除",
+        handleConfirm: async () => {
+          await RuleAPI.deleteRule({
+            ruleId: item.id,
+            projectId: item.parent.id,
+          });
+
+          setRefresh();
+        },
+      };
+
+      updateDialogInfo?.(info);
+      openDialog?.();
+    },
+    [openDialog, setRefresh, updateDialogInfo]
   );
 
   return (
@@ -42,7 +64,7 @@ const AllRule: React.FC<{
         <div
           key={item.id}
           style={{
-            padding: "10px",
+            padding: "5px",
             margin: "30px 30px 30px 0",
             borderRadius: "8px",
             backgroundColor: "transparent",
@@ -68,7 +90,7 @@ const AllRule: React.FC<{
               />,
             ]}
           >
-            <RightClickMenu item={item} />
+            <RightClickMenu item={item} handleClick={openConfirmDialog} />
             <Skeleton loading={false} avatar active>
               <Meta
                 title={

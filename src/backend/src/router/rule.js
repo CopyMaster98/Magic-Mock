@@ -17,7 +17,6 @@ router.post("/create", async (ctx) => {
     ruleStatus,
   } = ctx.request.body;
   const folders = fs.readdirSync(folderPath("")) ?? [];
-
   const isExistParentFolder = folders.find(
     (item) => hashUtils.getHash(item) === projectId
   );
@@ -77,28 +76,21 @@ router.post("/create", async (ctx) => {
       }
     }
   }
-
-  // if (!isExist) {
-  //   createFile();
-  // }
-
   ctx.set("notification", true);
 });
 
 router.get("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
-  const folder = (fs.readdirSync(folderPath("")) ?? []).find(
-    (item) => hashUtils.getHash(item) === projectId
-  );
-  const rule = (fs.readdirSync(folderPath(folder)) ?? []).find(
-    (item) => hashUtils.getHash(item) === ruleId
-  );
+
+  const folder = folderUtils.findFile(projectId);
+  const rule = folderUtils.findFile(ruleId, folder);
 
   if (rule) {
+    const content = folderUtils.folderContent(folderPath(`${folder}/${rule}`));
     ctx.response.body = {
       message: "规则信息获取成功",
       statusCode: 0,
-      data: JSON.parse(fs.readFileSync(folderPath(`${folder}/${rule}`))),
+      data: content ? JSON.parse(content) : {},
     };
   } else {
     ctx.response.body = {
@@ -112,10 +104,53 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 
 router.put("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
-  const data = ctx.request.body;
+  const { ruleInfo } = ctx.request.body;
+  const folderName = folderUtils.findFile(projectId);
+  const ruleName = folderUtils.findFile(ruleId, folderName);
+  const rulePath = folderPath(`${folderName}/${ruleName}`);
+  let currentRuleData = JSON.parse(folderUtils.folderContent(rulePath));
+
+  if (currentRuleData) {
+    for (let key in ruleInfo) {
+      currentRuleData[key] = ruleInfo[key];
+    }
+  }
+
+  try {
+    createFile(rulePath, JSON.stringify(currentRuleData, null, 2));
+    ctx.response.body = {
+      message: "保存成功",
+      statusCode: 0,
+    };
+  } catch (error) {
+    ctx.response.body = {
+      message: "保存失败",
+      statusCode: -1,
+    };
+  }
 
   ctx.set("notification", true);
-  console.log(ruleId, projectId, data);
+});
+
+router.delete("/info/:projectId/:ruleId", async (ctx) => {
+  const { ruleId, projectId } = ctx.params;
+  const folderName = folderUtils.findFile(projectId);
+  const ruleName = folderUtils.findFile(ruleId, folderName);
+  const rulePath = folderPath(`${folderName}/${ruleName}`);
+
+  try {
+    folderUtils.deleteFile(rulePath);
+    ctx.response.body = {
+      message: "删除成功",
+      statusCode: 0,
+    };
+  } catch (error) {
+    ctx.response.body = {
+      message: "删除成功",
+      statusCode: -1,
+    };
+  }
+  ctx.set("notification", true);
 });
 
 module.exports = router.routes();
