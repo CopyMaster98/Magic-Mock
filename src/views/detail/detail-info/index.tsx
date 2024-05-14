@@ -1,9 +1,10 @@
 import { Breadcrumb, BreadcrumbProps, Button, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { PoweroffOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../../context";
-import { FolderAPI, RuleAPI } from "../../../api";
+import { FolderAPI, ProjectAPI, RuleAPI } from "../../../api";
 import "./index.css";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import RuleForm from "../../../components/rule-form";
@@ -13,10 +14,10 @@ import { useNavigate } from "../../../hooks/navigate";
 
 const DetailInfo: React.FC<{
   pathname: any;
-  projectId: string;
+  project: any;
   rules: any[];
 }> = (props) => {
-  const { pathname, projectId, rules } = props;
+  const { pathname, project, rules } = props;
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -32,6 +33,7 @@ const DetailInfo: React.FC<{
 
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   // useEffect(() => {
   //   projectId &&
@@ -58,21 +60,37 @@ const DetailInfo: React.FC<{
               ruleMethod: string;
               requestHeader?: any[];
               responseData?: any[];
+              requestHeaderJSON?: string;
+              responseDataJSON?: string;
             }) => {
+              const requestHeader = !ruleFormRef.current?.requestHeaderInputType
+                ? formValue.requestHeaderJSON
+                  ? JSON.parse(formValue.requestHeaderJSON)
+                  : null
+                : formValue.requestHeader ?? [];
+              const responseData = !ruleFormRef.current?.responseDataInputType
+                ? formValue.responseDataJSON
+                  ? JSON.parse(formValue.responseDataJSON)
+                  : null
+                : formValue.responseData ?? [];
+
               await RuleAPI.createRule({
-                projectId,
+                projectId: project.id,
                 ruleName: formValue.ruleName,
                 rulePattern: formValue.rulePattern,
                 ruleMethod: formValue.ruleMethod,
-                requestHeader:
-                  !formValue.requestHeader ||
-                  formValue.requestHeader.length === 0
-                    ? []
-                    : formValue.requestHeader,
-                responseData:
-                  !formValue.responseData || formValue.responseData.length === 0
-                    ? []
-                    : formValue.responseData,
+                requestHeader: {
+                  data: requestHeader,
+                  type: info.ref?.current?.requestHeaderInputType
+                    ? "text"
+                    : "json",
+                },
+                responseData: {
+                  data: responseData,
+                  type: info.ref?.current?.responseDataInputType
+                    ? "text"
+                    : "json",
+                },
                 ruleStatus: true,
               });
               setRefresh();
@@ -97,7 +115,7 @@ const DetailInfo: React.FC<{
   }, [
     closeDialog,
     openDialog,
-    projectId,
+    project,
     setRefresh,
     updateDialogInfo,
     updateModalConfig,
@@ -137,22 +155,41 @@ const DetailInfo: React.FC<{
           ruleMethod: string;
           requestHeader?: any[];
           responseData?: any[];
+          requestHeaderJSON?: string;
+          responseDataJSON?: string;
         }) => {
+          const requestHeader = !ruleFormRef.current?.requestHeaderInputType
+            ? formValue.requestHeaderJSON
+              ? JSON.parse(formValue.requestHeaderJSON)
+              : null
+            : formValue.requestHeader ?? [];
+          const responseData = !ruleFormRef.current?.responseDataInputType
+            ? formValue.responseDataJSON
+              ? JSON.parse(formValue.responseDataJSON)
+              : null
+            : formValue.responseData ?? [];
+
+          console.log(requestHeader, responseData);
+
           await RuleAPI.updateRuleInfo({
-            projectId,
+            projectId: project.id,
             ruleId: location.search.slice(1).split("&")[1].split("=")[1],
             ruleInfo: {
               ruleName: formValue.ruleName,
               rulePattern: formValue.rulePattern,
               ruleMethod: formValue.ruleMethod,
-              requestHeader:
-                !formValue.requestHeader || formValue.requestHeader.length === 0
-                  ? []
-                  : formValue.requestHeader,
-              responseData:
-                !formValue.responseData || formValue.responseData.length === 0
-                  ? []
-                  : formValue.responseData,
+              requestHeader: {
+                data: requestHeader,
+                type: ruleFormRef?.current?.requestHeaderInputType
+                  ? "text"
+                  : "json",
+              },
+              responseData: {
+                data: responseData,
+                type: ruleFormRef?.current?.responseDataInputType
+                  ? "text"
+                  : "json",
+              },
             },
           });
 
@@ -163,7 +200,28 @@ const DetailInfo: React.FC<{
           );
         }
       );
-  }, [location, navigate, projectId]);
+  }, [location, navigate, project]);
+
+  const handleChangeStatus = useCallback(
+    async (project: any, status: boolean) => {
+      setLoading(status);
+
+      const fn = status ? ProjectAPI.startProject : ProjectAPI.stopProject;
+
+      fn({
+        name: project._name,
+        url: project._url,
+      })
+        .then((res) => {
+          console.log(res);
+        })
+        .finally(() => {
+          setLoading(false);
+          setRefresh();
+        });
+    },
+    [setRefresh]
+  );
 
   return (
     <>
@@ -196,16 +254,31 @@ const DetailInfo: React.FC<{
             {pathname[pathname.length - 1].slice(0, 1).toUpperCase() +
               pathname[pathname.length - 1].slice(1)}
           </span>
-          <Button
-            type="primary"
-            onClick={
-              location.search.includes("ruleId")
-                ? handleUpdateRule
-                : handleOpenDialog
-            }
-          >
-            {location.search.includes("ruleId") ? "Save" : "Add Rule"}
-          </Button>
+          <div className="buttons">
+            <Button
+              type="primary"
+              onClick={
+                location.search.includes("ruleId")
+                  ? handleUpdateRule
+                  : handleOpenDialog
+              }
+            >
+              {location.search.includes("ruleId") ? "Save" : "Add Rule"}
+            </Button>
+
+            <Button
+              type="primary"
+              danger={project?._status ? true : false}
+              style={{
+                marginLeft: "50px",
+              }}
+              loading={loading}
+              icon={<PoweroffOutlined />}
+              onClick={(e) => handleChangeStatus(project, !project?._status)}
+            >
+              {project?._status ? "Stop" : "Start"}
+            </Button>
+          </div>
         </div>
 
         <div

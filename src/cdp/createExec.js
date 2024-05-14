@@ -30,6 +30,10 @@ const createChildProcess = (projectInfo, resolve, reject) => {
         `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
       );
     }
+
+    if (data.includes("Error:")) {
+      reject(data);
+    }
   });
 
   child.stderr.on("data", (data) => {

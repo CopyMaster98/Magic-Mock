@@ -164,8 +164,7 @@ async function intercept(data, page) {
 
           // modify responseData
 
-          responseData.id = Math.random();
-
+          // responseData.id = Math.random();
           const matchedResponseData = config.responseData.find(
             (item) => item.rulePattern === matchedPattern.urlPattern
           );

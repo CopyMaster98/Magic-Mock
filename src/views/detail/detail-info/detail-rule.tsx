@@ -20,27 +20,39 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
     }).then((res) => {
       const formValue = res.data;
 
-      formValue.requestHeader = (formValue.requestHeader || [])
-        .map((item: any) => {
-          const keys = Object.keys(item);
+      if (formValue.requestHeaderType === "text") {
+        formValue.requestHeader = (formValue.requestHeader || [])
+          .map((item: any) => {
+            const keys = Object.keys(item);
 
-          return keys.map((key) => ({
-            headerKey: key,
-            newHeaderValue: item[key],
-          }));
-        })
-        .flat(Infinity);
+            return keys.map((key) => ({
+              headerKey: key,
+              newHeaderValue: item[key],
+            }));
+          })
+          .flat(Infinity);
+      } else {
+        formValue.requestHeaderJSON = formValue.requestHeaderJSON
+          ? JSON.stringify(formValue.requestHeaderJSON)
+          : formValue.requestHeaderJSON;
+      }
 
-      formValue.responseData = (formValue.responseData || [])
-        .map((item: any) => {
-          const keys = Object.keys(item);
+      if (formValue.responseDataType === "text") {
+        formValue.responseData = (formValue.responseData || [])
+          .map((item: any) => {
+            const keys = Object.keys(item);
 
-          return keys.map((key) => ({
-            dataKey: key,
-            newDataValue: item[key],
-          }));
-        })
-        .flat(Infinity);
+            return keys.map((key) => ({
+              dataKey: key,
+              newDataValue: item[key],
+            }));
+          })
+          .flat(Infinity);
+      } else {
+        formValue.responseDataJSON = formValue.responseDataJSON
+          ? JSON.stringify(formValue.responseDataJSON)
+          : formValue.responseDataJSON;
+      }
 
       setRuleForm(formValue);
     });

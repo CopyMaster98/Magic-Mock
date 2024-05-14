@@ -64,7 +64,7 @@ router.get("/info", async (ctx, next) => {
           id: hashUtils.getHash(item),
           name,
           url: decodeURIComponent(url),
-          status: currentProjectStatus?.status,
+          status: currentProjectStatus?.status ?? false,
           stats,
           rules,
         });

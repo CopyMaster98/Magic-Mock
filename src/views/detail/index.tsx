@@ -40,9 +40,8 @@ const Detail: React.FC = () => {
     return paths;
   }, [pathname, setRefresh]);
 
-  const projectId = useMemo(() => {
-    return projectData?.find((item: any) => item?.key === currentPathname[0])
-      ?.id;
+  const currentProject = useMemo(() => {
+    return projectData?.find((item: any) => item?.key === currentPathname[0]);
   }, [currentPathname, projectData]);
 
   useEffect(() => {
@@ -57,6 +56,9 @@ const Detail: React.FC = () => {
               project_{item.name}
             </Link>
           ),
+          _status: +item.status,
+          _url: item.url,
+          _name: item.name,
         };
         if (item.rules.length > 0) {
           folderInfo.children = [...item.rules]?.map((rule: any) => {
@@ -121,7 +123,7 @@ const Detail: React.FC = () => {
         {isDetailInfo ? (
           <DetailInfo
             pathname={currentPathname}
-            projectId={projectId}
+            project={currentProject}
             rules={
               projectData.find(
                 (item: any) => item.id === search.split("projectId=")[1]

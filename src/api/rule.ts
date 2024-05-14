@@ -6,8 +6,8 @@ const createRule = (
     ruleName: string;
     rulePattern: string;
     ruleMethod: string;
-    requestHeader: string | any[];
-    responseData: string | any[];
+    requestHeader: string | any;
+    responseData: string | any;
     ruleStatus: boolean;
   },
   config = {}

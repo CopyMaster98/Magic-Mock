@@ -16,8 +16,13 @@ import {
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data } = props;
   const [form] = Form.useForm();
-  const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
-  const [responseDataInputType, setResponseDataInputType] = useState(true);
+  const [requestHeaderInputType, setRequestHeaderInputType] = useState(
+    data?.requestHeaderType === "text" ?? true
+  );
+
+  const [responseDataInputType, setResponseDataInputType] = useState(
+    data?.responseDataType === "text" ?? true
+  );
   const onFinish: FormProps["onFinish"] = (values) => {
     console.log("Success:", values);
   };
@@ -36,6 +41,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         projectUrl: "",
       }),
     onInit: form.resetFields,
+    requestHeaderInputType,
+    responseDataInputType,
   }));
 
   const [requestHeaderValue, setRequestHeaderValue] = useState({
@@ -140,6 +147,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const responseDataSwap = useCallback(() => {
     handleUpdateForm("response");
   }, [handleUpdateForm]);
+
+  console.log(data);
 
   return (
     <Form

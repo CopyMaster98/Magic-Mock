@@ -37,6 +37,26 @@ router.post("/create", async (ctx) => {
       };
     } else {
       try {
+        const info = {
+          requestHeaderType: requestHeader.type,
+          responseDataType: responseData.type,
+        };
+        if (requestHeader.type === "text") {
+          info.requestHeader = requestHeader?.data?.map((item) => ({
+            [item.dataKey]: item.newDataValue,
+          }));
+        } else {
+          info.requestHeaderJSON = requestHeader?.data;
+        }
+
+        if (responseData.type === "text") {
+          info.responseData = responseData?.data?.map((item) => ({
+            [item.dataKey]: item.newDataValue,
+          }));
+        } else {
+          info.responseDataJSON = responseData?.data;
+        }
+
         createFile(
           `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,
           JSON.stringify(
@@ -53,12 +73,9 @@ router.post("/create", async (ctx) => {
               ),
               ruleName,
               rulePattern,
-              requestHeader,
               ruleMethod,
               ruleStatus,
-              responseData: responseData.map((item) => ({
-                [item.dataKey]: item.newDataValue,
-              })),
+              ...info,
             },
             null,
             2
@@ -87,6 +104,7 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 
   if (rule) {
     const content = folderUtils.folderContent(folderPath(`${folder}/${rule}`));
+    console.log(content);
     ctx.response.body = {
       message: "规则信息获取成功",
       statusCode: 0,
@@ -112,7 +130,16 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
 
   if (currentRuleData) {
     for (let key in ruleInfo) {
-      currentRuleData[key] = ruleInfo[key];
+      const flag = ["requestHeader", "responseData"].includes(key);
+      const ruleData = flag ? ruleInfo[key]?.data : ruleInfo[key];
+
+      if (flag) currentRuleData[key + "Type"] = ruleInfo[key].type;
+
+      if (flag && Array.isArray(ruleData) && ruleData[key]?.type === "text")
+        currentRuleData[key] = ruleData?.map((item) => ({
+          [item.dataKey]: item.newDataValue,
+        }));
+      else currentRuleData[key] = ruleData;
     }
   }
 

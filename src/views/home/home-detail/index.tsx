@@ -23,12 +23,12 @@ const HomeDetail: React.FC = () => {
   const { openDialog, updateDialogInfo, refresh, setRefresh, closeDialog } =
     useData();
   const [projectData, setProjectData] = useState([]);
-  const [loadings, setLoadings] = useState<any>({});
+  const [loading, setLoading] = useState<any>({});
   const formRef = useRef<IFormRefProps>();
 
   const handleChangeStatus = useCallback(
     async (project: any, status: boolean) => {
-      setLoadings((oldValue: any) => ({
+      setLoading((oldValue: any) => ({
         ...oldValue,
         [project.name]: status,
       }));
@@ -43,7 +43,7 @@ const HomeDetail: React.FC = () => {
           console.log(res);
         })
         .finally(() => {
-          setLoadings((oldValue: any) => ({
+          setLoading((oldValue: any) => ({
             ...oldValue,
             [project.name]: false,
           }));
@@ -107,7 +107,7 @@ const HomeDetail: React.FC = () => {
 
   useEffect(() => {
     FolderAPI.getFolderInfo().then((res: any) => {
-      // setLoadings(res.project?.map(() => false))
+      // setLoading(res.project?.map(() => false))
       setProjectData(res.project);
     });
   }, [refresh]);
@@ -189,7 +189,7 @@ const HomeDetail: React.FC = () => {
                   danger={item.status ? true : false}
                   type="primary"
                   icon={<PoweroffOutlined />}
-                  loading={loadings[item.name]}
+                  loading={loading[item.name]}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleChangeStatus(item, !item.status);
