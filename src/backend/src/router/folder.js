@@ -40,23 +40,26 @@ router.get("/info", async (ctx, next) => {
   let folder = [];
 
   if (isExist) {
-    const items = fs.readdirSync(path);
-
+    const items = fs.readdirSync(path).filter((item) => item.includes("@@"));
     items.forEach((item) => {
       try {
         const _folderPath = `${path}/${item}`;
         const stats = folderInfo(_folderPath);
-        const rules = fs.readdirSync(_folderPath).map((item) => {
-          const content = folderUtils.folderContent(
-            folderPath(`${_folderPath}/${item}`)
-          );
-          return {
-            id: hashUtils.getHash(item),
-            name: item,
-            stats: folderInfo(`${_folderPath}/${item}`),
-            content: content.length ? JSON.parse(content) : {},
-          };
-        });
+        const rules = fs
+          .readdirSync(_folderPath)
+          .filter((item) => item.includes(".json"))
+          .map((item) => {
+            console.log(item);
+            const content = folderUtils.folderContent(
+              folderPath(`${_folderPath}/${item}`)
+            );
+            return {
+              id: hashUtils.getHash(item),
+              name: item,
+              stats: folderInfo(`${_folderPath}/${item}`),
+              content: content.length ? JSON.parse(content) : {},
+            };
+          });
         const [name, url] = item.split("@@");
         const currentProjectStatus = global.projectStatus.get(name);
 

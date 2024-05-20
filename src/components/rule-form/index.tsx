@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useRef,
   useState,
 } from "react";
 import {
@@ -12,6 +13,9 @@ import {
   SwapOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
+import JSONEditor from "jsoneditor";
+import "jsoneditor/dist/jsoneditor.min.css";
+import "./index.css";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data } = props;
@@ -35,6 +39,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   });
   useImperativeHandle(ref, () => ({
     onValidate: form.validateFields,
+    onJSONEditorValidate: responseDataEditor?.validate(),
     onReset: () =>
       form.setFieldsValue({
         projectName: "",
@@ -44,6 +49,66 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     requestHeaderInputType,
     responseDataInputType,
   }));
+
+  const [responseDataEditor, setResponseDataEditor] = useState<any>();
+  const [requestHeaderEditor, setRequestHeaderEditor] = useState<any>();
+  const requestHeaderEditorRef = useRef<HTMLDivElement>(null);
+  const responseDataEditorRef = useRef<HTMLDivElement>(null);
+  const requestHeaderEditorValueRef = useRef(null);
+  const responseDataEditorValueRef = useRef(null);
+
+  const handleInitRequestHeaderEditor = useCallback(() => {
+    !requestHeaderInputType &&
+      requestHeaderEditorRef.current &&
+      setRequestHeaderEditor(
+        new JSONEditor(
+          requestHeaderEditorRef.current,
+          { mode: "code" },
+          requestHeaderEditorValueRef.current
+        )
+      );
+  }, [requestHeaderInputType]);
+
+  const handleInitResponseDataEditor = useCallback(() => {
+    /*
+   第二个参数可以添加各种配置
+   比如mode： text | tree | view 
+   文本模式 树模式 预览模式
+  */
+
+    !responseDataInputType &&
+      responseDataEditorRef.current &&
+      setResponseDataEditor(
+        new JSONEditor(
+          responseDataEditorRef.current,
+          { mode: "code" },
+          responseDataEditorValueRef.current
+        )
+      );
+  }, [responseDataInputType]);
+
+  useEffect(() => {
+    handleInitRequestHeaderEditor();
+
+    return () => {
+      // 记得一定要注销
+      if (requestHeaderEditor) {
+        requestHeaderEditor.destroy();
+        setRequestHeaderEditor(null);
+      }
+    };
+  }, [form, handleInitRequestHeaderEditor]);
+
+  useEffect(() => {
+    handleInitResponseDataEditor();
+
+    return () => {
+      if (responseDataEditor) {
+        responseDataEditor.destroy();
+        setResponseDataEditor(null);
+      }
+    };
+  }, [form, handleInitResponseDataEditor]);
 
   const [requestHeaderValue, setRequestHeaderValue] = useState({
     requestHeader: [],
@@ -147,8 +212,6 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const responseDataSwap = useCallback(() => {
     handleUpdateForm("response");
   }, [handleUpdateForm]);
-
-  console.log(data);
 
   return (
     <Form
@@ -263,12 +326,34 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         </Form.Item>
       ) : (
         <Form.Item label="Request Header JSON">
-          <Form.Item name="requestHeaderJSON">
+          <Form.Item
+            name="requestHeaderJSON"
+            style={{
+              display: "none",
+            }}
+          >
             <Input.TextArea
               placeholder="Enter Request Header JSON"
               autoSize={{ minRows: 5 }}
             />
           </Form.Item>
+          <div
+            ref={requestHeaderEditorRef}
+            className="json-editor"
+            onBlur={async (e) => {
+              requestHeaderEditor?.repair();
+
+              const errors = await requestHeaderEditor?.validate();
+
+              if (errors.length) return;
+
+              form.setFieldValue(
+                "requestHeaderJSON",
+                requestHeaderEditor.get()
+              );
+              requestHeaderEditorValueRef.current = requestHeaderEditor.get();
+            }}
+          ></div>
           <SwapOutlined
             style={{
               position: "absolute",
@@ -346,12 +431,31 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         </Form.Item>
       ) : (
         <Form.Item label="Response Data JSON">
-          <Form.Item name="responseDataJSON">
+          <Form.Item
+            name="responseDataJSON"
+            style={{
+              display: "none",
+            }}
+          >
             <Input.TextArea
               placeholder="Enter Response Data JSON"
               autoSize={{ minRows: 5 }}
             />
           </Form.Item>
+          <div
+            ref={responseDataEditorRef}
+            className="json-editor"
+            onBlur={async (e) => {
+              responseDataEditor?.repair();
+
+              const errors = await responseDataEditor?.validate();
+
+              if (errors.length) return;
+
+              form.setFieldValue("responseDataJSON", responseDataEditor.get());
+              responseDataEditorValueRef.current = responseDataEditor.get();
+            }}
+          ></div>
           <SwapOutlined
             style={{
               position: "absolute",

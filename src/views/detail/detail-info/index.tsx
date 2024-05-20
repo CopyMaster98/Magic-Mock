@@ -160,16 +160,18 @@ const DetailInfo: React.FC<{
         }) => {
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
             ? formValue.requestHeaderJSON
-              ? JSON.parse(formValue.requestHeaderJSON)
+              ? formValue.requestHeaderJSON
               : null
             : formValue.requestHeader ?? [];
           const responseData = !ruleFormRef.current?.responseDataInputType
             ? formValue.responseDataJSON
-              ? JSON.parse(formValue.responseDataJSON)
+              ? formValue.responseDataJSON
               : null
             : formValue.responseData ?? [];
 
-          console.log(requestHeader, responseData);
+          console.log(requestHeader, responseData, formValue);
+
+          return;
 
           await RuleAPI.updateRuleInfo({
             projectId: project.id,
