@@ -139,9 +139,11 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
         currentRuleData[key] = ruleData?.map((item) => ({
           [item.key]: item.value,
         }));
+        delete currentRuleData[key + "JSON"];
       } else {
         if (ruleInfo[key]?.type === "json") {
           currentRuleData[key + "JSON"] = ruleData;
+          delete currentRuleData[key];
         } else currentRuleData[key] = ruleData;
       }
     }

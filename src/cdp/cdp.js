@@ -48,7 +48,16 @@ const updateConfig = (configPath) => {
     ruleName: newConfig.ruleName,
     rulePattern: newConfig.rulePattern,
     ruleStatus: newConfig.ruleStatus,
-    responseData: newConfig.responseData,
+    requestHeader:
+      newConfig.requestHeaderType === "text"
+        ? newConfig.requestHeader
+        : newConfig.requestHeaderJSON,
+    responseData:
+      newConfig.responseDataType === "text"
+        ? newConfig.responseData
+        : newConfig.responseDataJSON,
+    requestHeaderType: newConfig.requestHeaderType,
+    responseDataType: newConfig.responseDataType,
     patterns: [
       {
         urlPattern: newConfig.rulePattern,
@@ -93,8 +102,14 @@ async function intercept(data, page) {
           urlPatterns = [];
         }
 
-        const { patterns, responseData, ruleName, rulePattern, ruleStatus } =
-          updateConfig(configPath);
+        const {
+          patterns,
+          responseData,
+          ruleName,
+          rulePattern,
+          ruleStatus,
+          responseDataType,
+        } = updateConfig(configPath);
 
         config.responseData = config.responseData.filter(
           (item) => item.ruleName !== ruleName
@@ -104,6 +119,7 @@ async function intercept(data, page) {
           rulePattern,
           path: configPath,
           value: responseData,
+          responseDataType,
         });
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
         if (ruleStatus)
@@ -143,7 +159,6 @@ async function intercept(data, page) {
       const allUrlPatterns = urlPatterns
         .map((item) => item.value)
         .flat(Infinity);
-      console.log(urlPatterns);
       const matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*?]([^*?]+)[*?]$/g;
 
@@ -172,12 +187,16 @@ async function intercept(data, page) {
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
+          console.log(matchedResponseData);
           if (matchedResponseData && matchedResponseData.value)
-            matchedResponseData.value.forEach((item) => {
-              Object.keys(item).forEach((key) => {
-                commonUtils.deepUpdateValue(responseData, key, item[key]);
+            if (matchedResponseData.responseDataType === "json")
+              responseData = matchedResponseData.value;
+            else
+              matchedResponseData.value.forEach((item) => {
+                Object.keys(item).forEach((key) => {
+                  commonUtils.deepUpdateValue(responseData, key, item[key]);
+                });
               });
-            });
 
           Fetch.fulfillRequest({
             requestId: params.requestId,
