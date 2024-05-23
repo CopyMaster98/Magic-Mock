@@ -34,6 +34,7 @@ const DetailInfo: React.FC<{
   const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // useEffect(() => {
   //   projectId &&
@@ -63,14 +64,16 @@ const DetailInfo: React.FC<{
               requestHeaderJSON?: string;
               responseDataJSON?: string;
             }) => {
-              const requestHeader = !ruleFormRef.current?.requestHeaderInputType
-                ? formValue.requestHeaderJSON
-                  ? JSON.parse(formValue.requestHeaderJSON)
+              const requestHeader = !formRef.current?.requestHeaderInputType
+                ? formValue.requestHeaderJSON &&
+                  Object.keys(formValue.requestHeaderJSON).length > 0
+                  ? formValue.requestHeaderJSON
                   : null
                 : formValue.requestHeader ?? [];
-              const responseData = !ruleFormRef.current?.responseDataInputType
-                ? formValue.responseDataJSON
-                  ? JSON.parse(formValue.responseDataJSON)
+              const responseData = !formRef.current?.responseDataInputType
+                ? formValue.responseDataJSON &&
+                  Object.keys(formValue.responseDataJSON).length > 0
+                  ? formValue.responseDataJSON
                   : null
                 : formValue.responseData ?? [];
 
@@ -155,23 +158,23 @@ const DetailInfo: React.FC<{
           ruleMethod: string;
           requestHeader?: any[];
           responseData?: any[];
-          requestHeaderJSON?: string;
-          responseDataJSON?: string;
+          requestHeaderJSON?: object;
+          responseDataJSON?: object;
         }) => {
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
-            ? formValue.requestHeaderJSON
+            ? formValue.requestHeaderJSON &&
+              Object.keys(formValue.requestHeaderJSON).length > 0
               ? formValue.requestHeaderJSON
               : null
             : formValue.requestHeader ?? [];
           const responseData = !ruleFormRef.current?.responseDataInputType
-            ? formValue.responseDataJSON
+            ? formValue.responseDataJSON &&
+              Object.keys(formValue.responseDataJSON).length > 0
               ? formValue.responseDataJSON
               : null
             : formValue.responseData ?? [];
 
-          console.log(requestHeader, responseData, formValue);
-
-          return;
+          setSaveLoading(true);
 
           await RuleAPI.updateRuleInfo({
             projectId: project.id,
@@ -201,7 +204,9 @@ const DetailInfo: React.FC<{
             }`
           );
         }
-      );
+      )
+      .catch((err: any) => console.log(err))
+      .finally(() => setSaveLoading(false));
   }, [location, navigate, project]);
 
   const handleChangeStatus = useCallback(
@@ -259,6 +264,7 @@ const DetailInfo: React.FC<{
           <div className="buttons">
             <Button
               type="primary"
+              loading={saveLoading}
               onClick={
                 location.search.includes("ruleId")
                   ? handleUpdateRule

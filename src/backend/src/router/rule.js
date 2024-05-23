@@ -43,7 +43,7 @@ router.post("/create", async (ctx) => {
         };
         if (requestHeader.type === "text") {
           info.requestHeader = requestHeader?.data?.map((item) => ({
-            [item.dataKey]: item.newDataValue,
+            [item.key]: item.value,
           }));
         } else {
           info.requestHeaderJSON = requestHeader?.data;
@@ -51,7 +51,7 @@ router.post("/create", async (ctx) => {
 
         if (responseData.type === "text") {
           info.responseData = responseData?.data?.map((item) => ({
-            [item.dataKey]: item.newDataValue,
+            [item.key]: item.value,
           }));
         } else {
           info.responseDataJSON = responseData?.data;
@@ -104,7 +104,7 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 
   if (rule) {
     const content = folderUtils.folderContent(folderPath(`${folder}/${rule}`));
-    console.log(content);
+
     ctx.response.body = {
       message: "规则信息获取成功",
       statusCode: 0,
@@ -135,11 +135,15 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
 
       if (flag) currentRuleData[key + "Type"] = ruleInfo[key].type;
 
-      if (flag && Array.isArray(ruleData) && ruleData[key]?.type === "text")
+      if (flag && Array.isArray(ruleData) && ruleInfo[key]?.type === "text") {
         currentRuleData[key] = ruleData?.map((item) => ({
-          [item.dataKey]: item.newDataValue,
+          [item.key]: item.value,
         }));
-      else currentRuleData[key] = ruleData;
+      } else {
+        if (ruleInfo[key]?.type === "json") {
+          currentRuleData[key + "JSON"] = ruleData;
+        } else currentRuleData[key] = ruleData;
+      }
     }
   }
 

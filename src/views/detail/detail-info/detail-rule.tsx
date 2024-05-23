@@ -7,7 +7,7 @@ import { RuleAPI } from "../../../api";
 
 const DetailRule: React.FC<any> = forwardRef((props, ref) => {
   const location = useLocation();
-  const [ruleForm, setRuleForm] = useState({});
+  const [ruleForm, setRuleForm] = useState(null);
 
   useEffect(() => {
     const [projectInfo, ruleInfo] = location.search.slice(1).split("&");
@@ -20,38 +20,30 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
     }).then((res) => {
       const formValue = res.data;
 
-      if (formValue.requestHeaderType === "text") {
+      if (formValue?.requestHeaderType === "text") {
         formValue.requestHeader = (formValue.requestHeader || [])
           .map((item: any) => {
             const keys = Object.keys(item);
 
             return keys.map((key) => ({
-              headerKey: key,
-              newHeaderValue: item[key],
+              key: key,
+              value: item[key],
             }));
           })
           .flat(Infinity);
-      } else {
-        formValue.requestHeaderJSON = formValue.requestHeaderJSON
-          ? JSON.stringify(formValue.requestHeaderJSON)
-          : formValue.requestHeaderJSON;
       }
 
-      if (formValue.responseDataType === "text") {
+      if (formValue?.responseDataType === "text") {
         formValue.responseData = (formValue.responseData || [])
           .map((item: any) => {
             const keys = Object.keys(item);
 
             return keys.map((key) => ({
-              dataKey: key,
-              newDataValue: item[key],
+              key: key,
+              value: item[key],
             }));
           })
           .flat(Infinity);
-      } else {
-        formValue.responseDataJSON = formValue.responseDataJSON
-          ? JSON.stringify(formValue.responseDataJSON)
-          : formValue.responseDataJSON;
       }
 
       setRuleForm(formValue);

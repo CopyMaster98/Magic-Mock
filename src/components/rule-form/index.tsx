@@ -20,13 +20,9 @@ import "./index.css";
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data } = props;
   const [form] = Form.useForm();
-  const [requestHeaderInputType, setRequestHeaderInputType] = useState(
-    data?.requestHeaderType === "text" ?? true
-  );
+  const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
 
-  const [responseDataInputType, setResponseDataInputType] = useState(
-    data?.responseDataType === "text" ?? true
-  );
+  const [responseDataInputType, setResponseDataInputType] = useState(true);
   const onFinish: FormProps["onFinish"] = (values) => {
     console.log("Success:", values);
   };
@@ -52,22 +48,34 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
   const [responseDataEditor, setResponseDataEditor] = useState<any>();
   const [requestHeaderEditor, setRequestHeaderEditor] = useState<any>();
+  const isInitialRenderRef = useRef(true);
   const requestHeaderEditorRef = useRef<HTMLDivElement>(null);
   const responseDataEditorRef = useRef<HTMLDivElement>(null);
   const requestHeaderEditorValueRef = useRef(null);
   const responseDataEditorValueRef = useRef(null);
+  const requestHeaderInputValueRef = useRef(null);
+  const responseDataInputValueRef = useRef(null);
+  const formBaseValueRef = useRef({
+    ruleName: "",
+    rulePattern: "",
+    ruleMethod: "",
+  });
 
   const handleInitRequestHeaderEditor = useCallback(() => {
-    !requestHeaderInputType &&
-      requestHeaderEditorRef.current &&
-      setRequestHeaderEditor(
-        new JSONEditor(
-          requestHeaderEditorRef.current,
-          { mode: "code" },
-          requestHeaderEditorValueRef.current
-        )
-      );
-  }, [requestHeaderInputType]);
+    if (requestHeaderEditor && requestHeaderEditorValueRef.current) {
+      requestHeaderEditor.setTextSelection(requestHeaderEditorValueRef.current);
+      return;
+    } else if (!requestHeaderEditor)
+      !requestHeaderInputType &&
+        requestHeaderEditorRef.current &&
+        setRequestHeaderEditor(
+          new JSONEditor(
+            requestHeaderEditorRef.current,
+            { mode: "code" },
+            requestHeaderEditorValueRef.current
+          )
+        );
+  }, [requestHeaderEditor, requestHeaderInputType]);
 
   const handleInitResponseDataEditor = useCallback(() => {
     /*
@@ -75,17 +83,21 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
    比如mode： text | tree | view 
    文本模式 树模式 预览模式
   */
-
-    !responseDataInputType &&
-      responseDataEditorRef.current &&
-      setResponseDataEditor(
-        new JSONEditor(
-          responseDataEditorRef.current,
-          { mode: "code" },
-          responseDataEditorValueRef.current
-        )
-      );
-  }, [responseDataInputType]);
+    if (responseDataEditor && responseDataEditorValueRef.current) {
+      responseDataEditor.setTextSelection(responseDataEditorValueRef.current);
+      return;
+    } else if (!responseDataEditor) {
+      !responseDataInputType &&
+        responseDataEditorRef.current &&
+        setResponseDataEditor(
+          new JSONEditor(
+            responseDataEditorRef.current,
+            { mode: "code" },
+            responseDataEditorValueRef.current
+          )
+        );
+    }
+  }, [responseDataEditor, responseDataInputType]);
 
   useEffect(() => {
     handleInitRequestHeaderEditor();
@@ -97,7 +109,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         setRequestHeaderEditor(null);
       }
     };
-  }, [form, handleInitRequestHeaderEditor]);
+  }, [data, form, handleInitRequestHeaderEditor, requestHeaderEditor]);
 
   useEffect(() => {
     handleInitResponseDataEditor();
@@ -108,101 +120,29 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         setResponseDataEditor(null);
       }
     };
-  }, [form, handleInitResponseDataEditor]);
-
-  const [requestHeaderValue, setRequestHeaderValue] = useState({
-    requestHeader: [],
-    requestHeaderJSON: "",
-  });
-
-  const [responseDataValue, setResponseDataValue] = useState({
-    responseData: [],
-    responseDataJSON: "",
-  });
+  }, [data, form, handleInitResponseDataEditor, responseDataEditor]);
 
   const handleUpdateForm = useCallback(
     (type: "request" | "response") => {
-      const baseFormItem = {
+      formBaseValueRef.current = {
         ruleName: form.getFieldValue("ruleName"),
         rulePattern: form.getFieldValue("rulePattern"),
         ruleMethod: form.getFieldValue("ruleMethod"),
       };
 
-      setTimeout(() => {
-        Object.keys(baseFormItem).forEach((key) => {
-          form.setFieldValue(
-            key,
-            baseFormItem[key as keyof typeof baseFormItem]
-          );
-        });
-      });
+      const requestHeader = form.getFieldValue("requestHeader");
+      const responseData = form.getFieldValue("responseData");
+
+      if (requestHeader) requestHeaderInputValueRef.current = requestHeader;
+      if (responseData) responseDataInputValueRef.current = responseData;
 
       if (type === "request") {
-        const requestHeader = form.getFieldValue("requestHeader");
-        const requestHeaderJSON = form.getFieldValue("requestHeaderJSON");
-        const requestLabel = requestHeaderInputType
-          ? "requestHeaderJSON"
-          : "requestHeader";
-        setTimeout(() =>
-          form.setFieldValue(requestLabel, requestHeaderValue[requestLabel])
-        );
-        if (requestHeader)
-          setRequestHeaderValue((oldValue) => ({
-            ...oldValue,
-            requestHeader: requestHeader,
-          }));
-        if (requestHeaderJSON)
-          setRequestHeaderValue((oldValue) => ({
-            ...oldValue,
-            requestHeaderJSON: requestHeaderJSON,
-          }));
-
-        const responseLabel = responseDataInputType
-          ? "responseData"
-          : "responseDataJSON";
-
-        const responseValue = form.getFieldValue(responseLabel);
-
-        setTimeout(() => form.setFieldValue(responseLabel, responseValue));
-
         setRequestHeaderInputType((oldValue) => !oldValue);
       } else {
-        const responseData = form.getFieldValue("responseData");
-        const responseDataJSON = form.getFieldValue("responseDataJSON");
-        const responseLabel = responseDataInputType
-          ? "responseDataJSON"
-          : "responseData";
-        setTimeout(() =>
-          form.setFieldValue(responseLabel, responseDataValue[responseLabel])
-        );
-        if (responseData)
-          setResponseDataValue((oldValue) => ({
-            ...oldValue,
-            responseData: responseData,
-          }));
-        if (responseDataJSON)
-          setResponseDataValue((oldValue) => ({
-            ...oldValue,
-            responseDataJSON: responseDataJSON,
-          }));
-
-        const requestLabel = requestHeaderInputType
-          ? "requestHeader"
-          : "requestHeaderJSON";
-
-        const requestValue = form.getFieldValue(requestLabel);
-        setTimeout(() => form.setFieldValue(requestLabel, requestValue));
-
         setResponseDataInputType((oldValue) => !oldValue);
       }
     },
-    [
-      form,
-      requestHeaderInputType,
-      requestHeaderValue,
-      responseDataInputType,
-      responseDataValue,
-    ]
+    [form]
   );
 
   const requestHeaderSwap = useCallback(() => {
@@ -212,6 +152,73 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const responseDataSwap = useCallback(() => {
     handleUpdateForm("response");
   }, [handleUpdateForm]);
+
+  useEffect(() => {
+    if (data && isInitialRenderRef.current) {
+      setRequestHeaderInputType(data?.requestHeaderType === "text");
+      setResponseDataInputType(data?.responseDataType === "text");
+      requestHeaderEditorValueRef.current = data.requestHeaderJSON;
+      responseDataEditorValueRef.current = data.responseDataJSON;
+      formBaseValueRef.current = {
+        ruleName: data.ruleName,
+        rulePattern: data.rulePattern,
+        ruleMethod: data.ruleMethod,
+      };
+
+      setTimeout(() => {
+        Object.keys(formBaseValueRef.current).forEach((key) => {
+          form.setFieldValue(
+            key,
+            formBaseValueRef.current[
+              key as keyof typeof formBaseValueRef.current
+            ]
+          );
+        });
+
+        if (data.requestHeaderType === "text") {
+          form.setFieldValue("requestHeader", data.requestHeader ?? []);
+        } else {
+          form.setFieldValue("requestHeaderJSON", data.requestHeaderJSON);
+          // handleInitRequestHeaderEditor()
+        }
+
+        if (data?.responseDataType === "text") {
+          form.setFieldValue("responseData", data.responseData ?? []);
+        } else {
+          form.setFieldValue("responseDataJSON", data.responseDataJSON);
+          // handleInitResponseDataEditor()
+        }
+      });
+
+      isInitialRenderRef.current = false;
+    }
+  }, [data, form]);
+
+  useEffect(() => {
+    if (isInitialRenderRef.current) return;
+    const { ruleName, rulePattern, ruleMethod } = formBaseValueRef.current;
+
+    const baseFormItem = {
+      ruleName,
+      rulePattern,
+      ruleMethod,
+    };
+
+    setTimeout(() => {
+      Object.keys(baseFormItem).forEach((key) => {
+        form.setFieldValue(key, baseFormItem[key as keyof typeof baseFormItem]);
+      });
+    });
+    if (requestHeaderInputType)
+      setTimeout(() =>
+        form.setFieldValue("requestHeader", requestHeaderInputValueRef.current)
+      );
+
+    if (responseDataInputType)
+      setTimeout(() =>
+        form.setFieldValue("responseData", responseDataInputValueRef.current)
+      );
+  }, [form, requestHeaderInputType, responseDataInputType]);
 
   return (
     <Form
@@ -280,7 +287,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
                     }}
                   >
                     <Form.Item
-                      name={[subField.name, "headerKey"]}
+                      name={[subField.name, "key"]}
                       style={{ width: "45%" }}
                       rules={[
                         {
@@ -293,7 +300,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
                     </Form.Item>
                     <SyncOutlined style={{ transform: "translateY(-80%)" }} />
                     <Form.Item
-                      name={[subField.name, "newHeaderValue"]}
+                      name={[subField.name, "value"]}
                       style={{ width: "45%" }}
                     >
                       <Input placeholder="New Header Value" />
@@ -385,7 +392,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
                     }}
                   >
                     <Form.Item
-                      name={[subField.name, "dataKey"]}
+                      name={[subField.name, "key"]}
                       style={{ width: "45%" }}
                       rules={[
                         {
@@ -398,7 +405,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
                     </Form.Item>
                     <SyncOutlined style={{ transform: "translateY(70%)" }} />
                     <Form.Item
-                      name={[subField.name, "newDataValue"]}
+                      name={[subField.name, "value"]}
                       style={{ width: "45%" }}
                     >
                       <Input placeholder="New Data Value" />

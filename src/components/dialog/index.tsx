@@ -1,5 +1,5 @@
-import { Modal, ModalProps } from "antd";
-import { useRef, useState } from "react";
+import { Button, Modal, ModalProps } from "antd";
+import { useEffect, useRef, useState } from "react";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { DialogType } from "../../types";
@@ -21,10 +21,10 @@ const Dialog: React.FC<{
     right: 0,
   });
   const draggleRef = useRef<HTMLDivElement>(null);
-  const handleOk = async (e: React.MouseEvent<HTMLElement>) => {
+  const handleOk = async () => {
     if (dialogConfig?.handleConfirm) dialogConfig.handleConfirm();
   };
-  const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
+  const handleCancel = () => {
     if (dialogConfig?.handleClose) dialogConfig.handleClose();
 
     handleClose();
@@ -45,6 +45,18 @@ const Dialog: React.FC<{
       bottom: clientHeight - (targetRect.bottom - uiData.y),
     });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: any) => {
+      if (event.key === "Enter") {
+        handleOk();
+      }
+    };
+
+    if (open) window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
   return (
     <Modal
       styles={{

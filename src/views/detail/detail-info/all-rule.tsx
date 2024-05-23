@@ -48,6 +48,7 @@ const AllRule: React.FC<{
             projectId: item.parent.id,
           });
 
+          closeDialog?.();
           setRefresh();
         },
       };
@@ -55,7 +56,7 @@ const AllRule: React.FC<{
       updateDialogInfo?.(info);
       openDialog?.();
     },
-    [openDialog, setRefresh, updateDialogInfo]
+    [closeDialog, openDialog, setRefresh, updateDialogInfo]
   );
 
   return (

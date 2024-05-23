@@ -47,6 +47,7 @@ const updateConfig = (configPath) => {
   return {
     ruleName: newConfig.ruleName,
     rulePattern: newConfig.rulePattern,
+    ruleStatus: newConfig.ruleStatus,
     responseData: newConfig.responseData,
     patterns: [
       {
@@ -92,7 +93,7 @@ async function intercept(data, page) {
           urlPatterns = [];
         }
 
-        const { patterns, responseData, ruleName, rulePattern } =
+        const { patterns, responseData, ruleName, rulePattern, ruleStatus } =
           updateConfig(configPath);
 
         config.responseData = config.responseData.filter(
@@ -105,12 +106,13 @@ async function intercept(data, page) {
           value: responseData,
         });
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
-        urlPatterns.push({
-          ruleName,
-          rulePattern,
-          path: configPath,
-          value: patterns,
-        });
+        if (ruleStatus)
+          urlPatterns.push({
+            ruleName,
+            rulePattern,
+            path: configPath,
+            value: patterns,
+          });
 
         // todos need delete
         process.stdout.write(JSON.stringify(config.responseData));
@@ -141,6 +143,7 @@ async function intercept(data, page) {
       const allUrlPatterns = urlPatterns
         .map((item) => item.value)
         .flat(Infinity);
+      console.log(urlPatterns);
       const matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*?]([^*?]+)[*?]$/g;
 

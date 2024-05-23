@@ -55,7 +55,7 @@ router.post("/stop", async (ctx) => {
 
   const projectStatus = global.projectStatus.get(name);
 
-  if (projectStatus) projectStatus.childProcess.stdin.write("Page: close");
+  if (projectStatus) projectStatus.childProcess?.stdin.write("Page: close");
 
   ctx.response.body = {
     message: "关闭成功",

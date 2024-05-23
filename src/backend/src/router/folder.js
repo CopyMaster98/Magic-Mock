@@ -49,7 +49,6 @@ router.get("/info", async (ctx, next) => {
           .readdirSync(_folderPath)
           .filter((item) => item.includes(".json"))
           .map((item) => {
-            console.log(item);
             const content = folderUtils.folderContent(
               folderPath(`${_folderPath}/${item}`)
             );
