@@ -27,7 +27,11 @@ router.post("/create", async (ctx) => {
       statusCode: -1,
     };
   } else {
-    const path = folderPath(`${isExistParentFolder}/${ruleName}.config.json`);
+    const path = folderPath(
+      `${encodeURIComponent(isExistParentFolder)}/${encodeURIComponent(
+        ruleName
+      )}.config.json`
+    );
     const isExist = folderExists(path);
 
     if (isExist) {
