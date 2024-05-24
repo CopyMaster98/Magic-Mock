@@ -3,6 +3,7 @@ const puppeteer = require("puppeteer");
 const fs = require("fs");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
+const chokidar = require("chokidar");
 const { folderUtils, commonUtils } = require("../backend/src/utils");
 
 (async () => {
@@ -48,6 +49,7 @@ const updateConfig = (configPath) => {
     ruleName: newConfig.ruleName,
     rulePattern: newConfig.rulePattern,
     ruleStatus: newConfig.ruleStatus,
+    ruleMethod: newConfig.ruleMethod,
     requestHeader:
       newConfig.requestHeaderType === "text"
         ? newConfig.requestHeader
@@ -79,8 +81,9 @@ async function intercept(data, page) {
   const projectName = folderUtils.folderPath(
     `${name}@@${encodeURIComponent(url)}`
   );
-  const rules = fs.readdirSync(projectName);
-  const configFile = rules.filter((item) => item.endsWith(".config.json"));
+  let rules = fs.readdirSync(projectName);
+  let configFile = rules.filter((item) => item.endsWith(".config.json"));
+  const fileContentMap = new Map();
 
   try {
     client = await CDP({ port });
@@ -102,14 +105,34 @@ async function intercept(data, page) {
           urlPatterns = [];
         }
 
+        let isFileExists = folderUtils.folderExists(configPath);
+
+        let fileContent = !isFileExists
+          ? fileContentMap.get(configPath)
+          : updateConfig(configPath);
+
+        if (!isFileExists) {
+          config.responseData = config.responseData.filter(
+            (item) => item.ruleName !== fileContent?.ruleName
+          );
+          urlPatterns = urlPatterns.filter(
+            (item) => item.ruleName !== fileContent?.ruleName
+          );
+          fileContentMap.delete(configPath);
+          return;
+        }
+
+        fileContentMap.set(configPath, fileContent);
+
         const {
           patterns,
           responseData,
           ruleName,
           rulePattern,
+          ruleMethod,
           ruleStatus,
           responseDataType,
-        } = updateConfig(configPath);
+        } = fileContent;
 
         config.responseData = config.responseData.filter(
           (item) => item.ruleName !== ruleName
@@ -120,6 +143,7 @@ async function intercept(data, page) {
           path: configPath,
           value: responseData,
           responseDataType,
+          ruleMethod,
         });
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
         if (ruleStatus)
@@ -134,17 +158,24 @@ async function intercept(data, page) {
         process.stdout.write(JSON.stringify(config.responseData));
       };
       await new Promise(async (resolve) => {
-        configFile.forEach(async (item, index) => {
-          const configPath = `${projectName}/${item}`;
-
-          await handleUpdate(configPath, index === 0);
-          fs.watchFile(configPath, async () => {
+        rules = fs.readdirSync(projectName);
+        configFile = rules.filter((item) => item.endsWith(".config.json"));
+        const watcher = chokidar.watch(projectName, {
+          ignored: /(^|[/\\])\../, // 忽略隐藏文件
+          persistent: true, // 持续监听
+        });
+        watcher.on("all", async (event, configPath) => {
+          if (["unlink", "add", "change"].includes(event)) {
             await handleUpdate(configPath, false);
 
             await Fetch.enable({
               patterns: urlPatterns.map((item) => item.value).flat(Infinity),
             });
-          });
+          }
+        });
+        configFile.forEach(async (item, index) => {
+          const configPath = `${projectName}/${item}`;
+          await handleUpdate(configPath, index === 0);
         });
 
         await Fetch.enable({
