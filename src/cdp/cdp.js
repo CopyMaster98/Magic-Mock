@@ -160,7 +160,7 @@ async function intercept(data, page) {
         .map((item) => item.value)
         .flat(Infinity);
       const matchedPattern = allUrlPatterns.find((pattern) => {
-        const regex = /^[*?]([^*]+)[*?]$/g;
+        const regex = /^[*]?([^*]+)[*]?$/g;
 
         let match;
         while ((match = regex.exec(pattern.urlPattern)) !== null) {
@@ -187,7 +187,6 @@ async function intercept(data, page) {
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
-          console.log(matchedResponseData);
           if (matchedResponseData && matchedResponseData.value)
             if (matchedResponseData.responseDataType === "json")
               responseData = matchedResponseData.value;
