@@ -18,7 +18,7 @@ import "jsoneditor/dist/jsoneditor.min.css";
 import "./index.css";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
-  const { data } = props;
+  const { data, isUpdate } = props;
   const [form] = Form.useForm();
   const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
 
@@ -195,7 +195,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   }, [data, form]);
 
   useEffect(() => {
-    if (isInitialRenderRef.current) return;
+    if (isInitialRenderRef.current && isUpdate) return;
     const { ruleName, rulePattern, ruleMethod } = formBaseValueRef.current;
 
     const baseFormItem = {
