@@ -10,7 +10,9 @@ router.post("/create", async (ctx) => {
   const { url, name } = ctx.request.body;
 
   if (name) {
-    const path = folderPath(`${name}@@${encodeURIComponent(url)}`);
+    const path = folderPath(
+      `${encodeURIComponent(name)}@@${encodeURIComponent(url)}`
+    );
     const isExist = folderExists(path);
 
     if (!isExist) {
