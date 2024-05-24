@@ -19,6 +19,7 @@ import "./index.css";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data, isUpdate } = props;
+
   const [form] = Form.useForm();
   const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
 
@@ -346,7 +347,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           </Form.Item>
           <div
             ref={requestHeaderEditorRef}
-            className="json-editor"
+            className={isUpdate ? "update json-editor" : "json-editor"}
             onBlur={async (e) => {
               requestHeaderEditor?.repair();
 
@@ -451,7 +452,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           </Form.Item>
           <div
             ref={responseDataEditorRef}
-            className="json-editor"
+            className={isUpdate ? "update json-editor" : "json-editor"}
             onBlur={async (e) => {
               responseDataEditor?.repair();
 

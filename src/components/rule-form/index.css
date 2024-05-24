@@ -2,4 +2,11 @@
   .jsoneditor-menu {
     display: none;
   }
+  
+}
+
+.update {
+  .jsoneditor-outer {
+    height: 50vh;
+  }
 }

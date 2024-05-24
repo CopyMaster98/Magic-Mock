@@ -52,7 +52,7 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
 
   return (
     <div className="detail-rule-container">
-      <RuleForm data={ruleForm} ref={ref}></RuleForm>
+      <RuleForm data={ruleForm} ref={ref} isUpdate={true}></RuleForm>
     </div>
   );
 });
