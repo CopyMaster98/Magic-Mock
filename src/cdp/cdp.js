@@ -160,7 +160,7 @@ async function intercept(data, page) {
         .map((item) => item.value)
         .flat(Infinity);
       const matchedPattern = allUrlPatterns.find((pattern) => {
-        const regex = /^[*?]([^*?]+)[*?]$/g;
+        const regex = /^[*?]([^*]+)[*?]$/g;
 
         let match;
         while ((match = regex.exec(pattern.urlPattern)) !== null) {
