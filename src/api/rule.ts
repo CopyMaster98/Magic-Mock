@@ -5,7 +5,7 @@ const createRule = (
     projectId: string;
     ruleName: string;
     rulePattern: string;
-    ruleMethod: string;
+    ruleMethod: string[];
     requestHeader: string | any;
     responseData: string | any;
     ruleStatus: boolean;

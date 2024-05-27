@@ -82,13 +82,18 @@ const HomeDetail: React.FC = () => {
                 projectName: string;
                 projectUrl: string;
               }) => {
-                await FolderAPI.updateFolder({
-                  pathname: data.name,
-                  name: formValue.projectName,
-                  url: formValue.projectUrl,
-                  id: data.id,
-                });
-                setRefresh();
+                if (
+                  formValue.projectName !== data.name ||
+                  formValue.projectUrl !== data.url
+                ) {
+                  await FolderAPI.updateFolder({
+                    pathname: data.name,
+                    name: formValue.projectName,
+                    url: formValue.projectUrl,
+                    id: data.id,
+                  });
+                  setRefresh();
+                }
                 info.ref?.current?.onReset();
                 closeDialog?.();
               }

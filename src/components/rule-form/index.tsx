@@ -1,4 +1,4 @@
-import { Button, Form, FormProps, Input, Space, Tooltip } from "antd";
+import { Button, Form, FormProps, Input, Select, Space, Tooltip } from "antd";
 import {
   forwardRef,
   useCallback,
@@ -59,7 +59,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const formBaseValueRef = useRef({
     ruleName: "",
     rulePattern: "",
-    ruleMethod: "",
+    ruleMethod: [],
   });
 
   const handleInitRequestHeaderEditor = useCallback(() => {
@@ -219,7 +219,38 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       setTimeout(() =>
         form.setFieldValue("responseData", responseDataInputValueRef.current)
       );
-  }, [form, requestHeaderInputType, responseDataInputType]);
+  }, [form, isUpdate, requestHeaderInputType, responseDataInputType]);
+
+  const options = [
+    {
+      label: "GET",
+      value: "GET",
+    },
+    {
+      label: "POST",
+      value: "POST",
+    },
+    {
+      label: "PUT",
+      value: "PUT",
+    },
+    {
+      label: "DELETE",
+      value: "DELETE",
+    },
+    {
+      label: "PATCH",
+      value: "PATCH",
+    },
+    {
+      label: "HEAD",
+      value: "HEAD",
+    },
+    {
+      label: "OPTIONS",
+      value: "OPTIONS",
+    },
+  ];
 
   return (
     <Form
@@ -266,7 +297,13 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       </Form.Item>
 
       <Form.Item label="Rule Method" name="ruleMethod">
-        <Input />
+        <Select
+          mode="multiple"
+          allowClear
+          style={{ width: "100%" }}
+          placeholder="Please select"
+          options={options}
+        />
       </Form.Item>
 
       {requestHeaderInputType ? (

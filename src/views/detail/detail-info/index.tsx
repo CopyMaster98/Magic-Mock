@@ -58,7 +58,7 @@ const DetailInfo: React.FC<{
             async (formValue: {
               ruleName: string;
               rulePattern: string;
-              ruleMethod: string;
+              ruleMethod: string[];
               requestHeader?: any[];
               responseData?: any[];
               requestHeaderJSON?: string;
@@ -155,7 +155,7 @@ const DetailInfo: React.FC<{
         async (formValue: {
           ruleName: string;
           rulePattern: string;
-          ruleMethod: string;
+          ruleMethod: string[];
           requestHeader?: any[];
           responseData?: any[];
           requestHeaderJSON?: object;

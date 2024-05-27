@@ -64,10 +64,12 @@ const updateConfig = (configPath) => {
       {
         urlPattern: newConfig.rulePattern,
         requestStage: "Request",
+        ruleMethod: newConfig.ruleMethod,
       },
       {
         urlPattern: newConfig.rulePattern,
         requestStage: "Response",
+        ruleMethod: newConfig.ruleMethod,
       },
     ],
   };
@@ -152,6 +154,7 @@ async function intercept(data, page) {
             rulePattern,
             path: configPath,
             value: patterns,
+            ruleMethod: ruleMethod,
           });
 
         // todos need delete
@@ -203,7 +206,6 @@ async function intercept(data, page) {
       });
 
       if (matchedPattern) {
-        console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
           const res = await Fetch.getResponseBody({
@@ -218,7 +220,16 @@ async function intercept(data, page) {
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
-          if (matchedResponseData && matchedResponseData.value)
+          if (
+            matchedResponseData &&
+            matchedResponseData.value &&
+            (!matchedPattern.ruleMethod ||
+              matchedPattern.ruleMethod.includes(params.request.method))
+          ) {
+            console.log(
+              `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
+            );
+
             if (matchedResponseData.responseDataType === "json")
               responseData = matchedResponseData.value;
             else
@@ -227,6 +238,7 @@ async function intercept(data, page) {
                   commonUtils.deepUpdateValue(responseData, key, item[key]);
                 });
               });
+          }
 
           Fetch.fulfillRequest({
             requestId: params.requestId,
