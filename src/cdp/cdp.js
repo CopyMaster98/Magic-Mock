@@ -104,6 +104,7 @@ async function intercept(data, page) {
       const handleUpdate = async (configPath, isInit = false) => {
         if (isInit) {
           config.responseData = [];
+          config.requestHeader = [];
           urlPatterns = [];
         }
 
@@ -129,6 +130,8 @@ async function intercept(data, page) {
         const {
           patterns,
           responseData,
+          requestHeader,
+          requestHeaderType,
           ruleName,
           rulePattern,
           ruleMethod,
@@ -139,6 +142,10 @@ async function intercept(data, page) {
         config.responseData = config.responseData.filter(
           (item) => item.ruleName !== ruleName
         );
+        config.requestHeader = config.requestHeader.filter(
+          (item) => item.ruleName !== ruleName
+        );
+
         config.responseData.push({
           ruleName,
           rulePattern,
@@ -146,6 +153,15 @@ async function intercept(data, page) {
           value: responseData,
           responseDataType,
           ruleMethod,
+        });
+
+        config.requestHeader.push({
+          value: requestHeader,
+          requestHeaderType,
+          ruleMethod,
+          ruleName,
+          rulePattern,
+          path: configPath,
         });
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
         if (ruleStatus)
@@ -205,7 +221,12 @@ async function intercept(data, page) {
         return false;
       });
 
-      if (matchedPattern) {
+      if (
+        matchedPattern &&
+        (!matchedPattern.ruleMethod?.length ||
+          matchedPattern.ruleMethod.includes(params.request.method))
+      ) {
+        console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
           const res = await Fetch.getResponseBody({
@@ -220,16 +241,7 @@ async function intercept(data, page) {
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
-          if (
-            matchedResponseData &&
-            matchedResponseData.value &&
-            (!matchedPattern.ruleMethod ||
-              matchedPattern.ruleMethod.includes(params.request.method))
-          ) {
-            console.log(
-              `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
-            );
-
+          if (matchedResponseData && matchedResponseData.value)
             if (matchedResponseData.responseDataType === "json")
               responseData = matchedResponseData.value;
             else
@@ -238,7 +250,6 @@ async function intercept(data, page) {
                   commonUtils.deepUpdateValue(responseData, key, item[key]);
                 });
               });
-          }
 
           Fetch.fulfillRequest({
             requestId: params.requestId,
@@ -251,8 +262,34 @@ async function intercept(data, page) {
             params.request.postData && JSON.parse(params.request.postData);
 
           // modify requestData
+          const headersArray = Object.entries(params.request.headers).map(
+            ([name, value]) => ({ name, value: value?.toString() })
+          );
+          const matchedRequestHeader = config.requestHeader.find(
+            (item) => item.rulePattern === matchedPattern.urlPattern
+          );
+
+          let newHeaders = headersArray;
+
+          if (matchedRequestHeader.requestHeaderType === "text") {
+            const formatMatchedRequestHeader = matchedRequestHeader.value.map(
+              (item) => {
+                const [name, value] = Object.entries(item)[0];
+
+                return {
+                  name,
+                  value: value?.toString(),
+                };
+              }
+            );
+            newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+          } else
+            newHeaders = Object.entries(matchedRequestHeader.value).map(
+              ([name, value]) => ({ name, value: value?.toString() })
+            );
 
           Fetch.continueRequest({
+            headers: newHeaders,
             requestId: params.requestId,
             postData: btoa(JSON.stringify(data)),
           });
