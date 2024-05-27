@@ -46,17 +46,17 @@ const Dialog: React.FC<{
     });
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: any) => {
-      if (event.key === "Enter") {
-        handleOk();
-      }
-    };
+  // useEffect(() => {
+  //   const handleKeyDown = (event: any) => {
+  //     if (event.key === "Enter") {
+  //       handleOk();
+  //     }
+  //   };
 
-    if (open) window.addEventListener("keydown", handleKeyDown);
+  //   if (open) window.addEventListener("keydown", handleKeyDown);
 
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  });
+  //   return () => window.removeEventListener("keydown", handleKeyDown);
+  // });
   return (
     <Modal
       styles={{

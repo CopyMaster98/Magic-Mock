@@ -1,6 +1,8 @@
 const CDP = require("chrome-remote-interface");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
+const _url = require("url");
+const querystring = require("querystring");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
@@ -50,6 +52,7 @@ const updateConfig = (configPath) => {
     rulePattern: newConfig.rulePattern,
     ruleStatus: newConfig.ruleStatus,
     ruleMethod: newConfig.ruleMethod,
+    payload: newConfig.payloadJSON,
     requestHeader:
       newConfig.requestHeaderType === "text"
         ? newConfig.requestHeader
@@ -65,11 +68,13 @@ const updateConfig = (configPath) => {
         urlPattern: newConfig.rulePattern,
         requestStage: "Request",
         ruleMethod: newConfig.ruleMethod,
+        payload: newConfig.payloadJSON,
       },
       {
         urlPattern: newConfig.rulePattern,
         requestStage: "Response",
         ruleMethod: newConfig.ruleMethod,
+        payload: newConfig.payloadJSON,
       },
     ],
   };
@@ -163,6 +168,7 @@ async function intercept(data, page) {
           rulePattern,
           path: configPath,
         });
+
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
         if (ruleStatus)
           urlPatterns.push({
@@ -221,8 +227,46 @@ async function intercept(data, page) {
         return false;
       });
 
+      let payloadMatched = true;
+
+      console.log(params.request);
+      if (matchedPattern && matchedPattern.payload) {
+        const payload = matchedPattern.payload;
+        const payloadKeysLength = Object.keys(payload).length;
+
+        if (params.request.method.toLowerCase() === "get") {
+          const searchParamsKeyValue = new URL(params.request.url).searchParams;
+          const searchParamsKeysLength =
+            Object.keys(searchParamsKeyValue)?.length;
+
+          if (
+            !searchParamsKeysLength ||
+            searchParamsKeysLength < payloadKeysLength
+          )
+            payloadMatched = false;
+          else {
+            payloadMatched = Object.keys(payload).every(
+              (key) => payload[key] === searchParamsKeyValue[key]
+            );
+          }
+        } else {
+          const requestData = commonUtils.isValidJSON(params.request.postData)
+            ? JSON.parse(params.request.postData)
+            : {};
+
+          const requestDataLength = Object.keys(requestData)?.length;
+
+          if (!requestDataLength || requestDataLength < payloadKeysLength)
+            payloadMatched = false;
+          else
+            payloadMatched = Object.keys(payload).every(
+              (key) => payload[key] === requestData[key]
+            );
+        }
+      }
       if (
         matchedPattern &&
+        payloadMatched &&
         (!matchedPattern.ruleMethod?.length ||
           matchedPattern.ruleMethod.includes(params.request.method))
       ) {
@@ -259,7 +303,8 @@ async function intercept(data, page) {
           });
         } else if (params.request.method !== "OPTIONS") {
           const data =
-            params.request.postData && JSON.parse(params.request.postData);
+            commonUtils.isValidJSON(params.request.postData) &&
+            JSON.parse(params.request.postData);
 
           // modify requestData
           const headersArray = Object.entries(params.request.headers).map(

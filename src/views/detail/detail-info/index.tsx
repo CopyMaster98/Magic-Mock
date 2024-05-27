@@ -63,6 +63,7 @@ const DetailInfo: React.FC<{
               responseData?: any[];
               requestHeaderJSON?: string;
               responseDataJSON?: string;
+              payloadJSON?: string;
             }) => {
               const requestHeader = !formRef.current?.requestHeaderInputType
                 ? formValue.requestHeaderJSON &&
@@ -76,6 +77,11 @@ const DetailInfo: React.FC<{
                   ? formValue.responseDataJSON
                   : null
                 : formValue.responseData ?? [];
+              const payload =
+                formValue.payloadJSON &&
+                Object.keys(formValue.payloadJSON).length > 0
+                  ? formValue.payloadJSON
+                  : null;
 
               await RuleAPI.createRule({
                 projectId: project.id,
@@ -94,6 +100,7 @@ const DetailInfo: React.FC<{
                     ? "text"
                     : "json",
                 },
+                payload,
                 ruleStatus: true,
               });
               setRefresh();
@@ -160,6 +167,7 @@ const DetailInfo: React.FC<{
           responseData?: any[];
           requestHeaderJSON?: object;
           responseDataJSON?: object;
+          payloadJSON?: string;
         }) => {
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
             ? formValue.requestHeaderJSON &&
@@ -173,6 +181,11 @@ const DetailInfo: React.FC<{
               ? formValue.responseDataJSON
               : null
             : formValue.responseData ?? [];
+          const payload =
+            formValue.payloadJSON &&
+            Object.keys(formValue.payloadJSON).length > 0
+              ? formValue.payloadJSON
+              : null;
 
           setSaveLoading(true);
 
@@ -195,6 +208,7 @@ const DetailInfo: React.FC<{
                   ? "text"
                   : "json",
               },
+              payload,
             },
           });
 

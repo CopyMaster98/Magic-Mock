@@ -3,6 +3,7 @@ const fs = require("fs");
 const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
 const { resolve } = require("path");
+const { info } = require("console");
 const { folderPath, folderExists, createFolder, createFile, folderContent } =
   folderUtils;
 
@@ -13,6 +14,7 @@ router.post("/create", async (ctx) => {
     rulePattern,
     requestHeader,
     responseData,
+    payload,
     ruleMethod,
     ruleStatus,
   } = ctx.request.body;
@@ -60,6 +62,8 @@ router.post("/create", async (ctx) => {
         } else {
           info.responseDataJSON = responseData?.data;
         }
+
+        if (payload) info.payloadJSON = payload;
 
         createFile(
           `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,
@@ -145,7 +149,7 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
         }));
         delete currentRuleData[key + "JSON"];
       } else {
-        if (ruleInfo[key]?.type === "json") {
+        if (ruleInfo[key]?.type === "json" || key === "payload") {
           currentRuleData[key + "JSON"] = ruleData;
           delete currentRuleData[key];
         } else currentRuleData[key] = ruleData;

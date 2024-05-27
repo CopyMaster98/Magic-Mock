@@ -39,8 +39,13 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     onJSONEditorValidate: responseDataEditor?.validate(),
     onReset: () =>
       form.setFieldsValue({
-        projectName: "",
-        projectUrl: "",
+        ruleName: "",
+        rulePattern: "",
+        payloadJSON: null,
+        requestHeader: [],
+        requestHeaderJSON: null,
+        responseData: [],
+        responseDataJSON: null,
       }),
     onInit: form.resetFields,
     requestHeaderInputType,
@@ -49,11 +54,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
   const [responseDataEditor, setResponseDataEditor] = useState<any>();
   const [requestHeaderEditor, setRequestHeaderEditor] = useState<any>();
+  const [payloadEditor, setPayloadEditor] = useState<any>();
   const isInitialRenderRef = useRef(true);
   const requestHeaderEditorRef = useRef<HTMLDivElement>(null);
   const responseDataEditorRef = useRef<HTMLDivElement>(null);
+  const payloadEditorRef = useRef<HTMLDivElement>(null);
   const requestHeaderEditorValueRef = useRef(null);
   const responseDataEditorValueRef = useRef(null);
+  const payloadEditorValueRef = useRef(null);
   const requestHeaderInputValueRef = useRef(null);
   const responseDataInputValueRef = useRef(null);
   const formBaseValueRef = useRef({
@@ -77,6 +85,21 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           )
         );
   }, [requestHeaderEditor, requestHeaderInputType]);
+
+  const handleInitPayloadEditor = useCallback(() => {
+    if (payloadEditor && payloadEditorValueRef.current) {
+      payloadEditor.setTextSelection(payloadEditorValueRef.current);
+      return;
+    } else if (!payloadEditor)
+      payloadEditorRef.current &&
+        setPayloadEditor(
+          new JSONEditor(
+            payloadEditorRef.current,
+            { mode: "code" },
+            payloadEditorValueRef.current
+          )
+        );
+  }, [payloadEditor]);
 
   const handleInitResponseDataEditor = useCallback(() => {
     /*
@@ -111,6 +134,17 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       }
     };
   }, [data, form, handleInitRequestHeaderEditor, requestHeaderEditor]);
+
+  useEffect(() => {
+    handleInitPayloadEditor();
+
+    return () => {
+      if (payloadEditor) {
+        payloadEditor.destroy();
+        setPayloadEditor(null);
+      }
+    };
+  }, [data, form, handleInitPayloadEditor, payloadEditor]);
 
   useEffect(() => {
     handleInitResponseDataEditor();
@@ -160,6 +194,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       setResponseDataInputType(data?.responseDataType === "text");
       requestHeaderEditorValueRef.current = data.requestHeaderJSON;
       responseDataEditorValueRef.current = data.responseDataJSON;
+      payloadEditorValueRef.current = data.payloadJSON;
       formBaseValueRef.current = {
         ruleName: data.ruleName,
         rulePattern: data.rulePattern,
@@ -189,6 +224,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           form.setFieldValue("responseDataJSON", data.responseDataJSON);
           // handleInitResponseDataEditor()
         }
+
+        form.setFieldValue("payloadJSON", data.payloadJSON);
       });
 
       isInitialRenderRef.current = false;
@@ -295,7 +332,33 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           />
         </Tooltip>
       </Form.Item>
+      <Form.Item label="Rule Payload">
+        <Form.Item
+          name="payloadJSON"
+          style={{
+            display: "none",
+          }}
+        >
+          <Input.TextArea
+            placeholder="Enter payload JSON"
+            autoSize={{ minRows: 5 }}
+          />
+        </Form.Item>
+        <div
+          ref={payloadEditorRef}
+          className={isUpdate ? "payload json-editor" : "json-editor"}
+          onBlur={async (e) => {
+            payloadEditor?.repair();
 
+            const errors = await payloadEditor?.validate();
+
+            if (errors.length) return;
+
+            form.setFieldValue("payloadJSON", payloadEditor.get());
+            payloadEditorValueRef.current = payloadEditor.get();
+          }}
+        ></div>
+      </Form.Item>
       <Form.Item label="Rule Method" name="ruleMethod">
         <Select
           mode="multiple"

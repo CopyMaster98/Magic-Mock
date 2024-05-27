@@ -13,6 +13,16 @@ const deepUpdateValue = (data, key, value) => {
   }
 };
 
+const isValidJSON = (str) => {
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 module.exports = {
   deepUpdateValue,
+  isValidJSON,
 };

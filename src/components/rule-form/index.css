@@ -10,3 +10,9 @@
     height: 50vh;
   }
 }
+
+.payload {
+  .jsoneditor-outer {
+    height: 30vh;
+  }
+}
