@@ -353,9 +353,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
             const errors = await payloadEditor?.validate();
 
             if (errors.length) return;
+            let value = null;
 
-            form.setFieldValue("payloadJSON", payloadEditor.get());
-            payloadEditorValueRef.current = payloadEditor.get();
+            try {
+              value = payloadEditor.get();
+            } catch (error) {}
+
+            form.setFieldValue("payloadJSON", value);
+            payloadEditorValueRef.current = value;
           }}
         ></div>
       </Form.Item>

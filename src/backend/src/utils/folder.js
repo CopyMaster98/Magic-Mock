@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const chokidar = require("chokidar");
+const CONSTANT = require("../constants/index");
 const hashUtils = require("./hash");
 
 const folderExists = (path) => {
@@ -27,8 +28,8 @@ const createFile = (filePath, content) => {
   }
 };
 
-const folderPath = (folderName) =>
-  path.resolve(process.cwd() + "/Magic-Mock-Data", folderName);
+const folderPath = (folderName, rootFolderName = CONSTANT.MAGIC_MOCK_DATA) =>
+  path.resolve(process.cwd() + `/${rootFolderName}`, folderName);
 
 const folderInfo = (folderPath) => fs.statSync(folderPath);
 

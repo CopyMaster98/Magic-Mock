@@ -1,8 +1,8 @@
 const CDP = require("chrome-remote-interface");
 const puppeteer = require("puppeteer");
 const fs = require("fs");
-const _url = require("url");
-const querystring = require("querystring");
+const path = require("path");
+const CONSTANT = require("../backend/src/constants/index");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
@@ -63,21 +63,37 @@ const updateConfig = (configPath) => {
         : newConfig.responseDataJSON,
     requestHeaderType: newConfig.requestHeaderType,
     responseDataType: newConfig.responseDataType,
+    configPath,
     patterns: [
       {
         urlPattern: newConfig.rulePattern,
         requestStage: "Request",
         ruleMethod: newConfig.ruleMethod,
         payload: newConfig.payloadJSON,
+        configPath,
       },
       {
         urlPattern: newConfig.rulePattern,
         requestStage: "Response",
         ruleMethod: newConfig.ruleMethod,
         payload: newConfig.payloadJSON,
+        configPath,
       },
     ],
   };
+};
+
+const updateFileOrFolder = (params, path) => {
+  if (folderUtils.folderExists(path)) {
+    console.log(
+      params.request.url,
+      params.request.postData,
+      folderUtils.folderExists(path + "/" + params.request.method)
+    );
+    // const requestName = encodeURIComponent(params.request.url)
+  } else {
+    folderUtils.createFolder(path);
+  }
 };
 
 async function intercept(data, page) {
@@ -229,7 +245,6 @@ async function intercept(data, page) {
 
       let payloadMatched = true;
 
-      console.log(params.request);
       if (matchedPattern && matchedPattern.payload) {
         const payload = matchedPattern.payload;
         const payloadKeysLength = Object.keys(payload).length;
@@ -241,7 +256,7 @@ async function intercept(data, page) {
 
           if (
             !searchParamsKeysLength ||
-            searchParamsKeysLength < payloadKeysLength
+            searchParamsKeysLength !== payloadKeysLength
           )
             payloadMatched = false;
           else {
@@ -256,7 +271,7 @@ async function intercept(data, page) {
 
           const requestDataLength = Object.keys(requestData)?.length;
 
-          if (!requestDataLength || requestDataLength < payloadKeysLength)
+          if (!requestDataLength || requestDataLength !== payloadKeysLength)
             payloadMatched = false;
           else
             payloadMatched = Object.keys(payload).every(
@@ -278,9 +293,33 @@ async function intercept(data, page) {
           });
           let responseData = res.body && JSON.parse(atob(res.body));
 
+          const isExistLocalServer = folderUtils.folderExists(
+            CONSTANT.LOCAL_SERVER
+          );
+          const projectName = path
+            .dirname(matchedPattern.configPath)
+            .match(/[^\/]+$/)[0];
+          const configName = matchedPattern.configPath.match(/[^\/]+$/)[0];
+          const localServerProjectPath = folderUtils.folderPath(
+            projectName,
+            CONSTANT.LOCAL_SERVER
+          );
+          if (
+            isExistLocalServer &&
+            params.responseStatusCode.toString().startsWith("2")
+          ) {
+            updateFileOrFolder(params, localServerProjectPath);
+          } else {
+            const serverPath = folderUtils.folderPath(
+              CONSTANT.LOCAL_SERVER,
+              ""
+            );
+            folderUtils.createFolder(serverPath);
+            updateFileOrFolder(params, localServerProjectPath);
+          }
+          console.log(params.responseStatusCode, responseData, matchedPattern);
           // modify responseData
 
-          // responseData.id = Math.random();
           const matchedResponseData = config.responseData.find(
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
