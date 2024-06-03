@@ -17,10 +17,13 @@ const { folderUtils, commonUtils } = require("../backend/src/utils");
     return;
   }
 
+  const { name, url, port } = process.env.projectInfo
+    ? JSON.parse(process.env.projectInfo)
+    : {};
   const browser = await puppeteer.launch({
     executablePath: chromePath,
     headless: false,
-    args: [`--remote-debugging-port=${args[2]}`],
+    args: [`--remote-debugging-port=${port}`],
   });
   const page = await browser.newPage();
 
@@ -36,9 +39,9 @@ const { folderUtils, commonUtils } = require("../backend/src/utils");
   pages[0].close();
   intercept(
     {
-      name: args[0],
-      url: args[1],
-      port: args[2],
+      name,
+      url,
+      port,
     },
     page
   );
@@ -85,11 +88,31 @@ const updateConfig = (configPath) => {
 
 const updateFileOrFolder = (params, path) => {
   if (folderUtils.folderExists(path)) {
-    console.log(
-      params.request.url,
-      params.request.postData,
-      folderUtils.folderExists(path + "/" + params.request.method)
-    );
+    const methodPath = path + "/" + params.request.method;
+
+    if (folderUtils.folderExists(methodPath)) {
+      const requestFile =
+        methodPath +
+        "/" +
+        encodeURIComponent(params.request.url) +
+        ".request.json";
+
+      if (folderUtils.folderExists(requestFile)) {
+      } else {
+        folderUtils.createFile(
+          requestFile,
+          JSON.stringify(
+            {
+              params,
+            },
+            null,
+            2
+          )
+        );
+      }
+    } else {
+      folderUtils.createFolder(methodPath);
+    }
     // const requestName = encodeURIComponent(params.request.url)
   } else {
     folderUtils.createFolder(path);
@@ -279,6 +302,39 @@ async function intercept(data, page) {
             );
         }
       }
+
+      const isExistLocalServer = folderUtils.folderExists(
+        CONSTANT.LOCAL_SERVER
+      );
+      const projectName = path
+        .dirname(matchedPattern.configPath)
+        .match(/[^\/]+$/)[0];
+      const localServerProjectPath = folderUtils.folderPath(
+        projectName,
+        CONSTANT.LOCAL_SERVER
+      );
+      let response = null;
+      let responseData = null;
+
+      if (params.responseStatusCode) {
+        response = await Fetch.getResponseBody({
+          requestId: params.requestId,
+        });
+        responseData = response.body && JSON.parse(atob(response.body));
+        params.responseData = responseData;
+
+        if (
+          isExistLocalServer &&
+          params.responseStatusCode.toString().startsWith("2")
+        ) {
+          updateFileOrFolder(params, localServerProjectPath);
+        } else {
+          const serverPath = folderUtils.folderPath(CONSTANT.LOCAL_SERVER, "");
+          folderUtils.createFolder(serverPath);
+          updateFileOrFolder(params, localServerProjectPath);
+        }
+      }
+
       if (
         matchedPattern &&
         payloadMatched &&
@@ -288,35 +344,6 @@ async function intercept(data, page) {
         console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
-          const res = await Fetch.getResponseBody({
-            requestId: params.requestId,
-          });
-          let responseData = res.body && JSON.parse(atob(res.body));
-
-          const isExistLocalServer = folderUtils.folderExists(
-            CONSTANT.LOCAL_SERVER
-          );
-          const projectName = path
-            .dirname(matchedPattern.configPath)
-            .match(/[^\/]+$/)[0];
-          const configName = matchedPattern.configPath.match(/[^\/]+$/)[0];
-          const localServerProjectPath = folderUtils.folderPath(
-            projectName,
-            CONSTANT.LOCAL_SERVER
-          );
-          if (
-            isExistLocalServer &&
-            params.responseStatusCode.toString().startsWith("2")
-          ) {
-            updateFileOrFolder(params, localServerProjectPath);
-          } else {
-            const serverPath = folderUtils.folderPath(
-              CONSTANT.LOCAL_SERVER,
-              ""
-            );
-            folderUtils.createFolder(serverPath);
-            updateFileOrFolder(params, localServerProjectPath);
-          }
           console.log(params.responseStatusCode, responseData, matchedPattern);
           // modify responseData
 

@@ -5,8 +5,12 @@ const websocket = spawn("npm", ["run", "backend-client-websocket"], {
 
 const createChildProcess = (projectInfo, resolve, reject) => {
   const { url, name, port } = projectInfo;
-  const child = spawn("npm", ["run", "cdp", "--projectInfo", name, url, port], {
+  const child = spawn("npm", ["run", "cdp"], {
     shell: true,
+    env: {
+      ...process.env,
+      projectInfo: JSON.stringify(projectInfo),
+    },
   });
 
   child.stdout.on("data", (data) => {

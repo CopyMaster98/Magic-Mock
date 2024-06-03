@@ -5,6 +5,7 @@
 /.pnp
 .pnp.js
 /Magic-Mock-Data
+/Local-Server
 
 # testing
 /coverage
