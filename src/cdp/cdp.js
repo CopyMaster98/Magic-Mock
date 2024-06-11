@@ -320,7 +320,11 @@ async function intercept(data, page) {
         response = await Fetch.getResponseBody({
           requestId: params.requestId,
         });
-        responseData = response.body && JSON.parse(atob(response.body));
+
+        try {
+          responseData = response.body && JSON.parse(atob(response.body));
+        } catch (error) {}
+
         params.responseData = responseData;
 
         if (
