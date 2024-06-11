@@ -372,9 +372,9 @@ async function intercept(data, page) {
             body: btoa(JSON.stringify(responseData)),
           });
         } else if (params.request.method !== "OPTIONS") {
-          const data =
-            commonUtils.isValidJSON(params.request.postData) &&
-            JSON.parse(params.request.postData);
+          const data = commonUtils.isValidJSON(params.request.postData)
+            ? JSON.parse(params.request.postData)
+            : params.request.postData;
 
           // modify requestData
           const headersArray = Object.entries(params.request.headers).map(
