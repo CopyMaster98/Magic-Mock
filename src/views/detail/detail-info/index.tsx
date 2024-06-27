@@ -64,6 +64,7 @@ const DetailInfo: React.FC<{
               requestHeaderJSON?: string;
               responseDataJSON?: string;
               payloadJSON?: string;
+              responseStatusCode?: number;
             }) => {
               const requestHeader = !formRef.current?.requestHeaderInputType
                 ? formValue.requestHeaderJSON &&
@@ -168,7 +169,9 @@ const DetailInfo: React.FC<{
           requestHeaderJSON?: object;
           responseDataJSON?: object;
           payloadJSON?: string;
+          responseStatusCode?: number;
         }) => {
+          console.log(formValue);
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
             ? formValue.requestHeaderJSON &&
               Object.keys(formValue.requestHeaderJSON).length > 0
@@ -209,6 +212,7 @@ const DetailInfo: React.FC<{
                   : "json",
               },
               payload,
+              responseStatusCode: formValue.responseStatusCode ?? null,
             },
           });
 

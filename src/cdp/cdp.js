@@ -56,6 +56,7 @@ const updateConfig = (configPath) => {
     ruleStatus: newConfig.ruleStatus,
     ruleMethod: newConfig.ruleMethod,
     payload: newConfig.payloadJSON,
+    responseStatusCode: newConfig.responseStatusCode,
     requestHeader:
       newConfig.requestHeaderType === "text"
         ? newConfig.requestHeader
@@ -73,6 +74,7 @@ const updateConfig = (configPath) => {
         requestStage: "Request",
         ruleMethod: newConfig.ruleMethod,
         payload: newConfig.payloadJSON,
+        responseStatusCode: newConfig.responseStatusCode,
         configPath,
       },
       {
@@ -80,6 +82,7 @@ const updateConfig = (configPath) => {
         requestStage: "Response",
         ruleMethod: newConfig.ruleMethod,
         payload: newConfig.payloadJSON,
+        responseStatusCode: newConfig.responseStatusCode,
         configPath,
       },
     ],
@@ -181,6 +184,7 @@ async function intercept(data, page) {
           ruleMethod,
           ruleStatus,
           responseDataType,
+          responseStatusCode,
         } = fileContent;
 
         config.responseData = config.responseData.filter(
@@ -197,6 +201,7 @@ async function intercept(data, page) {
           value: responseData,
           responseDataType,
           ruleMethod,
+          responseStatusCode,
         });
 
         config.requestHeader.push({
@@ -206,6 +211,7 @@ async function intercept(data, page) {
           ruleName,
           rulePattern,
           path: configPath,
+          responseStatusCode,
         });
 
         urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
@@ -368,7 +374,8 @@ async function intercept(data, page) {
           Fetch.fulfillRequest({
             requestId: params.requestId,
             responseHeaders: params.responseHeaders,
-            responseCode: params.responseStatusCode,
+            responseCode:
+              matchedPattern.responseStatusCode ?? params.responseStatusCode,
             body: btoa(JSON.stringify(responseData)),
           });
         } else if (params.request.method !== "OPTIONS") {

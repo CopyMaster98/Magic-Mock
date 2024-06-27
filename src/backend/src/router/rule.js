@@ -17,6 +17,7 @@ router.post("/create", async (ctx) => {
     payload,
     ruleMethod,
     ruleStatus,
+    responseStatusCode,
   } = ctx.request.body;
   const folders = fs.readdirSync(folderPath("")) ?? [];
   const isExistParentFolder = folders.find(
@@ -64,6 +65,8 @@ router.post("/create", async (ctx) => {
         }
 
         if (payload) info.payloadJSON = payload;
+
+        if (responseStatusCode) info.responseStatusCode = responseStatusCode;
 
         createFile(
           `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,

@@ -1,4 +1,13 @@
-import { Button, Form, FormProps, Input, Select, Space, Tooltip } from "antd";
+import {
+  Button,
+  Form,
+  FormProps,
+  Input,
+  InputNumber,
+  Select,
+  Space,
+  Tooltip,
+} from "antd";
 import {
   forwardRef,
   useCallback,
@@ -16,14 +25,16 @@ import {
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./index.css";
+import { methodOptions } from "../../constant";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data, isUpdate } = props;
 
   const [form] = Form.useForm();
   const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
-
   const [responseDataInputType, setResponseDataInputType] = useState(true);
+  const [payloadStatus, setPayloadStatus] = useState(false);
+
   const onFinish: FormProps["onFinish"] = (values) => {
     console.log("Success:", values);
   };
@@ -37,16 +48,26 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   useImperativeHandle(ref, () => ({
     onValidate: form.validateFields,
     onJSONEditorValidate: responseDataEditor?.validate(),
-    onReset: () =>
+    onReset: () => {
       form.setFieldsValue({
         ruleName: "",
         rulePattern: "",
+        ruleMethod: [],
         payloadJSON: null,
         requestHeader: [],
         requestHeaderJSON: null,
         responseData: [],
         responseDataJSON: null,
-      }),
+      });
+
+      setPayloadEditor(null);
+      setRequestHeaderEditor(null);
+      setResponseDataEditor(null);
+      payloadEditorValueRef.current = null;
+      requestHeaderInputValueRef.current = null;
+      responseDataInputValueRef.current = null;
+      setPayloadStatus(false);
+    },
     onInit: form.resetFields,
     requestHeaderInputType,
     responseDataInputType,
@@ -68,6 +89,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     ruleName: "",
     rulePattern: "",
     ruleMethod: [],
+    responseStatusCode: null,
   });
 
   const handleInitRequestHeaderEditor = useCallback(() => {
@@ -87,6 +109,9 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   }, [requestHeaderEditor, requestHeaderInputType]);
 
   const handleInitPayloadEditor = useCallback(() => {
+    setPayloadStatus(
+      data?.payloadJSON && Object.keys(data.payloadJSON).length > 0
+    );
     if (payloadEditor && payloadEditorValueRef.current) {
       payloadEditor.setTextSelection(payloadEditorValueRef.current);
       return;
@@ -102,11 +127,11 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   }, [payloadEditor]);
 
   const handleInitResponseDataEditor = useCallback(() => {
-    /*
-   第二个参数可以添加各种配置
-   比如mode： text | tree | view 
-   文本模式 树模式 预览模式
-  */
+    /**
+     * 第二个参数可以添加各种配置
+     * 比如mode： text | tree | view
+     * 文本模式 树模式 预览模式
+     */
     if (responseDataEditor && responseDataEditorValueRef.current) {
       responseDataEditor.setTextSelection(responseDataEditorValueRef.current);
       return;
@@ -163,6 +188,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: form.getFieldValue("ruleName"),
         rulePattern: form.getFieldValue("rulePattern"),
         ruleMethod: form.getFieldValue("ruleMethod"),
+        responseStatusCode: form.getFieldValue("responseStatusCode"),
       };
 
       const requestHeader = form.getFieldValue("requestHeader");
@@ -199,6 +225,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: data.ruleName,
         rulePattern: data.rulePattern,
         ruleMethod: data.ruleMethod,
+        responseStatusCode: data.responseStatusCode,
       };
 
       setTimeout(() => {
@@ -234,12 +261,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
   useEffect(() => {
     if (isInitialRenderRef.current && isUpdate) return;
-    const { ruleName, rulePattern, ruleMethod } = formBaseValueRef.current;
+    const { ruleName, rulePattern, ruleMethod, responseStatusCode } =
+      formBaseValueRef.current;
 
     const baseFormItem = {
       ruleName,
       rulePattern,
       ruleMethod,
+      responseStatusCode,
     };
 
     setTimeout(() => {
@@ -257,37 +286,6 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         form.setFieldValue("responseData", responseDataInputValueRef.current)
       );
   }, [form, isUpdate, requestHeaderInputType, responseDataInputType]);
-
-  const options = [
-    {
-      label: "GET",
-      value: "GET",
-    },
-    {
-      label: "POST",
-      value: "POST",
-    },
-    {
-      label: "PUT",
-      value: "PUT",
-    },
-    {
-      label: "DELETE",
-      value: "DELETE",
-    },
-    {
-      label: "PATCH",
-      value: "PATCH",
-    },
-    {
-      label: "HEAD",
-      value: "HEAD",
-    },
-    {
-      label: "OPTIONS",
-      value: "OPTIONS",
-    },
-  ];
 
   return (
     <Form
@@ -332,7 +330,16 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           />
         </Tooltip>
       </Form.Item>
-      <Form.Item label="Rule Payload">
+      <Form.Item label="Rule Method" name="ruleMethod">
+        <Select
+          mode="multiple"
+          allowClear
+          style={{ width: "100%" }}
+          placeholder="Please select"
+          options={methodOptions}
+        />
+      </Form.Item>
+      <Form.Item label="Request Payload">
         <Form.Item
           name="payloadJSON"
           style={{
@@ -344,7 +351,16 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
             autoSize={{ minRows: 5 }}
           />
         </Form.Item>
+
         <div
+          style={{
+            display:
+              (payloadEditorValueRef.current &&
+                Object.keys(payloadEditorValueRef.current).length > 0) ||
+              payloadStatus
+                ? "block"
+                : "none",
+          }}
           ref={payloadEditorRef}
           className={isUpdate ? "payload json-editor" : "json-editor"}
           onBlur={async (e) => {
@@ -363,17 +379,18 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
             payloadEditorValueRef.current = value;
           }}
         ></div>
-      </Form.Item>
-      <Form.Item label="Rule Method" name="ruleMethod">
-        <Select
-          mode="multiple"
-          allowClear
-          style={{ width: "100%" }}
-          placeholder="Please select"
-          options={options}
-        />
-      </Form.Item>
 
+        <Button
+          type="dashed"
+          style={{
+            display: payloadStatus ? "none" : "block",
+          }}
+          onClick={() => setPayloadStatus(true)}
+          block
+        >
+          + Add Request Payload
+        </Button>
+      </Form.Item>
       {requestHeaderInputType ? (
         <Form.Item label="Request Header">
           <Form.List name={["requestHeader"]}>
@@ -479,6 +496,15 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           />
         </Form.Item>
       )}
+      <Form.Item label="Response StatusCode" name="responseStatusCode">
+        <InputNumber
+          min={100}
+          max={599}
+          controls={false}
+          style={{ width: "100%" }}
+          placeholder="Default value is the original status code"
+        />
+      </Form.Item>
       {responseDataInputType ? (
         <Form.Item label="Response Data">
           <Form.List name={["responseData"]}>
