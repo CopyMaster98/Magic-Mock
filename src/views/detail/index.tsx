@@ -142,7 +142,7 @@ const Detail: React.FC = () => {
             }}
           >
             {projectData?.length > 0 ? (
-              "Content123"
+              "Content"
             ) : (
               <Empty
                 style={{

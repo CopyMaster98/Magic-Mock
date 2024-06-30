@@ -454,6 +454,7 @@ async function intercept(data, page) {
     });
 
     process.stdout.write(`projectName=${name}&url=${url}`);
+
     page.on("close", () => {
       console.log("Page: close");
       // 在这里执行页面关闭时的操作

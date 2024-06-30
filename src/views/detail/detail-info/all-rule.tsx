@@ -72,7 +72,7 @@ const AllRule: React.FC<{
             ...(item?.content?.ruleStatus
               ? {
                   backgroundImage:
-                    "linear-gradient(var(--direc), #5ddcff, #3c67e3 43%, #4e00c2)",
+                    "linear-gradient(var(--dir), #5ddcff, #3c67e3 43%, #4e00c2)",
                   animation: "rotate 3s linear infinite",
                 }
               : {}),
@@ -97,6 +97,12 @@ const AllRule: React.FC<{
                 title={
                   <>
                     <span>{item.name}</span>
+                    <Tag
+                      color={item.status ? "processing" : "success"}
+                      style={{ marginLeft: "10px" }}
+                    >
+                      <span>{item.status ? "Cache" : "Mock"}</span>
+                    </Tag>
                     <Switch
                       checkedChildren="开启"
                       unCheckedChildren="关闭"

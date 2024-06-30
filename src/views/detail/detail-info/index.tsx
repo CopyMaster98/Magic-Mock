@@ -248,6 +248,15 @@ const DetailInfo: React.FC<{
     [setRefresh]
   );
 
+  const handleBack = useCallback(() => {
+    setTimeout(() => {
+      navigate(
+        `${location.pathname.split("/").slice(0, -1).join("/")}${
+          location.search.split("&")[0]
+        }`
+      );
+    });
+  }, []);
   return (
     <>
       <Breadcrumb
@@ -280,6 +289,17 @@ const DetailInfo: React.FC<{
               pathname[pathname.length - 1].slice(1)}
           </span>
           <div className="buttons">
+            {location.search.includes("ruleId") && (
+              <Button
+                type="primary"
+                onClick={handleBack}
+                style={{
+                  marginRight: "50px",
+                }}
+              >
+                Back
+              </Button>
+            )}
             <Button
               type="primary"
               loading={saveLoading}
