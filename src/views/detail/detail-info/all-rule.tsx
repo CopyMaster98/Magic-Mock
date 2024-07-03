@@ -81,7 +81,6 @@ const AllRule: React.FC<{
           <Card
             className="card-container"
             style={{
-              width: 300,
               marginLeft: 0,
             }}
             actions={[

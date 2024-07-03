@@ -124,12 +124,31 @@ router.put("/project/:projectName", async (ctx) => {
       statusCode: 0,
     };
   } catch (err) {
-    console.error("重命名文件失败:", err);
-    ctx.response.status = 500;
-    ctx.response.body = {
-      message: "修改失败",
-      statusCode: -1,
-    };
+    if (err.toString().includes("operation not permitted")) {
+      try {
+        fs.cpSync(projectPath, newProjectPath, { recursive: true });
+        fs.rmdirSync(projectPath, { recursive: true });
+        console.log("文件已成功重命名为:", newProjectName);
+        ctx.response.body = {
+          message: "修改成功",
+          statusCode: 0,
+        };
+      } catch (error) {
+        console.error("重命名文件失败:", err);
+        ctx.response.status = 500;
+        ctx.response.body = {
+          message: "修改失败",
+          statusCode: -1,
+        };
+      }
+    } else {
+      console.error("重命名文件失败:", err);
+      ctx.response.status = 500;
+      ctx.response.body = {
+        message: "修改失败",
+        statusCode: -1,
+      };
+    }
   }
   ctx.set("notification", true);
 });
