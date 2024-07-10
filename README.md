@@ -1,1 +1,2 @@
 #  Magic Mock
+hello world
