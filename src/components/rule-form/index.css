@@ -1,0 +1,18 @@
+.json-editor {
+  .jsoneditor-menu {
+    display: none;
+  }
+  
+}
+
+.update {
+  .jsoneditor-outer {
+    height: 50vh;
+  }
+}
+
+.payload {
+  .jsoneditor-outer {
+    height: 30vh;
+  }
+}

@@ -1,0 +1,15 @@
+.container {
+  display: flex;
+  margin-top: 20px;
+  overflow-y: auto;
+}
+.sub-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  > span {
+    font-size: 24px;
+    font-weight: 700;
+  }
+}

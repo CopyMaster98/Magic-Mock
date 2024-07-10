@@ -1,0 +1,17 @@
+.container {
+  .ant-card-body {
+    line-height: 1;
+  }
+}
+
+@property --dir {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes rotate {
+  to {
+    --dir: 360deg
+  }
+}
