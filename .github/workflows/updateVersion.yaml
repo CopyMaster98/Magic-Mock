@@ -1,16 +1,20 @@
 on:
-  push:
+  pull_request:
     branches:
-      - release
+      - main
+    types:
+      - closed
+  workflow_dispatch: 
 
 permissions:
   contents: write
   pull-requests: write
 
-name: release-please
+name: update-version
 
 jobs:
-  release-please:
+  update-version:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: google-github-actions/release-please-action@v3
