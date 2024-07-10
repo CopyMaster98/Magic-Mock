@@ -21,6 +21,7 @@ jobs:
         with:
           release-type: node
           package-name: release-please-action
+          branch-format: 'release/{{version}}'
           extra-files: |
             README.md
             CHANGELOG.md
