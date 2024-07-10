@@ -1,0 +1,11 @@
+{
+  "id": "6010d2e0185dcf88",
+  "ruleName": "123",
+  "rulePattern": "*comments*",
+  "requestHeader": [],
+  "responseData": [
+    {
+      "email": "121212"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "adfa17c99a43cebc",
+  "ruleName": "213",
+  "rulePattern": "123",
+  "ruleStatus": true,
+  "requestHeaderType": "text",
+  "responseDataType": "text",
+  "requestHeader": [],
+  "responseData": [],
+  "responseStatusCode": 404
+}
