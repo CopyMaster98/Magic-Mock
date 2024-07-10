@@ -103,6 +103,7 @@ const DetailInfo: React.FC<{
                 },
                 payload,
                 ruleStatus: true,
+                responseStatusCode: formValue.responseStatusCode ?? 200,
               });
               setRefresh();
               info.ref?.current?.onReset();
@@ -212,7 +213,7 @@ const DetailInfo: React.FC<{
                   : "json",
               },
               payload,
-              responseStatusCode: formValue.responseStatusCode ?? null,
+              responseStatusCode: formValue.responseStatusCode ?? 200,
             },
           });
 
