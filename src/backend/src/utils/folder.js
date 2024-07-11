@@ -90,6 +90,28 @@ const deleteFolderRecursive = async (folderPath) => {
   }
 };
 
+const renameFile = (oldPath, newPath) => {
+  try {
+    fs.renameSync(oldPath, newPath);
+    console.log("文件已成功重命名: ", newPath);
+    return true;
+  } catch (err) {
+    if (err.toString().includes("operation not permitted")) {
+      try {
+        fs.cpSync(oldPath, newPath, { recursive: true });
+        fs.rmdirSync(oldPath, { recursive: true });
+        return true;
+      } catch (err) {
+        console.error("重命名文件失败:", err);
+        return false;
+      }
+    } else {
+      console.error("重命名文件失败:", err);
+      return false;
+    }
+  }
+};
+
 module.exports = {
   createFolder,
   folderExists,
@@ -101,4 +123,5 @@ module.exports = {
   findFile,
   deleteFolderRecursive,
   deleteFile,
+  renameFile,
 };

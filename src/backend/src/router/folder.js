@@ -1,6 +1,7 @@
 const Router = require("koa-router");
 const fs = require("fs");
 const { folderUtils, hashUtils } = require("../utils/index");
+const { getLocalServerProjectData } = require("../core");
 const router = new Router();
 
 const { folderPath, folderExists, createFolder, folderInfo, folderContent } =
@@ -59,6 +60,7 @@ router.get("/info", async (ctx, next) => {
               name: item,
               stats: folderInfo(`${_folderPath}/${item}`),
               content: content.length ? JSON.parse(content) : {},
+              type: "mock",
             };
           });
         const [name, url] = item.split("@@");
@@ -71,6 +73,7 @@ router.get("/info", async (ctx, next) => {
           status: currentProjectStatus?.status ?? false,
           stats,
           rules,
+          cacheData: getLocalServerProjectData(item),
         });
       } catch (err) {
         console.error(err);
@@ -78,7 +81,7 @@ router.get("/info", async (ctx, next) => {
     });
   }
 
-  folder = folder.sort((a, b) => a.stats.birthtimeMs - b.stats.birthtimeMs);
+  folder = folder.sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
 
   ctx.response.body = {
     project: !isExist ? [] : folder,

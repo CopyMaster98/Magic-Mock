@@ -4,6 +4,7 @@ const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
 const { resolve } = require("path");
 const { info } = require("console");
+const { renameFile } = require("../utils/folder");
 const { folderPath, folderExists, createFolder, createFile, folderContent } =
   folderUtils;
 
@@ -135,9 +136,26 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
   const { ruleInfo } = ctx.request.body;
   const folderName = folderUtils.findFile(projectId);
-  const ruleName = folderUtils.findFile(ruleId, folderName);
-  const rulePath = folderPath(`${folderName}/${ruleName}`);
-  let currentRuleData = JSON.parse(folderUtils.folderContent(rulePath));
+  const oldRuleName = folderUtils.findFile(ruleId, folderName);
+  const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
+  const newRuleName = ruleInfo.ruleName + ".config.json";
+  const newRulePath = folderPath(`${folderName}/${newRuleName}`);
+
+  if (
+    ruleInfo.ruleName &&
+    newRuleName !== oldRuleName &&
+    folderExists(newRulePath)
+  ) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "规则名字已存在",
+      statusCode: -1,
+    };
+
+    return;
+  }
+
+  let currentRuleData = JSON.parse(folderUtils.folderContent(oldRulePath));
 
   if (currentRuleData) {
     for (let key in ruleInfo) {
@@ -161,11 +179,14 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
   }
 
   try {
-    createFile(rulePath, JSON.stringify(currentRuleData, null, 2));
+    createFile(oldRulePath, JSON.stringify(currentRuleData, null, 2));
     ctx.response.body = {
       message: "保存成功",
       statusCode: 0,
     };
+
+    if (ruleInfo.ruleName && newRuleName !== oldRuleName)
+      renameFile(oldRulePath, newRulePath);
   } catch (error) {
     ctx.response.body = {
       message: "保存失败",

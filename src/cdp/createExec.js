@@ -28,7 +28,6 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       );
     }
 
-    console.log(`stdout: ${data}`);
     if (data.includes("clean exit") || data.includes("Page: close")) {
       websocket.stdin.write(
         `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`

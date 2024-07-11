@@ -10,8 +10,22 @@
   inherits: false;
 }
 
+.rule-card {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    filter: blur(5px);
+    background: repeating-conic-gradient(from var(--dir), #0f0, #ff0, #0ff, #f0f,#0ff);
+    animation: rotate 4s linear infinite;
+  }
+}
 @keyframes rotate {
+  from {
+    --dir: 0deg;
+  }
   to {
-    --dir: 360deg
+    --dir: 360deg;
   }
 }

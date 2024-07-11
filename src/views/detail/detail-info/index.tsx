@@ -16,8 +16,9 @@ const DetailInfo: React.FC<{
   pathname: any;
   project: any;
   rules: any[];
+  cacheData?: any[];
 }> = (props) => {
-  const { pathname, project, rules } = props;
+  const { pathname, project, rules, cacheData } = props;
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -340,7 +341,7 @@ const DetailInfo: React.FC<{
           {pathname.length > 1 ? (
             <DetailRule ref={ruleFormRef} />
           ) : (
-            <AllRule rules={rules} />
+            <AllRule rules={rules} cacheData={cacheData} />
           )}
         </div>
       </Content>

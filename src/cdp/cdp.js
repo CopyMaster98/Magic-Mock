@@ -6,7 +6,8 @@ const CONSTANT = require("../backend/src/constants/index");
 const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
-const { folderUtils, commonUtils } = require("../backend/src/utils");
+const { folderUtils, commonUtils, hashUtils } = require("../backend/src/utils");
+const { request } = require("http");
 
 (async () => {
   const chromePath = findChrome();
@@ -50,54 +51,64 @@ const { folderUtils, commonUtils } = require("../backend/src/utils");
 const updateConfig = (configPath) => {
   const newConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 
+  const {
+    ruleName,
+    rulePattern,
+    ruleStatus,
+    ruleMethod,
+    payloadJSON,
+    responseStatusCode,
+    requestHeaderType,
+    requestHeader,
+    requestHeaderJSON,
+    responseDataType,
+    responseData,
+    responseDataJSON,
+  } = newConfig;
+
   return {
-    ruleName: newConfig.ruleName,
-    rulePattern: newConfig.rulePattern,
-    ruleStatus: newConfig.ruleStatus,
-    ruleMethod: newConfig.ruleMethod,
-    payload: newConfig.payloadJSON,
-    responseStatusCode: newConfig.responseStatusCode,
+    ruleName,
+    rulePattern,
+    ruleStatus,
+    ruleMethod,
+    payload: payloadJSON,
+    responseStatusCode,
     requestHeader:
-      newConfig.requestHeaderType === "text"
-        ? newConfig.requestHeader
-        : newConfig.requestHeaderJSON,
-    responseData:
-      newConfig.responseDataType === "text"
-        ? newConfig.responseData
-        : newConfig.responseDataJSON,
-    requestHeaderType: newConfig.requestHeaderType,
-    responseDataType: newConfig.responseDataType,
+      requestHeaderType === "text" ? requestHeader : requestHeaderJSON,
+    responseData: responseDataType === "text" ? responseData : responseDataJSON,
+    requestHeaderType,
+    responseDataType,
     configPath,
     patterns: [
       {
-        urlPattern: newConfig.rulePattern,
+        urlPattern: rulePattern,
         requestStage: "Request",
-        ruleMethod: newConfig.ruleMethod,
-        payload: newConfig.payloadJSON,
-        responseStatusCode: newConfig.responseStatusCode,
+        ruleMethod,
+        payload: payloadJSON,
+        responseStatusCode,
         configPath,
       },
       {
-        urlPattern: newConfig.rulePattern,
+        urlPattern: rulePattern,
         requestStage: "Response",
-        ruleMethod: newConfig.ruleMethod,
-        payload: newConfig.payloadJSON,
-        responseStatusCode: newConfig.responseStatusCode,
+        ruleMethod,
+        payload: payloadJSON,
+        responseStatusCode,
         configPath,
       },
     ],
   };
 };
 
-const updateFileOrFolder = (params, path) => {
+const updateFileOrFolder = (data, path) => {
   if (folderUtils.folderExists(path)) {
-    const methodPath = path + "/" + params.request.method;
+    const methodPath = path + "/" + data.params.request.method;
 
     if (folderUtils.folderExists(methodPath)) {
       const requestFile =
         methodPath +
         "/" +
-        encodeURIComponent(params.request.url) +
+        hashUtils.getHash(encodeURIComponent(data.params.request.url)) +
         ".request.json";
 
       if (folderUtils.folderExists(requestFile)) {
@@ -106,7 +117,7 @@ const updateFileOrFolder = (params, path) => {
           requestFile,
           JSON.stringify(
             {
-              params,
+              ...data,
             },
             null,
             2
@@ -224,7 +235,29 @@ async function intercept(data, page) {
             ruleMethod: ruleMethod,
           });
 
-        // todos need delete
+        if (
+          (urlPatterns.length > 0 &&
+            !urlPatterns[0].value[0].hasOwnProperty("init")) ||
+          urlPatterns.length === 0
+        ) {
+          urlPatterns.unshift({
+            value: [
+              {
+                urlPattern: "*",
+                requestStage: "Response",
+                resourceType: "XHR",
+                init: true,
+              },
+              {
+                urlPattern: "*",
+                requestStage: "Response",
+                resourceType: "Fetch",
+                init: true,
+              },
+            ],
+          });
+        }
+        // TODO need delete
         process.stdout.write(JSON.stringify(config.responseData));
       };
       await new Promise(async (resolve) => {
@@ -257,10 +290,11 @@ async function intercept(data, page) {
 
     Fetch.requestPaused(async (params) => {
       const requestUrl = params.request.url;
+      console.log(params);
       const allUrlPatterns = urlPatterns
         .map((item) => item.value)
         .flat(Infinity);
-      const matchedPattern = allUrlPatterns.find((pattern) => {
+      let matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*]?([^*]+)[*]?$/g;
 
         let match;
@@ -312,11 +346,13 @@ async function intercept(data, page) {
       const isExistLocalServer = folderUtils.folderExists(
         CONSTANT.LOCAL_SERVER
       );
-      const projectName = path
-        .dirname(matchedPattern.configPath)
-        .match(/[^\/]+$/)[0];
+      // const projectName = path.dirname(matchedPattern.configPath);
+      // .match(/[^\/]+$/)[0];
+
+      let localServerPath = `${name}@@${encodeURIComponent(url)}`;
+
       const localServerProjectPath = folderUtils.folderPath(
-        projectName,
+        localServerPath,
         CONSTANT.LOCAL_SERVER
       );
       let response = null;
@@ -337,11 +373,17 @@ async function intercept(data, page) {
           isExistLocalServer &&
           params.responseStatusCode.toString().startsWith("2")
         ) {
-          updateFileOrFolder(params, localServerProjectPath);
+          updateFileOrFolder(
+            { params, ruleStatus: false },
+            localServerProjectPath
+          );
         } else {
           const serverPath = folderUtils.folderPath(CONSTANT.LOCAL_SERVER, "");
           folderUtils.createFolder(serverPath);
-          updateFileOrFolder(params, localServerProjectPath);
+          updateFileOrFolder(
+            { ...params, ruleStatus: false },
+            localServerProjectPath
+          );
         }
       }
 
@@ -354,10 +396,9 @@ async function intercept(data, page) {
         console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
-          console.log(params.responseStatusCode, responseData, matchedPattern);
           // modify responseData
 
-          const matchedResponseData = config.responseData.find(
+          const matchedResponseData = config.responseData?.find(
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
@@ -387,28 +428,30 @@ async function intercept(data, page) {
           const headersArray = Object.entries(params.request.headers).map(
             ([name, value]) => ({ name, value: value?.toString() })
           );
-          const matchedRequestHeader = config.requestHeader.find(
+          const matchedRequestHeader = config.requestHeader?.find(
             (item) => item.rulePattern === matchedPattern.urlPattern
           );
 
           let newHeaders = headersArray;
 
-          if (matchedRequestHeader.requestHeaderType === "text") {
-            const formatMatchedRequestHeader = matchedRequestHeader.value.map(
-              (item) => {
-                const [name, value] = Object.entries(item)[0];
+          if (matchedRequestHeader) {
+            if (matchedRequestHeader?.requestHeaderType === "text") {
+              const formatMatchedRequestHeader = matchedRequestHeader.value.map(
+                (item) => {
+                  const [name, value] = Object.entries(item)[0];
 
-                return {
-                  name,
-                  value: value?.toString(),
-                };
-              }
-            );
-            newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-          } else
-            newHeaders = Object.entries(matchedRequestHeader.value).map(
-              ([name, value]) => ({ name, value: value?.toString() })
-            );
+                  return {
+                    name,
+                    value: value?.toString(),
+                  };
+                }
+              );
+              newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+            } else
+              newHeaders = Object.entries(matchedRequestHeader?.value).map(
+                ([name, value]) => ({ name, value: value?.toString() })
+              );
+          }
 
           Fetch.continueRequest({
             headers: newHeaders,
