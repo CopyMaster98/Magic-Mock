@@ -5,7 +5,6 @@
 
 ### Bug Fixes
 
-* btoa error DOMException invalid character ([6083125](https://github.com/CopyMaster98/Magic-Mock/commit/608312509d55419e4b24e619f496d60260695c3b))
 * btoa error DOMException invalid character ([4be6e9e](https://github.com/CopyMaster98/Magic-Mock/commit/4be6e9e8f620c13e6f391b52a377e7c44e553025))
 
 ## 1.0.0 (2024-07-10)
