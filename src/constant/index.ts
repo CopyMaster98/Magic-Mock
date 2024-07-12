@@ -1,6 +1,14 @@
 import * as header from "./header";
 
-const methods = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
+const methods = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "HEAD",
+  "OPTIONS",
+] as const;
 
 const methodOptions = methods.map((item) => ({
   label: item,
@@ -14,4 +22,4 @@ const methodColors = methodOptions.map((item, index) => ({
   color: color[index],
 }));
 
-export { header, methodOptions, methodColors };
+export { header, methodOptions, methodColors, methods };

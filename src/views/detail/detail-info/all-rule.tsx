@@ -6,7 +6,7 @@ import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
 import { useCallback, useMemo, useState } from "react";
-import { FolderAPI, RuleAPI } from "../../../api";
+import { CacheAPI, FolderAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import { methodColors } from "../../../constant";
@@ -20,9 +20,18 @@ const AllRule: React.FC<{
   const { pathname, search } = url.usePathname();
   const { setRefresh, openDialog, updateDialogInfo, closeDialog } = useData();
   const [switchLoading, setSwitchLoading] = useState(false);
-  const handleNavigate = (item: any) => {
-    navigate(`/${pathname.join("/")}/${item.key}${search}&ruleId=${item.id}`);
-  };
+  const handleNavigate = useCallback(
+    (item: any, type: "mock" | "cache" = "mock") => {
+      let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
+        item.id
+      }&type=${type}`;
+
+      if (type === "cache") url += `&methodType=${item.method}`;
+
+      navigate(url);
+    },
+    [navigate, pathname, search]
+  );
   const toggleRuleStatus = useCallback(
     async (rule: any) => {
       setSwitchLoading(true);
@@ -34,6 +43,26 @@ const AllRule: React.FC<{
           ruleStatus: !rule?.content?.ruleStatus,
         },
       });
+      setSwitchLoading(false);
+      setRefresh();
+      closeDialog?.();
+    },
+    [closeDialog, setRefresh]
+  );
+
+  const toggleCacheStatus = useCallback(
+    async (item: any) => {
+      setSwitchLoading(true);
+
+      await CacheAPI.updateCacheInfo({
+        projectId: item.parent.id,
+        ruleId: item.id,
+        cacheInfo: {
+          cacheStatus: !item?.content?.cacheStatus,
+          cacheMethodType: item?.content?.params?.request?.method,
+        },
+      });
+
       setSwitchLoading(false);
       setRefresh();
       closeDialog?.();
@@ -88,15 +117,6 @@ const AllRule: React.FC<{
                   margin: "0 30px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
-                  // ...(item?.content?.ruleStatus
-                  //   ? {
-                  //       background:
-                  //         "repeating-conic-gradient(from var(--dir), #0f0, #ff0, #0ff, #f0f,#0ff)",
-                  //       // backgroundImage:
-                  //       //   "linear-gradient(var(--dir), #eaff8f, #52c41a 43%, #5cdbd3)",
-                  //       animation: "rotate 4s linear infinite",
-                  //     }
-                  //   : {}),
                 }}
               >
                 <Card
@@ -118,15 +138,8 @@ const AllRule: React.FC<{
                       title={
                         <>
                           <span>{item.name}</span>
-                          <Tag
-                            color={
-                              item.type === "cache" ? "processing" : "success"
-                            }
-                            style={{ marginLeft: "10px" }}
-                          >
-                            <span>
-                              {item.type === "cache" ? "Cache" : "Mock"}
-                            </span>
+                          <Tag color="success" style={{ marginLeft: "10px" }}>
+                            <span>Mock</span>
                           </Tag>
                           <Switch
                             checkedChildren="开启"
@@ -159,19 +172,12 @@ const AllRule: React.FC<{
             {cacheData?.map((item) => (
               <div
                 key={item.id}
-                className={item?.content?.ruleStatus ? "rule-card" : ""}
+                className={item?.content?.cacheStatus ? "rule-card" : ""}
                 style={{
                   padding: "5px",
                   margin: "0 30px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
-                  // ...(item?.content?.ruleStatus
-                  //   ? {
-                  //       backgroundImage:
-                  //         "linear-gradient(var(--dir), #5ddcff, #3c67e3 43%, #4e00c2)",
-                  //       animation: "rotate 4s linear infinite",
-                  //     }
-                  //   : {}),
                 }}
               >
                 <Card
@@ -183,7 +189,7 @@ const AllRule: React.FC<{
                   actions={[
                     <SettingOutlined
                       key="setting"
-                      onClick={() => handleNavigate(item)}
+                      onClick={() => handleNavigate(item, "cache")}
                     />,
                   ]}
                 >
@@ -202,22 +208,18 @@ const AllRule: React.FC<{
                             <span>{findMethod(item)?.name ?? "null"}</span>
                           </Tag>
                           <Tag
-                            color={
-                              item.type === "cache" ? "processing" : "success"
-                            }
+                            color="processing"
                             style={{ marginLeft: "10px" }}
                           >
-                            <span>
-                              {item.type === "cache" ? "Cache" : "Mock"}
-                            </span>
+                            <span>Cache</span>
                           </Tag>
                           <Switch
                             checkedChildren="开启"
                             unCheckedChildren="关闭"
                             loading={switchLoading}
-                            defaultValue={item?.content?.ruleStatus}
+                            defaultValue={item?.content?.cacheStatus}
                             style={{ float: "right" }}
-                            // onClick={() => toggleRuleStatus(item)}
+                            onClick={() => toggleCacheStatus(item)}
                           />
                         </>
                       }
@@ -238,6 +240,7 @@ const AllRule: React.FC<{
     openConfirmDialog,
     rules,
     switchLoading,
+    toggleCacheStatus,
     toggleRuleStatus,
   ]);
 

@@ -56,8 +56,8 @@ const watchFolder = (folderPath, clients) => {
   });
 };
 
-const findFile = (id, path = "") => {
-  return (fs.readdirSync(folderPath(path)) ?? []).find(
+const findFile = (id, path = "", rootPath = CONSTANT.MAGIC_MOCK_DATA) => {
+  return (fs.readdirSync(folderPath(path, rootPath)) ?? []).find(
     (item) => hashUtils.getHash(item) === id
   );
 };

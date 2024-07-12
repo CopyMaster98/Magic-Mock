@@ -110,7 +110,6 @@ router.post("/create", async (ctx) => {
 
 router.get("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
-
   const folder = folderUtils.findFile(projectId);
   const rule = folderUtils.findFile(ruleId, folder);
 
@@ -128,8 +127,8 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
       statusCode: -1,
       data: null,
     };
-    ctx.set("notification", true);
   }
+  ctx.set("notification", true);
 });
 
 router.put("/info/:projectId/:ruleId", async (ctx) => {
