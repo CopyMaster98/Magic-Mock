@@ -55,10 +55,3 @@
 * rename mkdir error ([47a4630](https://github.com/CopyMaster98/Magic-Mock/commit/47a4630072325e3222d94ef4551480c2c28f7811))
 * rule name ([9222af1](https://github.com/CopyMaster98/Magic-Mock/commit/9222af153727d48b01921aae9fbaaa8efe4a8d4e))
 * rule name ([ba6af03](https://github.com/CopyMaster98/Magic-Mock/commit/ba6af0341f0169b7d934b1979d52958379d77629))
-
-## 1.0.0 (2024-07-10)
-
-
-### Features
-
-* project init ([5505cfa](https://github.com/CopyMaster98/Magic-Mock/commit/5505cfabdc019edb1a2275f1510e0ee6a020d7d4))
