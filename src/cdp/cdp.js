@@ -7,6 +7,7 @@ const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
 const { folderUtils, commonUtils } = require("../backend/src/utils");
+const { unescape } = require("querystring");
 
 (async () => {
   const chromePath = findChrome();
@@ -376,7 +377,7 @@ async function intercept(data, page) {
             responseHeaders: params.responseHeaders,
             responseCode:
               matchedPattern.responseStatusCode ?? params.responseStatusCode,
-            body: btoa(JSON.stringify(responseData)),
+            body: btoa(unescape(JSON.stringify(responseData))),
           });
         } else if (params.request.method !== "OPTIONS") {
           const data = commonUtils.isValidJSON(params.request.postData)
@@ -413,7 +414,7 @@ async function intercept(data, page) {
           Fetch.continueRequest({
             headers: newHeaders,
             requestId: params.requestId,
-            postData: btoa(JSON.stringify(data)),
+            postData: btoa(unescape(JSON.stringify(data))),
           });
         } else {
           Fetch.continueRequest({ requestId: params.requestId });
