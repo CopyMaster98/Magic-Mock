@@ -329,7 +329,9 @@ async function intercept(data, page) {
         });
 
         try {
-          responseData = response.body && JSON.parse(atob(response.body));
+          responseData =
+            response.body &&
+            JSON.parse(Buffer.from(response.body, "base64").toString());
         } catch (error) {}
 
         params.responseData = responseData;
@@ -377,7 +379,9 @@ async function intercept(data, page) {
             responseHeaders: params.responseHeaders,
             responseCode:
               matchedPattern.responseStatusCode ?? params.responseStatusCode,
-            body: btoa(unescape(JSON.stringify(responseData))),
+            body:
+              responseData &&
+              Buffer.from(JSON.stringify(responseData)).toString("base64"),
           });
         } else if (params.request.method !== "OPTIONS") {
           const data = commonUtils.isValidJSON(params.request.postData)
@@ -414,7 +418,8 @@ async function intercept(data, page) {
           Fetch.continueRequest({
             headers: newHeaders,
             requestId: params.requestId,
-            postData: btoa(unescape(JSON.stringify(data))),
+            postData:
+              data && Buffer.from(JSON.stringify(data)).toString("base64"),
           });
         } else {
           Fetch.continueRequest({ requestId: params.requestId });
