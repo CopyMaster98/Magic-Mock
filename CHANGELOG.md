@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.0.1...v1.0.2) (2024-07-12)
+
+
+### Bug Fixes
+
+* btoa error DOMException invalid character ([81a695b](https://github.com/CopyMaster98/Magic-Mock/commit/81a695b3a57b725c7d0de7e2e526c707e903418b))
+
 ## [1.0.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.0.0...v1.0.1) (2024-07-12)
 
 
