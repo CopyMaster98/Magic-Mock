@@ -62,7 +62,8 @@ router.get("/info", async (ctx, next) => {
               content: content.length ? JSON.parse(content) : {},
               type: "mock",
             };
-          });
+          })
+          .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
         const [name, url] = item.split("@@");
         const currentProjectStatus = global.projectStatus.get(name);
 

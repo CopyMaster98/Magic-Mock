@@ -99,6 +99,7 @@ const DetailInfo: React.FC<{
                     : "json",
                 },
                 payload,
+                responseStatusCode: formValue.responseStatusCode ?? 200,
                 ruleStatus: true,
               });
               setRefresh();
@@ -168,7 +169,6 @@ const DetailInfo: React.FC<{
           payloadJSON?: string;
           responseStatusCode?: number;
         }) => {
-          console.log(formValue);
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
             ? formValue.requestHeaderJSON &&
               Object.keys(formValue.requestHeaderJSON).length > 0
@@ -209,7 +209,7 @@ const DetailInfo: React.FC<{
                   : "json",
               },
               payload,
-              responseStatusCode: formValue.responseStatusCode ?? null,
+              responseStatusCode: formValue.responseStatusCode ?? 200,
             },
           });
 

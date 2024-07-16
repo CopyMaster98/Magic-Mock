@@ -1,7 +1,14 @@
 .container {
-  scrollbar-width: none;
+  .ant-tabs-content-holder {
+    scrollbar-width: none;
+    overflow-y: scroll;
+  }
   .ant-card-body {
     line-height: 1;
+  }
+
+  > .ant-tabs {
+    width: 100%;
   }
 }
 
@@ -34,9 +41,15 @@
 
 .ant-tabs-tabpane > div {
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: space-around;
 }
 
-#rc-tabs-0-panel-2 > div {
-  justify-content: space-around;
+.ant-card-meta-title > div > div {
+  align-items: center;
+}
+
+.method-select {
+  position: absolute;
+  width: auto; 
+  right: 48px
 }

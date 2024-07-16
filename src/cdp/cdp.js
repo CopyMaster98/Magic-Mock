@@ -101,36 +101,44 @@ const updateConfig = (configPath) => {
 };
 
 const updateFileOrFolder = (data, path) => {
-  if (folderUtils.folderExists(path)) {
-    const methodPath = path + "/" + data.params.request.method;
+  if (!folderUtils.folderExists(path)) folderUtils.createFolder(path);
 
-    if (folderUtils.folderExists(methodPath)) {
-      const requestFile =
-        methodPath +
-        "/" +
-        hashUtils.getHash(encodeURIComponent(data.params.request.url)) +
-        ".request.json";
+  const methodPath = path + "/" + data.params.request.method;
 
-      if (folderUtils.folderExists(requestFile)) {
-      } else {
-        folderUtils.createFile(
-          requestFile,
-          JSON.stringify(
-            {
-              id: hashUtils.getHash(JSON.stringify(+new Date())),
-              ...data,
-            },
-            null,
-            2
-          )
-        );
-      }
-    } else {
-      folderUtils.createFolder(methodPath);
-    }
-    // const requestName = encodeURIComponent(params.request.url)
+  if (!folderUtils.folderExists(methodPath))
+    folderUtils.createFolder(methodPath);
+  const requestFile =
+    methodPath +
+    "/" +
+    hashUtils.getHash(
+      encodeURIComponent(data.params.request.url?.split("?")[0])
+    ) +
+    ".request.json";
+
+  if (folderUtils.folderExists(requestFile)) {
+    fs.writeFileSync(
+      requestFile,
+      JSON.stringify(
+        {
+          id: hashUtils.getHash(JSON.stringify(+new Date())),
+          ...data,
+        },
+        null,
+        2
+      )
+    );
   } else {
-    folderUtils.createFolder(path);
+    folderUtils.createFile(
+      requestFile,
+      JSON.stringify(
+        {
+          id: hashUtils.getHash(JSON.stringify(+new Date())),
+          ...data,
+        },
+        null,
+        2
+      )
+    );
   }
 };
 
@@ -138,10 +146,17 @@ async function intercept(data, page) {
   let client;
   let config = {};
   let urlPatterns = [];
+  const cacheDataConfig = {};
   const { name, url, port } = data;
   const projectName = folderUtils.folderPath(
     `${name}@@${encodeURIComponent(url)}`
   );
+  const cacheDataProjectName = folderUtils.folderPath(
+    `${name}@@${encodeURIComponent(url)}`,
+    CONSTANT.LOCAL_SERVER
+  );
+
+  let cacheDataUrlPatterns = [];
   let rules = fs.readdirSync(projectName);
   let configFile = rules.filter((item) => item.endsWith(".config.json"));
   const fileContentMap = new Map();
@@ -159,108 +174,108 @@ async function intercept(data, page) {
       }),
     ]);
 
-    if (configFile.length) {
-      const handleUpdate = async (configPath, isInit = false) => {
-        if (isInit) {
-          config.responseData = [];
-          config.requestHeader = [];
-          urlPatterns = [];
-        }
+    const handleUpdate = async (configPath, isInit = false) => {
+      if (isInit) {
+        config.responseData = [];
+        config.requestHeader = [];
+        urlPatterns = [];
+      }
 
-        let isFileExists = folderUtils.folderExists(configPath);
+      let isFileExists = folderUtils.folderExists(configPath);
 
-        let fileContent = !isFileExists
-          ? fileContentMap.get(configPath)
-          : updateConfig(configPath);
+      let fileContent = !isFileExists
+        ? fileContentMap.get(configPath)
+        : updateConfig(configPath);
 
-        if (!isFileExists) {
-          config.responseData = config.responseData.filter(
-            (item) => item.ruleName !== fileContent?.ruleName
-          );
-          urlPatterns = urlPatterns.filter(
-            (item) => item.ruleName !== fileContent?.ruleName
-          );
-          fileContentMap.delete(configPath);
-          return;
-        }
-
-        fileContentMap.set(configPath, fileContent);
-
-        const {
-          patterns,
-          responseData,
-          requestHeader,
-          requestHeaderType,
-          ruleName,
-          rulePattern,
-          ruleMethod,
-          ruleStatus,
-          responseDataType,
-          responseStatusCode,
-        } = fileContent;
-
+      if (!isFileExists) {
         config.responseData = config.responseData.filter(
-          (item) => item.ruleName !== ruleName
+          (item) => item.ruleName !== fileContent?.ruleName
         );
-        config.requestHeader = config.requestHeader.filter(
-          (item) => item.ruleName !== ruleName
+        urlPatterns = urlPatterns.filter(
+          (item) => item.ruleName !== fileContent?.ruleName
         );
+        fileContentMap.delete(configPath);
+        return;
+      }
 
-        config.responseData.push({
+      fileContentMap.set(configPath, fileContent);
+
+      const {
+        patterns,
+        responseData,
+        requestHeader,
+        requestHeaderType,
+        ruleName,
+        rulePattern,
+        ruleMethod,
+        ruleStatus,
+        responseDataType,
+        responseStatusCode,
+      } = fileContent;
+
+      config.responseData = config.responseData.filter(
+        (item) => item.ruleName !== ruleName
+      );
+      config.requestHeader = config.requestHeader.filter(
+        (item) => item.ruleName !== ruleName
+      );
+
+      config.responseData.push({
+        ruleName,
+        rulePattern,
+        path: configPath,
+        value: responseData,
+        responseDataType,
+        ruleMethod,
+        responseStatusCode,
+      });
+
+      config.requestHeader.push({
+        value: requestHeader,
+        requestHeaderType,
+        ruleMethod,
+        ruleName,
+        rulePattern,
+        path: configPath,
+        responseStatusCode,
+      });
+
+      urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
+      if (ruleStatus)
+        urlPatterns.push({
           ruleName,
           rulePattern,
           path: configPath,
-          value: responseData,
-          responseDataType,
-          ruleMethod,
-          responseStatusCode,
+          value: patterns,
+          ruleMethod: ruleMethod,
         });
 
-        config.requestHeader.push({
-          value: requestHeader,
-          requestHeaderType,
-          ruleMethod,
-          ruleName,
-          rulePattern,
-          path: configPath,
-          responseStatusCode,
+      if (
+        (urlPatterns.length > 0 &&
+          !urlPatterns[0].value[0].hasOwnProperty("init")) ||
+        urlPatterns.length === 0
+      ) {
+        urlPatterns.unshift({
+          value: [
+            {
+              urlPattern: "*",
+              requestStage: "Response",
+              resourceType: "XHR",
+              init: true,
+            },
+            {
+              urlPattern: "*",
+              requestStage: "Response",
+              resourceType: "Fetch",
+              init: true,
+            },
+          ],
         });
-
-        urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
-        if (ruleStatus)
-          urlPatterns.push({
-            ruleName,
-            rulePattern,
-            path: configPath,
-            value: patterns,
-            ruleMethod: ruleMethod,
-          });
-
-        if (
-          (urlPatterns.length > 0 &&
-            !urlPatterns[0].value[0].hasOwnProperty("init")) ||
-          urlPatterns.length === 0
-        ) {
-          urlPatterns.unshift({
-            value: [
-              {
-                urlPattern: "*",
-                requestStage: "Response",
-                resourceType: "XHR",
-                init: true,
-              },
-              {
-                urlPattern: "*",
-                requestStage: "Response",
-                resourceType: "Fetch",
-                init: true,
-              },
-            ],
-          });
-        }
-        // TODO need delete
-        process.stdout.write(JSON.stringify(config.responseData));
-      };
+      }
+      // TODO need delete
+      process.stdout.write(JSON.stringify(config.responseData));
+    };
+    const initWatch = async () =>
       await new Promise(async (resolve) => {
         rules = fs.readdirSync(projectName);
         configFile = rules.filter((item) => item.endsWith(".config.json"));
@@ -287,11 +302,140 @@ async function intercept(data, page) {
         });
         resolve();
       });
+
+    const initCacheDataConfig = async (path) => {
+      if (path) {
+        const info = path.split("/");
+        const method = info[info.length - 2];
+        const content = JSON.parse(fs.readFileSync(path, "utf8"));
+        content.path = path;
+        if (!cacheDataConfig[method]) cacheDataConfig[method] = [];
+        cacheDataConfig[method] = cacheDataConfig[method].filter(
+          (item) => item.id !== content.id
+        );
+        cacheDataConfig[method].push(content);
+      } else if (folderUtils.folderExists(cacheDataProjectName)) {
+        const methods = fs.readdirSync(cacheDataProjectName);
+
+        methods.forEach((method) => {
+          const cacheFilePath = fs.readdirSync(
+            `${cacheDataProjectName}/${method}`
+          );
+          cacheFilePath.forEach((fileName) => {
+            const localPath = `${cacheDataProjectName}/${method}/${fileName}`;
+            const content = JSON.parse(fs.readFileSync(localPath, "utf8"));
+
+            content.path = localPath;
+
+            if (!cacheDataConfig[method]) cacheDataConfig[method] = [];
+
+            cacheDataConfig[method].filter((item) => item.id !== content.id);
+            cacheDataConfig[method].push(content);
+          });
+        });
+      }
+
+      const urlPattern = [];
+      Object.keys(cacheDataConfig).forEach((method) => {
+        cacheDataConfig[method].forEach((item) => {
+          const url = item.params.request.url.split("?")[0];
+          const findCachePattern = urlPattern.find(
+            (_item) => _item.rulePattern === `*${url}*`
+          );
+
+          if (findCachePattern) {
+            findCachePattern.value = findCachePattern.value.filter(
+              (_item) => _item.methodType !== item.params.request.method
+            );
+            findCachePattern.cacheStatus = item.cacheStatus;
+            findCachePattern.value.push(
+              ...[
+                {
+                  ...item,
+                  responseStatusCode: 200,
+                  urlPattern: `*${url}*`,
+                  requestStage: "Request",
+                  methodType: method,
+                },
+                {
+                  ...item,
+                  responseStatusCode: 200,
+                  urlPattern: `*${url}*`,
+                  requestStage: "Response",
+                  methodType: method,
+                },
+              ]
+            );
+          } else {
+            urlPattern.push({
+              rulePattern: `*${url}*`,
+              ruleName: item.id,
+              cacheStatus: item.cacheStatus,
+              value: [
+                {
+                  ...item,
+                  responseStatusCode: 200,
+                  urlPattern: `*${url}*`,
+                  requestStage: "Request",
+                  methodType: method,
+                },
+                {
+                  ...item,
+                  responseStatusCode: 200,
+                  urlPattern: `*${url}*`,
+                  requestStage: "Response",
+                  methodType: method,
+                },
+              ],
+            });
+          }
+        });
+      });
+
+      cacheDataUrlPatterns = urlPattern;
+
+      // TODO test code need delete
+      const a = [
+        ...urlPatterns.map((item) => item.value).flat(Infinity),
+        ...cacheDataUrlPatterns
+          .filter((item) => item.cacheStatus)
+          .map((item) => item.value)
+          .flat(Infinity),
+      ];
+      console.log(a);
+      // await Fetch.enable({
+      //   patterns: [
+      //     ...urlPatterns.map((item) => item.value).flat(Infinity),
+      //     ...cacheDataUrlPatterns.map((item) => item.value).flat(Infinity),
+      //   ],
+      // });
+    };
+
+    const watcher = chokidar.watch(cacheDataProjectName, {
+      ignored: /(^|[/\\])\../, // 忽略隐藏文件
+      persistent: true, // 持续监听
+    });
+
+    watcher.on("change", async (path, stats) => {
+      await initCacheDataConfig(path);
+    });
+    await initCacheDataConfig();
+    if (configFile.length) {
+      await initWatch();
+    } else {
+      const watcher = chokidar.watch(projectName, {
+        ignored: /(^|[/\\])\../, // 忽略隐藏文件
+        persistent: true, // 持续监听
+      });
+
+      watcher.on("add", async (path, stats) => {
+        watcher.unwatch();
+        await initWatch();
+      });
     }
 
     Fetch.requestPaused(async (params) => {
       const requestUrl = params.request.url;
-      console.log(params);
       const allUrlPatterns = urlPatterns
         .map((item) => item.value)
         .flat(Infinity);
@@ -382,7 +526,7 @@ async function intercept(data, page) {
           const serverPath = folderUtils.folderPath(CONSTANT.LOCAL_SERVER, "");
           folderUtils.createFolder(serverPath);
           updateFileOrFolder(
-            { ...params, cacheStatus: false },
+            { params, cacheStatus: false },
             localServerProjectPath
           );
         }
@@ -448,7 +592,7 @@ async function intercept(data, page) {
                 }
               );
               newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-            } else
+            } else if (matchedRequestHeader.value)
               newHeaders = Object.entries(matchedRequestHeader?.value).map(
                 ([name, value]) => ({ name, value: value?.toString() })
               );

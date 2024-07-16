@@ -1,4 +1,4 @@
-import { Card, Skeleton, Switch, Tabs, Tag } from "antd";
+import { Button, Card, Select, Skeleton, Switch, Tabs, Tag } from "antd";
 import Meta from "antd/es/card/Meta";
 import { SettingOutlined } from "@ant-design/icons";
 import RightClickMenu from "../../../components/right-click-menu";
@@ -9,7 +9,7 @@ import { useCallback, useMemo, useState } from "react";
 import { CacheAPI, FolderAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import { methodColors } from "../../../constant";
+import { methodColors, methodOptions } from "../../../constant";
 
 const AllRule: React.FC<{
   rules: any[];
@@ -114,7 +114,7 @@ const AllRule: React.FC<{
                 className={item?.content?.ruleStatus ? "rule-card" : ""}
                 style={{
                   padding: "5px",
-                  margin: "0 5px 30px 5px",
+                  margin: "5px 5px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
                 }}
@@ -123,7 +123,7 @@ const AllRule: React.FC<{
                   className="card-container"
                   style={{
                     height: "100%",
-                    width: 350,
+                    width: 360,
                     marginLeft: 0,
                   }}
                   actions={[
@@ -204,7 +204,7 @@ const AllRule: React.FC<{
                 className={item?.content?.cacheStatus ? "rule-card" : ""}
                 style={{
                   padding: "5px",
-                  margin: "0 5px 30px 5px",
+                  margin: "5px 5px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
                 }}
@@ -224,7 +224,7 @@ const AllRule: React.FC<{
                   ]}
                   hoverable
                 >
-                  <RightClickMenu item={item} handleClick={openConfirmDialog} />
+                  {/* <RightClickMenu item={item} handleClick={openConfirmDialog} /> */}
                   <Skeleton loading={false} avatar active>
                     <Meta
                       title={
@@ -304,6 +304,20 @@ const AllRule: React.FC<{
   return (
     <>
       <Tabs defaultActiveKey="1" items={items} />
+      <div className="method-select">
+        <label htmlFor="methodSelect">Method Filter: </label>
+        <Select
+          style={{
+            minWidth: "150px",
+            marginLeft: "15px",
+          }}
+          id="methodSelect"
+          mode="multiple"
+          allowClear
+          placeholder="Please select"
+          options={methodOptions}
+        />
+      </div>
     </>
   );
 };

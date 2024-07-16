@@ -10,6 +10,7 @@ const createRule = (
     responseData: string | any;
     ruleStatus: boolean;
     payload: string | null;
+    responseStatusCode?: number;
   },
   config = {}
 ) => {

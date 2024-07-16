@@ -67,6 +67,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       requestHeaderInputValueRef.current = null;
       responseDataInputValueRef.current = null;
       setPayloadStatus(false);
+      setRequestHeaderInputType(true);
+      setResponseDataInputType(true);
     },
     onInit: form.resetFields,
     requestHeaderInputType,
@@ -285,7 +287,13 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       setTimeout(() =>
         form.setFieldValue("responseData", responseDataInputValueRef.current)
       );
-  }, [form, isUpdate, requestHeaderInputType, responseDataInputType]);
+  }, [
+    form,
+    isUpdate,
+    requestHeaderInputType,
+    responseDataInputType,
+    payloadStatus,
+  ]);
 
   return (
     <Form
@@ -385,7 +393,16 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           style={{
             display: payloadStatus ? "none" : "block",
           }}
-          onClick={() => setPayloadStatus(true)}
+          onClick={() => {
+            formBaseValueRef.current = {
+              ruleName: form.getFieldValue("ruleName"),
+              rulePattern: form.getFieldValue("rulePattern"),
+              ruleMethod: form.getFieldValue("ruleMethod"),
+              responseStatusCode: form.getFieldValue("responseStatusCode"),
+            };
+
+            setPayloadStatus(true);
+          }}
           block
         >
           + Add Request Payload
@@ -477,11 +494,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
               if (errors.length) return;
 
-              form.setFieldValue(
-                "requestHeaderJSON",
-                requestHeaderEditor.get()
-              );
-              requestHeaderEditorValueRef.current = requestHeaderEditor.get();
+              let data = null;
+
+              try {
+                data = requestHeaderEditor.get();
+              } catch (error) {}
+
+              form.setFieldValue("requestHeaderJSON", data);
+              requestHeaderEditorValueRef.current = data;
             }}
           ></div>
           <SwapOutlined
@@ -502,6 +522,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           max={599}
           controls={false}
           style={{ width: "100%" }}
+          defaultValue={200}
           placeholder="Default value is the original status code"
         />
       </Form.Item>
@@ -591,8 +612,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
               if (errors.length) return;
 
-              form.setFieldValue("responseDataJSON", responseDataEditor.get());
-              responseDataEditorValueRef.current = responseDataEditor.get();
+              let data = null;
+
+              try {
+                data = responseDataEditor.get();
+              } catch (error) {}
+
+              form.setFieldValue("responseDataJSON", data);
+              responseDataEditorValueRef.current = data;
             }}
           ></div>
           <SwapOutlined
