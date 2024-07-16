@@ -114,7 +114,7 @@ const AllRule: React.FC<{
                 className={item?.content?.ruleStatus ? "rule-card" : ""}
                 style={{
                   padding: "5px",
-                  margin: "0 30px 30px 5px",
+                  margin: "0 5px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
                 }}
@@ -122,7 +122,8 @@ const AllRule: React.FC<{
                 <Card
                   className="card-container"
                   style={{
-                    minWidth: 300,
+                    height: "100%",
+                    width: 350,
                     marginLeft: 0,
                   }}
                   actions={[
@@ -131,24 +132,52 @@ const AllRule: React.FC<{
                       onClick={() => handleNavigate(item)}
                     />,
                   ]}
+                  hoverable
                 >
                   <RightClickMenu item={item} handleClick={openConfirmDialog} />
                   <Skeleton loading={false} avatar active>
                     <Meta
                       title={
                         <>
-                          <span>{item.name}</span>
-                          <Tag color="success" style={{ marginLeft: "10px" }}>
-                            <span>Mock</span>
-                          </Tag>
-                          <Switch
-                            checkedChildren="开启"
-                            unCheckedChildren="关闭"
-                            loading={switchLoading}
-                            defaultValue={item?.content?.ruleStatus}
-                            style={{ float: "right" }}
-                            onClick={() => toggleRuleStatus(item)}
-                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                flex: 1,
+                                width: 0,
+                                marginRight: "20px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {item.name}
+                              </span>
+                              <Tag
+                                color="success"
+                                style={{ marginLeft: "10px" }}
+                              >
+                                <span>Mock</span>
+                              </Tag>
+                            </div>
+                            <Switch
+                              checkedChildren="开启"
+                              unCheckedChildren="关闭"
+                              loading={switchLoading}
+                              defaultValue={item?.content?.ruleStatus}
+                              style={{ float: "right" }}
+                              onClick={() => toggleRuleStatus(item)}
+                            />
+                          </div>
                         </>
                       }
                       // description="This is the description"
@@ -175,7 +204,7 @@ const AllRule: React.FC<{
                 className={item?.content?.cacheStatus ? "rule-card" : ""}
                 style={{
                   padding: "5px",
-                  margin: "0 30px 30px 5px",
+                  margin: "0 5px 30px 5px",
                   borderRadius: "8px",
                   backgroundColor: "transparent",
                 }}
@@ -183,7 +212,8 @@ const AllRule: React.FC<{
                 <Card
                   className="card-container"
                   style={{
-                    minWidth: 300,
+                    height: "100%",
+                    width: 500,
                     marginLeft: 0,
                   }}
                   actions={[
@@ -192,35 +222,62 @@ const AllRule: React.FC<{
                       onClick={() => handleNavigate(item, "cache")}
                     />,
                   ]}
+                  hoverable
                 >
                   <RightClickMenu item={item} handleClick={openConfirmDialog} />
                   <Skeleton loading={false} avatar active>
                     <Meta
                       title={
                         <>
-                          <span>
-                            {new URL(item.content.params.request.url).pathname}
-                          </span>
-                          <Tag
-                            color={findMethod(item)?.color ?? "default"}
-                            style={{ marginLeft: "10px" }}
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                            }}
                           >
-                            <span>{findMethod(item)?.name ?? "null"}</span>
-                          </Tag>
-                          <Tag
-                            color="processing"
-                            style={{ marginLeft: "10px" }}
-                          >
-                            <span>Cache</span>
-                          </Tag>
-                          <Switch
-                            checkedChildren="开启"
-                            unCheckedChildren="关闭"
-                            loading={switchLoading}
-                            defaultValue={item?.content?.cacheStatus}
-                            style={{ float: "right" }}
-                            onClick={() => toggleCacheStatus(item)}
-                          />
+                            <div
+                              style={{
+                                display: "flex",
+                                flex: 1,
+                                width: 0,
+                                marginRight: "20px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {new URL(item.content.params.request.url)
+                                  .pathname === "/"
+                                  ? item.content.params.request.url
+                                  : new URL(item.content.params.request.url)
+                                      .pathname}
+                              </span>
+                              <Tag
+                                color={findMethod(item)?.color ?? "default"}
+                                style={{ marginLeft: "10px" }}
+                              >
+                                <span>{findMethod(item)?.name ?? "null"}</span>
+                              </Tag>
+                              <Tag
+                                color="processing"
+                                style={{ marginLeft: "10px" }}
+                              >
+                                <span>Cache</span>
+                              </Tag>
+                            </div>
+                            <Switch
+                              checkedChildren="开启"
+                              unCheckedChildren="关闭"
+                              loading={switchLoading}
+                              defaultValue={item?.content?.cacheStatus}
+                              style={{ float: "right" }}
+                              onClick={() => toggleCacheStatus(item)}
+                            />
+                          </div>
                         </>
                       }
                       // description="This is the description"

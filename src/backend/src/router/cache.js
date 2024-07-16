@@ -12,14 +12,36 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
   const cacheFile = folderUtils.findFile(ruleId, folder, LOCAL_SERVER);
 
   if (cacheFile) {
-    const content = folderUtils.folderContent(
+    let content = folderUtils.folderContent(
       folderPath(`${folder}/${cacheFile}`, LOCAL_SERVER)
     );
+
+    let res = null;
+
+    if (content) {
+      content = JSON.parse(content);
+      const { id, params, cacheStatus } = content;
+
+      const ruleName = new URL(params.request.url).pathname;
+
+      res = {
+        id,
+        cacheStatus,
+        payloadJSON: null,
+        requestHeaderJSON: params?.request?.headers,
+        requestHeaderType: "json",
+        responseDataJSON: params?.responseData,
+        responseDataType: "json",
+        responseStatusCode: 200,
+        ruleName: ruleName === "/" ? params?.request?.url : ruleName,
+        rulePattern: params?.request?.url,
+      };
+    }
 
     ctx.response.body = {
       message: "规则信息获取成功",
       statusCode: 0,
-      data: content ? JSON.parse(content) : {},
+      data: res ?? {},
     };
   } else {
     ctx.response.body = {

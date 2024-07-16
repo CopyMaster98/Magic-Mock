@@ -117,6 +117,7 @@ const updateFileOrFolder = (data, path) => {
           requestFile,
           JSON.stringify(
             {
+              id: hashUtils.getHash(JSON.stringify(+new Date())),
               ...data,
             },
             null,
@@ -374,14 +375,14 @@ async function intercept(data, page) {
           params.responseStatusCode.toString().startsWith("2")
         ) {
           updateFileOrFolder(
-            { params, ruleStatus: false },
+            { params, cacheStatus: false },
             localServerProjectPath
           );
         } else {
           const serverPath = folderUtils.folderPath(CONSTANT.LOCAL_SERVER, "");
           folderUtils.createFolder(serverPath);
           updateFileOrFolder(
-            { ...params, ruleStatus: false },
+            { ...params, cacheStatus: false },
             localServerProjectPath
           );
         }

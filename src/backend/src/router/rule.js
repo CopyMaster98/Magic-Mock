@@ -73,16 +73,7 @@ router.post("/create", async (ctx) => {
           `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,
           JSON.stringify(
             {
-              id: hashUtils.getHash(
-                JSON.stringify([
-                  ruleName,
-                  rulePattern,
-                  requestHeader,
-                  responseData,
-                  ruleMethod,
-                  ruleStatus,
-                ])
-              ),
+              id: hashUtils.getHash(JSON.stringify(+new Date())),
               ruleName,
               rulePattern,
               ruleMethod,
@@ -98,6 +89,7 @@ router.post("/create", async (ctx) => {
           statusCode: 0,
         };
       } catch (err) {
+        console.log(err);
         ctx.response.body = {
           message: "规则创建失败",
           statusCode: -1,

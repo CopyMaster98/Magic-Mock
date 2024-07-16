@@ -58,7 +58,7 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
         methodType,
       });
 
-      console.log(res);
+      setRuleForm(res.data);
     },
     []
   );
@@ -69,8 +69,8 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
       .split("&");
     const projectId = projectInfo.split("=")[1];
     const ruleId = ruleInfo.split("=")[1];
-    const type = typeInfo.split("=")[1] as any;
-    const methodType = methodTypeInfo.split("=")[1] as any;
+    const type = typeInfo?.split("=")[1] as any;
+    const methodType = methodTypeInfo?.split("=")[1] as any;
 
     if (type === "mock") getRuleInfo(projectId, ruleId);
     else getCacheInfo(projectId, ruleId, methodType);

@@ -11,6 +11,7 @@ import RuleForm from "../../../components/rule-form";
 import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
+import { scroll } from "../../../hooks";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -36,14 +37,9 @@ const DetailInfo: React.FC<{
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const containerRef = useRef(null);
 
-  // useEffect(() => {
-  //   projectId &&
-  //     !location.search.includes("ruleId") &&
-  //     FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
-  //       console.log(res);
-  //     });
-  // }, [location, pathname, projectId, setSpinning]);
+  // scroll.useHorizontalScroll(containerRef, pathname.length > 1);
 
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
@@ -330,6 +326,7 @@ const DetailInfo: React.FC<{
 
         <div
           className="container"
+          ref={containerRef}
           style={
             pathname.length > 1
               ? {
