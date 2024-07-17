@@ -120,7 +120,9 @@ const updateFileOrFolder = (data, path) => {
       requestFile,
       JSON.stringify(
         {
-          id: hashUtils.getHash(JSON.stringify(+new Date())),
+          id: hashUtils.getHash(
+            encodeURIComponent(data.params.request.url?.split("?")[0])
+          ),
           ...data,
         },
         null,
@@ -132,7 +134,9 @@ const updateFileOrFolder = (data, path) => {
       requestFile,
       JSON.stringify(
         {
-          id: hashUtils.getHash(JSON.stringify(+new Date())),
+          id: hashUtils.getHash(
+            encodeURIComponent(data.params.request.url?.split("?")[0])
+          ),
           ...data,
         },
         null,
@@ -303,12 +307,11 @@ async function intercept(data, page) {
         resolve();
       });
 
-    const initCacheDataConfig = async (path) => {
-      if (path) {
-        const info = path.split("/");
-        const method = info[info.length - 2];
-        const content = JSON.parse(fs.readFileSync(path, "utf8"));
-        content.path = path;
+    const initCacheDataConfig = async (dataPath) => {
+      if (dataPath) {
+        const method = path.basename(path.dirname(dataPath));
+        const content = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+        content.path = dataPath;
         if (!cacheDataConfig[method]) cacheDataConfig[method] = [];
         cacheDataConfig[method] = cacheDataConfig[method].filter(
           (item) => item.id !== content.id
@@ -345,70 +348,78 @@ async function intercept(data, page) {
 
           if (findCachePattern) {
             findCachePattern.value = findCachePattern.value.filter(
-              (_item) => _item.methodType !== item.params.request.method
+              (_item) =>
+                _item.methodType &&
+                _item.methodType !== item.params.request.method
             );
-            findCachePattern.cacheStatus = item.cacheStatus;
-            findCachePattern.value.push(
-              ...[
-                {
-                  ...item,
-                  responseStatusCode: 200,
-                  urlPattern: `*${url}*`,
-                  requestStage: "Request",
-                  methodType: method,
-                },
-                {
-                  ...item,
-                  responseStatusCode: 200,
-                  urlPattern: `*${url}*`,
-                  requestStage: "Response",
-                  methodType: method,
-                },
-              ]
-            );
+
+            if (item.cacheStatus) {
+              findCachePattern.value.push(
+                ...[
+                  {
+                    ...item,
+                    responseStatusCode: 200,
+                    urlPattern: `*${url}*`,
+                    requestStage: "Request",
+                    methodType: method,
+                    patternType: "cache",
+                  },
+                  {
+                    ...item,
+                    responseStatusCode: 200,
+                    urlPattern: `*${url}*`,
+                    requestStage: "Response",
+                    methodType: method,
+                    patternType: "cache",
+                  },
+                ]
+              );
+              if (findCachePattern.value.length === 0)
+                findCachePattern.cacheStatus = false;
+            }
           } else {
-            urlPattern.push({
-              rulePattern: `*${url}*`,
-              ruleName: item.id,
-              cacheStatus: item.cacheStatus,
-              value: [
-                {
-                  ...item,
-                  responseStatusCode: 200,
-                  urlPattern: `*${url}*`,
-                  requestStage: "Request",
-                  methodType: method,
-                },
-                {
-                  ...item,
-                  responseStatusCode: 200,
-                  urlPattern: `*${url}*`,
-                  requestStage: "Response",
-                  methodType: method,
-                },
-              ],
-            });
+            if (item.cacheStatus) {
+              urlPattern.push({
+                rulePattern: `*${url}*`,
+                ruleName: item.id,
+                cacheStatus: item.cacheStatus,
+                value: [
+                  {
+                    ...item,
+                    responseStatusCode: 200,
+                    urlPattern: `*${url}*`,
+                    requestStage: "Request",
+                    methodType: method,
+                    patternType: "cache",
+                  },
+                  {
+                    ...item,
+                    responseStatusCode: 200,
+                    urlPattern: `*${url}*`,
+                    requestStage: "Response",
+                    methodType: method,
+                    patternType: "cache",
+                  },
+                ],
+              });
+            }
           }
         });
       });
 
       cacheDataUrlPatterns = urlPattern;
 
-      // TODO test code need delete
-      const a = [
+      const newUrlPatters = [
         ...urlPatterns.map((item) => item.value).flat(Infinity),
         ...cacheDataUrlPatterns
           .filter((item) => item.cacheStatus)
           .map((item) => item.value)
           .flat(Infinity),
       ];
-      console.log(a);
-      // await Fetch.enable({
-      //   patterns: [
-      //     ...urlPatterns.map((item) => item.value).flat(Infinity),
-      //     ...cacheDataUrlPatterns.map((item) => item.value).flat(Infinity),
-      //   ],
-      // });
+
+      await Fetch.enable({
+        patterns: newUrlPatters,
+      });
     };
 
     const watcher = chokidar.watch(cacheDataProjectName, {
@@ -418,6 +429,11 @@ async function intercept(data, page) {
 
     watcher.on("change", async (path, stats) => {
       await initCacheDataConfig(path);
+    });
+
+    watcher.on("unlink", async (path, stats) => {
+      // TODO need finish when delete cache file then update cacheDataUrlPatterns
+      console.log(path, stats);
     });
     await initCacheDataConfig();
     if (configFile.length) {
@@ -439,6 +455,8 @@ async function intercept(data, page) {
       const allUrlPatterns = urlPatterns
         .map((item) => item.value)
         .flat(Infinity);
+
+      console.log(allUrlPatterns);
       let matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*]?([^*]+)[*]?$/g;
 
@@ -450,6 +468,27 @@ async function intercept(data, page) {
         }
         return false;
       });
+
+      let cacheMatchedPattern = false;
+      if (!matchedPattern) {
+        cacheMatchedPattern = cacheDataUrlPatterns
+          .filter((item) => item.cacheStatus)
+          .map((item) => item.value)
+          .flat(Infinity)
+          .find((pattern) => {
+            const regex = /^[*]?([^*]+)[*]?$/g;
+
+            let match;
+            while ((match = regex.exec(pattern.urlPattern)) !== null) {
+              const res =
+                params.request.url.split("?")[0] === match[1] &&
+                params.request.method === pattern.methodType;
+
+              if (res) return true;
+            }
+            return false;
+          });
+      }
 
       let payloadMatched = true;
 
@@ -514,101 +553,182 @@ async function intercept(data, page) {
 
         params.responseData = responseData;
 
-        if (
-          isExistLocalServer &&
-          params.responseStatusCode.toString().startsWith("2")
-        ) {
-          updateFileOrFolder(
-            { params, cacheStatus: false },
-            localServerProjectPath
-          );
-        } else {
-          const serverPath = folderUtils.folderPath(CONSTANT.LOCAL_SERVER, "");
-          folderUtils.createFolder(serverPath);
-          updateFileOrFolder(
-            { params, cacheStatus: false },
-            localServerProjectPath
-          );
+        if (!cacheMatchedPattern) {
+          if (
+            isExistLocalServer &&
+            (params.responseStatusCode.toString().startsWith("2") ||
+              params.responseStatusCode.toString().startsWith("3"))
+          ) {
+            updateFileOrFolder(
+              { params, cacheStatus: false },
+              localServerProjectPath
+            );
+          } else {
+            const serverPath = folderUtils.folderPath(
+              CONSTANT.LOCAL_SERVER,
+              ""
+            );
+            folderUtils.createFolder(serverPath);
+            updateFileOrFolder(
+              { params, cacheStatus: false },
+              localServerProjectPath
+            );
+          }
         }
       }
 
-      if (
-        matchedPattern &&
-        payloadMatched &&
-        (!matchedPattern.ruleMethod?.length ||
-          matchedPattern.ruleMethod.includes(params.request.method))
-      ) {
-        console.log(`请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`);
-        // 根据需要执行相应的逻辑
-        if (params.responseStatusCode) {
-          // modify responseData
-
-          const matchedResponseData = config.responseData?.find(
-            (item) => item.rulePattern === matchedPattern.urlPattern
+      if (matchedPattern) {
+        if (
+          matchedPattern &&
+          payloadMatched &&
+          (!matchedPattern.ruleMethod?.length ||
+            matchedPattern.ruleMethod.includes(params.request.method))
+        ) {
+          console.log(
+            `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
           );
+          // 根据需要执行相应的逻辑
+          if (params.responseStatusCode) {
+            // modify responseData
 
-          if (matchedResponseData && matchedResponseData.value)
-            if (matchedResponseData.responseDataType === "json")
-              responseData = matchedResponseData.value;
-            else
-              matchedResponseData.value.forEach((item) => {
-                Object.keys(item).forEach((key) => {
-                  commonUtils.deepUpdateValue(responseData, key, item[key]);
+            const matchedResponseData = config.responseData?.find(
+              (item) => item.rulePattern === matchedPattern.urlPattern
+            );
+
+            if (matchedResponseData && matchedResponseData.value)
+              if (matchedResponseData.responseDataType === "json")
+                responseData = matchedResponseData.value;
+              else
+                matchedResponseData.value.forEach((item) => {
+                  Object.keys(item).forEach((key) => {
+                    commonUtils.deepUpdateValue(responseData, key, item[key]);
+                  });
                 });
-              });
 
-          Fetch.fulfillRequest({
-            requestId: params.requestId,
-            responseHeaders: params.responseHeaders,
-            responseCode:
-              matchedPattern.responseStatusCode ?? params.responseStatusCode,
-            body: btoa(JSON.stringify(responseData)),
-          });
-        } else if (params.request.method !== "OPTIONS") {
-          const data = commonUtils.isValidJSON(params.request.postData)
-            ? JSON.parse(params.request.postData)
-            : params.request.postData;
+            Fetch.fulfillRequest({
+              requestId: params.requestId,
+              responseHeaders: params.responseHeaders,
+              responseCode:
+                matchedPattern.responseStatusCode ?? params.responseStatusCode,
+              body: btoa(JSON.stringify(responseData)),
+            });
+          } else if (params.request.method !== "OPTIONS") {
+            const data = commonUtils.isValidJSON(params.request.postData)
+              ? JSON.parse(params.request.postData)
+              : params.request.postData;
 
-          // modify requestData
-          const headersArray = Object.entries(params.request.headers).map(
-            ([name, value]) => ({ name, value: value?.toString() })
-          );
-          const matchedRequestHeader = config.requestHeader?.find(
-            (item) => item.rulePattern === matchedPattern.urlPattern
-          );
+            // modify requestData
+            const headersArray = Object.entries(params.request.headers).map(
+              ([name, value]) => ({ name, value: value?.toString() })
+            );
+            const matchedRequestHeader = config.requestHeader?.find(
+              (item) => item.rulePattern === matchedPattern.urlPattern
+            );
 
-          let newHeaders = headersArray;
+            let newHeaders = headersArray;
 
-          if (matchedRequestHeader) {
-            if (matchedRequestHeader?.requestHeaderType === "text") {
-              const formatMatchedRequestHeader = matchedRequestHeader.value.map(
-                (item) => {
-                  const [name, value] = Object.entries(item)[0];
+            if (matchedRequestHeader) {
+              if (matchedRequestHeader?.requestHeaderType === "text") {
+                const formatMatchedRequestHeader =
+                  matchedRequestHeader.value.map((item) => {
+                    const [name, value] = Object.entries(item)[0];
 
-                  return {
-                    name,
-                    value: value?.toString(),
-                  };
-                }
-              );
-              newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-            } else if (matchedRequestHeader.value)
-              newHeaders = Object.entries(matchedRequestHeader?.value).map(
-                ([name, value]) => ({ name, value: value?.toString() })
-              );
+                    return {
+                      name,
+                      value: value?.toString(),
+                    };
+                  });
+                newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+              } else if (matchedRequestHeader.value)
+                newHeaders = Object.entries(matchedRequestHeader?.value).map(
+                  ([name, value]) => ({ name, value: value?.toString() })
+                );
+            }
+
+            Fetch.continueRequest({
+              headers: newHeaders,
+              requestId: params.requestId,
+              postData: btoa(JSON.stringify(data)),
+            });
+          } else {
+            Fetch.continueRequest({ requestId: params.requestId });
           }
-
-          Fetch.continueRequest({
-            headers: newHeaders,
-            requestId: params.requestId,
-            postData: btoa(JSON.stringify(data)),
-          });
         } else {
+          // console.log(`请求 ${requestUrl} 不匹配任何模式`);
           Fetch.continueRequest({ requestId: params.requestId });
         }
       } else {
-        // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-        Fetch.continueRequest({ requestId: params.requestId });
+        // if (
+        //   cacheMatchedPattern(
+        //     !matchedPattern.ruleMethod?.length ||
+        //       matchedPattern.ruleMethod.includes(params.request.method)
+        //   )
+        // ) {
+        //   console.log(
+        //     `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
+        //   );
+        //   // 根据需要执行相应的逻辑
+        //   if (params.responseStatusCode) {
+        //     // modify responseData
+        //     const matchedResponseData = config.responseData?.find(
+        //       (item) => item.rulePattern === matchedPattern.urlPattern
+        //     );
+        //     if (matchedResponseData && matchedResponseData.value)
+        //       if (matchedResponseData.responseDataType === "json")
+        //         responseData = matchedResponseData.value;
+        //       else
+        //         matchedResponseData.value.forEach((item) => {
+        //           Object.keys(item).forEach((key) => {
+        //             commonUtils.deepUpdateValue(responseData, key, item[key]);
+        //           });
+        //         });
+        //     Fetch.fulfillRequest({
+        //       requestId: params.requestId,
+        //       responseHeaders: params.responseHeaders,
+        //       responseCode:
+        //         matchedPattern.responseStatusCode ?? params.responseStatusCode,
+        //       body: btoa(JSON.stringify(responseData)),
+        //     });
+        //   } else if (params.request.method !== "OPTIONS") {
+        //     const data = commonUtils.isValidJSON(params.request.postData)
+        //       ? JSON.parse(params.request.postData)
+        //       : params.request.postData;
+        //     // modify requestData
+        //     const headersArray = Object.entries(params.request.headers).map(
+        //       ([name, value]) => ({ name, value: value?.toString() })
+        //     );
+        //     const matchedRequestHeader = config.requestHeader?.find(
+        //       (item) => item.rulePattern === matchedPattern.urlPattern
+        //     );
+        //     let newHeaders = headersArray;
+        //     if (matchedRequestHeader) {
+        //       if (matchedRequestHeader?.requestHeaderType === "text") {
+        //         const formatMatchedRequestHeader =
+        //           matchedRequestHeader.value.map((item) => {
+        //             const [name, value] = Object.entries(item)[0];
+        //             return {
+        //               name,
+        //               value: value?.toString(),
+        //             };
+        //           });
+        //         newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+        //       } else if (matchedRequestHeader.value)
+        //         newHeaders = Object.entries(matchedRequestHeader?.value).map(
+        //           ([name, value]) => ({ name, value: value?.toString() })
+        //         );
+        //     }
+        //     Fetch.continueRequest({
+        //       headers: newHeaders,
+        //       requestId: params.requestId,
+        //       postData: btoa(JSON.stringify(data)),
+        //     });
+        //   } else {
+        //     Fetch.continueRequest({ requestId: params.requestId });
+        //   }
+        // } else {
+        //   // console.log(`请求 ${requestUrl} 不匹配任何模式`);
+        //   Fetch.continueRequest({ requestId: params.requestId });
+        // }
       }
     });
 
