@@ -2,6 +2,7 @@ const Router = require("koa-router");
 const { createFile, renameFile, folderPath } = require("../utils/folder");
 const { folderUtils } = require("../utils");
 const { LOCAL_SERVER } = require("../constants");
+const { isValidJSON } = require("../utils/common");
 const router = new Router();
 
 router.get("/info/:projectId/:ruleId", async (ctx) => {
@@ -21,13 +22,28 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
     if (content) {
       content = JSON.parse(content);
       const { id, params, cacheStatus } = content;
-
       const ruleName = new URL(params.request.url).pathname;
+
+      const payload = params?.request?.postData;
+      let newPayLoadJSON = null;
+      if (payload) {
+        const payloadKeyValues = payload
+          .split("&")
+          .map((item) => item.split("="));
+
+        newPayLoadJSON = payloadKeyValues.reduce(
+          (pre, cur) => ({
+            ...pre,
+            [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
+          }),
+          {}
+        );
+      }
 
       res = {
         id,
         cacheStatus,
-        payloadJSON: null,
+        payloadJSON: newPayLoadJSON,
         requestHeaderJSON: params?.request?.headers,
         requestHeaderType: "json",
         responseDataJSON: params?.responseData,

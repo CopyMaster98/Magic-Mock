@@ -31,7 +31,9 @@ router.post("/create", async (ctx) => {
       statusCode: -1,
     };
   } else {
-    const path = folderPath(`${isExistParentFolder}/${ruleName}.config.json`);
+    const path = folderPath(
+      `${isExistParentFolder}/${encodeURIComponent(ruleName)}.config.json`
+    );
     const isExist = folderExists(path);
 
     if (isExist) {
@@ -66,7 +68,9 @@ router.post("/create", async (ctx) => {
         if (responseStatusCode) info.responseStatusCode = responseStatusCode;
 
         createFile(
-          `${folderPath(`${isExistParentFolder}`)}/${ruleName}.config.json`,
+          `${folderPath(`${isExistParentFolder}`)}/${encodeURIComponent(
+            ruleName
+          )}.config.json`,
           JSON.stringify(
             {
               id: hashUtils.getHash(JSON.stringify(+new Date())),

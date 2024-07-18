@@ -222,6 +222,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       setResponseDataInputType(data?.responseDataType === "text");
       requestHeaderEditorValueRef.current = data.requestHeaderJSON;
       responseDataEditorValueRef.current = data.responseDataJSON;
+      requestHeaderInputValueRef.current = data.requestHeader;
+      responseDataInputValueRef.current = data.responseData;
       payloadEditorValueRef.current = data.payloadJSON;
       formBaseValueRef.current = {
         ruleName: data.ruleName,

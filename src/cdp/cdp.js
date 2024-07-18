@@ -553,7 +553,7 @@ async function intercept(data, page) {
 
         params.responseData = responseData;
 
-        if (!cacheMatchedPattern) {
+        if (!cacheMatchedPattern && !matchedPattern) {
           if (
             isExistLocalServer &&
             (params.responseStatusCode.toString().startsWith("2") ||
@@ -585,7 +585,7 @@ async function intercept(data, page) {
             matchedPattern.ruleMethod.includes(params.request.method))
         ) {
           console.log(
-            `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
+            `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
           );
           // 根据需要执行相应的逻辑
           if (params.responseStatusCode) {
@@ -648,7 +648,9 @@ async function intercept(data, page) {
             Fetch.continueRequest({
               headers: newHeaders,
               requestId: params.requestId,
-              postData: btoa(JSON.stringify(data)),
+              postData: data
+                ? Buffer.from(JSON.stringify(data), "utf8").toString("base64")
+                : data,
             });
           } else {
             Fetch.continueRequest({ requestId: params.requestId });
@@ -657,78 +659,68 @@ async function intercept(data, page) {
           // console.log(`请求 ${requestUrl} 不匹配任何模式`);
           Fetch.continueRequest({ requestId: params.requestId });
         }
+      } else if (cacheMatchedPattern) {
+        console.log(
+          `请求 ${requestUrl} 符合Cache模式 ${cacheMatchedPattern.urlPattern}`
+        );
+        // 根据需要执行相应的逻辑
+        if (params.responseStatusCode) {
+          // modify responseData
+          responseData = cacheMatchedPattern.params.responseData;
+
+          Fetch.fulfillRequest({
+            requestId: params.requestId,
+            responseHeaders: params.responseHeaders,
+            responseCode:
+              cacheMatchedPattern.params.responseStatusCode ??
+              params.responseStatusCode,
+            body: btoa(JSON.stringify(responseData)),
+          });
+        } else if (params.request.method !== "OPTIONS") {
+          // const data = commonUtils.isValidJSON(params.request.postData)
+          //   ? JSON.parse(params.request.postData)
+          //   : params.request.postData;
+          // // modify requestData
+          const headersArray = Object.entries(params.request.headers).map(
+            ([name, value]) => ({ name, value: value?.toString() })
+          );
+          // const matchedRequestHeader = config.requestHeader?.find(
+          //   (item) => item.rulePattern === matchedPattern.urlPattern
+          // );
+          // let newHeaders = headersArray;
+          // if (matchedRequestHeader) {
+          //   if (matchedRequestHeader?.requestHeaderType === "text") {
+          //     const formatMatchedRequestHeader = matchedRequestHeader.value.map(
+          //       (item) => {
+          //         const [name, value] = Object.entries(item)[0];
+          //         return {
+          //           name,
+          //           value: value?.toString(),
+          //         };
+          //       }
+          //     );
+          //     newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+          //   } else if (matchedRequestHeader.value)
+          //     newHeaders = Object.entries(matchedRequestHeader?.value).map(
+          //       ([name, value]) => ({ name, value: value?.toString() })
+          //     );
+          // }
+          Fetch.continueRequest({
+            headers: headersArray,
+            requestId: params.requestId,
+            postData: params.request.postData
+              ? Buffer.from(
+                  JSON.stringify(params.request.postData),
+                  "utf8"
+                ).toString("base64")
+              : params.request.postData,
+          });
+        } else {
+          Fetch.continueRequest({ requestId: params.requestId });
+        }
       } else {
-        // if (
-        //   cacheMatchedPattern(
-        //     !matchedPattern.ruleMethod?.length ||
-        //       matchedPattern.ruleMethod.includes(params.request.method)
-        //   )
-        // ) {
-        //   console.log(
-        //     `请求 ${requestUrl} 符合模式 ${matchedPattern.urlPattern}`
-        //   );
-        //   // 根据需要执行相应的逻辑
-        //   if (params.responseStatusCode) {
-        //     // modify responseData
-        //     const matchedResponseData = config.responseData?.find(
-        //       (item) => item.rulePattern === matchedPattern.urlPattern
-        //     );
-        //     if (matchedResponseData && matchedResponseData.value)
-        //       if (matchedResponseData.responseDataType === "json")
-        //         responseData = matchedResponseData.value;
-        //       else
-        //         matchedResponseData.value.forEach((item) => {
-        //           Object.keys(item).forEach((key) => {
-        //             commonUtils.deepUpdateValue(responseData, key, item[key]);
-        //           });
-        //         });
-        //     Fetch.fulfillRequest({
-        //       requestId: params.requestId,
-        //       responseHeaders: params.responseHeaders,
-        //       responseCode:
-        //         matchedPattern.responseStatusCode ?? params.responseStatusCode,
-        //       body: btoa(JSON.stringify(responseData)),
-        //     });
-        //   } else if (params.request.method !== "OPTIONS") {
-        //     const data = commonUtils.isValidJSON(params.request.postData)
-        //       ? JSON.parse(params.request.postData)
-        //       : params.request.postData;
-        //     // modify requestData
-        //     const headersArray = Object.entries(params.request.headers).map(
-        //       ([name, value]) => ({ name, value: value?.toString() })
-        //     );
-        //     const matchedRequestHeader = config.requestHeader?.find(
-        //       (item) => item.rulePattern === matchedPattern.urlPattern
-        //     );
-        //     let newHeaders = headersArray;
-        //     if (matchedRequestHeader) {
-        //       if (matchedRequestHeader?.requestHeaderType === "text") {
-        //         const formatMatchedRequestHeader =
-        //           matchedRequestHeader.value.map((item) => {
-        //             const [name, value] = Object.entries(item)[0];
-        //             return {
-        //               name,
-        //               value: value?.toString(),
-        //             };
-        //           });
-        //         newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-        //       } else if (matchedRequestHeader.value)
-        //         newHeaders = Object.entries(matchedRequestHeader?.value).map(
-        //           ([name, value]) => ({ name, value: value?.toString() })
-        //         );
-        //     }
-        //     Fetch.continueRequest({
-        //       headers: newHeaders,
-        //       requestId: params.requestId,
-        //       postData: btoa(JSON.stringify(data)),
-        //     });
-        //   } else {
-        //     Fetch.continueRequest({ requestId: params.requestId });
-        //   }
-        // } else {
-        //   // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-        //   Fetch.continueRequest({ requestId: params.requestId });
-        // }
+        // console.log(`请求 ${requestUrl} 不匹配任何模式`);
+        Fetch.continueRequest({ requestId: params.requestId });
       }
     });
 
