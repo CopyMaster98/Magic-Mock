@@ -439,14 +439,31 @@ async function intercept(data, page) {
     if (configFile.length) {
       await initWatch();
     } else {
-      const watcher = chokidar.watch(projectName, {
-        ignored: /(^|[/\\])\../, // 忽略隐藏文件
-        persistent: true, // 持续监听
-      });
+      if (
+        (urlPatterns.length > 0 &&
+          !urlPatterns[0].value[0].hasOwnProperty("init")) ||
+        urlPatterns.length === 0
+      ) {
+        urlPatterns.unshift({
+          value: [
+            {
+              urlPattern: "*",
+              requestStage: "Response",
+              resourceType: "XHR",
+              init: true,
+            },
+            {
+              urlPattern: "*",
+              requestStage: "Response",
+              resourceType: "Fetch",
+              init: true,
+            },
+          ],
+        });
+      }
 
-      watcher.on("add", async (path, stats) => {
-        watcher.unwatch();
-        await initWatch();
+      await Fetch.enable({
+        patterns: urlPatterns.map((item) => item.value).flat(Infinity),
       });
     }
 
@@ -605,7 +622,7 @@ async function intercept(data, page) {
                   });
                 });
 
-            Fetch.fulfillRequest({
+            await Fetch.fulfillRequest({
               requestId: params.requestId,
               responseHeaders: params.responseHeaders,
               responseCode:
@@ -645,7 +662,7 @@ async function intercept(data, page) {
                 );
             }
 
-            Fetch.continueRequest({
+            await Fetch.continueRequest({
               headers: newHeaders,
               requestId: params.requestId,
               postData: data
@@ -653,11 +670,11 @@ async function intercept(data, page) {
                 : data,
             });
           } else {
-            Fetch.continueRequest({ requestId: params.requestId });
+            await Fetch.continueRequest({ requestId: params.requestId });
           }
         } else {
           // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-          Fetch.continueRequest({ requestId: params.requestId });
+          await Fetch.continueRequest({ requestId: params.requestId });
         }
       } else if (cacheMatchedPattern) {
         console.log(
@@ -668,7 +685,7 @@ async function intercept(data, page) {
           // modify responseData
           responseData = cacheMatchedPattern.params.responseData;
 
-          Fetch.fulfillRequest({
+          await Fetch.fulfillRequest({
             requestId: params.requestId,
             responseHeaders: params.responseHeaders,
             responseCode:
@@ -705,7 +722,7 @@ async function intercept(data, page) {
           //       ([name, value]) => ({ name, value: value?.toString() })
           //     );
           // }
-          Fetch.continueRequest({
+          await Fetch.continueRequest({
             headers: headersArray,
             requestId: params.requestId,
             postData: params.request.postData
@@ -716,11 +733,11 @@ async function intercept(data, page) {
               : params.request.postData,
           });
         } else {
-          Fetch.continueRequest({ requestId: params.requestId });
+          await Fetch.continueRequest({ requestId: params.requestId });
         }
       } else {
         // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-        Fetch.continueRequest({ requestId: params.requestId });
+        await Fetch.continueRequest({ requestId: params.requestId });
       }
     });
 
