@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.0.2...v1.1.0) (2024-07-19)
+
+
+### Features
+
+* add cache data urlPatterns ([b65eab3](https://github.com/CopyMaster98/Magic-Mock/commit/b65eab37303158d8b2c03b910e0ab25447841e46))
+* add cache data urlPatterns ([69b3514](https://github.com/CopyMaster98/Magic-Mock/commit/69b3514c29637498e4c14dd1b1f7fec2d74faf77))
+* cache data mock ([55b7211](https://github.com/CopyMaster98/Magic-Mock/commit/55b7211ce04ca876e1ba2cfc382781237d5393ff))
+* cache mock finish ([0524c0e](https://github.com/CopyMaster98/Magic-Mock/commit/0524c0ef3d0e15cf5f9157836dc9a61f2d5630aa))
+
+
+### Bug Fixes
+
+* btoa error DOMException invalid character ([f463463](https://github.com/CopyMaster98/Magic-Mock/commit/f463463c7f3ec8c2d6b28f482d0e8e667f9a512c))
+* first use project but local server doesn't cache data ([5e114d0](https://github.com/CopyMaster98/Magic-Mock/commit/5e114d04c709c478edfaf7999c44a3d74632acdf))
+* update mock rule status error ([5ea0512](https://github.com/CopyMaster98/Magic-Mock/commit/5ea0512e54c08ff525f37c6548ca5eea93cdcbde))
+
 ## [1.0.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.0.0...v1.0.1) (2024-07-12)
 
 
