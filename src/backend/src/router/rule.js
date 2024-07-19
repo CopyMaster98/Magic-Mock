@@ -126,10 +126,12 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 router.put("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
   const { ruleInfo } = ctx.request.body;
-  const ruleInfoName = encodeURIComponent(ruleInfo.ruleName);
   const folderName = folderUtils.findFile(projectId);
   const oldRuleName = folderUtils.findFile(ruleId, folderName);
   const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
+  const ruleInfoName = ruleInfo.ruleName
+    ? encodeURIComponent(ruleInfo.ruleName)
+    : oldRuleName.split(".config.json")[0];
   const newRuleName = ruleInfoName + ".config.json";
   const newRulePath = folderPath(`${folderName}/${newRuleName}`);
 
