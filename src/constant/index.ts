@@ -1,34 +1,25 @@
 import * as header from "./header";
 
-const methodOptions = [
-  {
-    label: "GET",
-    value: "GET",
-  },
-  {
-    label: "POST",
-    value: "POST",
-  },
-  {
-    label: "PUT",
-    value: "PUT",
-  },
-  {
-    label: "DELETE",
-    value: "DELETE",
-  },
-  {
-    label: "PATCH",
-    value: "PATCH",
-  },
-  {
-    label: "HEAD",
-    value: "HEAD",
-  },
-  {
-    label: "OPTIONS",
-    value: "OPTIONS",
-  },
-];
+const methods = [
+  "GET",
+  "POST",
+  "PUT",
+  "DELETE",
+  "PATCH",
+  "HEAD",
+  "OPTIONS",
+] as const;
 
-export { header, methodOptions };
+const methodOptions = methods.map((item) => ({
+  label: item,
+  value: item,
+}));
+
+const color = ["magenta", "purple", "cyan", "gold", "geekblue"];
+
+const methodColors = methodOptions.map((item, index) => ({
+  name: item.label,
+  color: color[index],
+}));
+
+export { header, methodOptions, methodColors, methods };

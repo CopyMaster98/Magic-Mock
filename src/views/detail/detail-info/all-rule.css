@@ -1,6 +1,14 @@
 .container {
+  .ant-tabs-content-holder {
+    scrollbar-width: none;
+    overflow-y: scroll;
+  }
   .ant-card-body {
     line-height: 1;
+  }
+
+  > .ant-tabs {
+    width: 100%;
   }
 }
 
@@ -10,8 +18,38 @@
   inherits: false;
 }
 
-@keyframes rotate {
-  to {
-    --dir: 360deg
+.rule-card {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    filter: blur(5px);
+    background: repeating-conic-gradient(from var(--dir), #0f0, #ff0, #0ff, #f0f,#0ff);
+    animation: rotate 4s linear infinite;
   }
+}
+
+@keyframes rotate {
+  from {
+    --dir: 0deg;
+  }
+  to {
+    --dir: 360deg;
+  }
+}
+
+.ant-tabs-tabpane > div {
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+
+.ant-card-meta-title > div > div {
+  align-items: center;
+}
+
+.method-select {
+  position: absolute;
+  width: auto; 
+  right: 48px
 }

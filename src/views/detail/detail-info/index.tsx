@@ -11,13 +11,15 @@ import RuleForm from "../../../components/rule-form";
 import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
+import { scroll } from "../../../hooks";
 
 const DetailInfo: React.FC<{
   pathname: any;
   project: any;
   rules: any[];
+  cacheData?: any[];
 }> = (props) => {
-  const { pathname, project, rules } = props;
+  const { pathname, project, rules, cacheData } = props;
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -35,14 +37,9 @@ const DetailInfo: React.FC<{
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const containerRef = useRef(null);
 
-  // useEffect(() => {
-  //   projectId &&
-  //     !location.search.includes("ruleId") &&
-  //     FolderAPI.getFolderDetail(projectId, {}, setSpinning).then((res) => {
-  //       console.log(res);
-  //     });
-  // }, [location, pathname, projectId, setSpinning]);
+  // scroll.useHorizontalScroll(containerRef, pathname.length > 1);
 
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
@@ -102,8 +99,8 @@ const DetailInfo: React.FC<{
                     : "json",
                 },
                 payload,
-                ruleStatus: true,
                 responseStatusCode: formValue.responseStatusCode ?? 200,
+                ruleStatus: true,
               });
               setRefresh();
               info.ref?.current?.onReset();
@@ -172,7 +169,6 @@ const DetailInfo: React.FC<{
           payloadJSON?: string;
           responseStatusCode?: number;
         }) => {
-          console.log(formValue);
           const requestHeader = !ruleFormRef.current?.requestHeaderInputType
             ? formValue.requestHeaderJSON &&
               Object.keys(formValue.requestHeaderJSON).length > 0
@@ -257,7 +253,98 @@ const DetailInfo: React.FC<{
         }`
       );
     });
-  }, []);
+  }, [location, navigate]);
+
+  const handleSaveCache = useCallback(
+    async (
+      formValue: {
+        ruleName: string;
+        rulePattern: string;
+        ruleMethod: string[];
+        requestHeader?: any[];
+        responseData?: any[];
+        requestHeaderJSON?: object;
+        responseDataJSON?: object;
+        payloadJSON?: string;
+        responseStatusCode?: number;
+      } | null,
+      ruleFormRef: any
+    ) => {
+      if (formValue) {
+        const requestHeader = !ruleFormRef.current?.requestHeaderInputType
+          ? formValue.requestHeaderJSON &&
+            Object.keys(formValue.requestHeaderJSON).length > 0
+            ? formValue.requestHeaderJSON
+            : null
+          : formValue.requestHeader ?? [];
+        const responseData = !ruleFormRef.current?.responseDataInputType
+          ? formValue.responseDataJSON &&
+            Object.keys(formValue.responseDataJSON).length > 0
+            ? formValue.responseDataJSON
+            : null
+          : formValue.responseData ?? [];
+        const payload =
+          formValue.payloadJSON && Object.keys(formValue.payloadJSON).length > 0
+            ? formValue.payloadJSON
+            : null;
+
+        setSaveLoading(true);
+
+        await RuleAPI.createRule({
+          projectId: project.id,
+          ruleName: formValue.ruleName,
+          rulePattern: formValue.rulePattern,
+          ruleMethod: formValue.ruleMethod,
+          requestHeader: {
+            data: requestHeader,
+            type: ruleFormRef?.current?.requestHeaderInputType
+              ? "text"
+              : "json",
+          },
+          responseData: {
+            data: responseData,
+            type: ruleFormRef?.current?.responseDataInputType ? "text" : "json",
+          },
+          payload,
+          responseStatusCode: formValue.responseStatusCode ?? 200,
+          ruleStatus: true,
+        });
+
+        navigate(
+          `${location.pathname.split("/").slice(0, -1).join("/")}${
+            location.search.split("&")[0]
+          }`
+        );
+      }
+      setSaveLoading(false);
+      closeDialog?.();
+    },
+    [closeDialog, location, navigate, project]
+  );
+
+  const handleCreateAndSave = useCallback(async () => {
+    let form: any = null;
+
+    try {
+      form = await ruleFormRef.current?.onValidate();
+    } catch (error) {}
+
+    const newFormRef = JSON.parse(JSON.stringify(ruleFormRef));
+    const info: IDialogInfo<IFormRefProps | undefined> = {
+      title: "Crete & Save",
+      content: <div>Cache Data will create file and save as mock data.</div>,
+      handleConfirm: () => handleSaveCache(form, newFormRef),
+    };
+    updateDialogInfo?.(info);
+    updateModalConfig?.({
+      width: "45vw",
+      style: {
+        minWidth: "650px",
+      },
+    });
+    openDialog?.();
+  }, [handleSaveCache, openDialog, updateDialogInfo, updateModalConfig]);
+
   return (
     <>
       <Breadcrumb
@@ -286,8 +373,10 @@ const DetailInfo: React.FC<{
       >
         <div className="sub-title">
           <span>
-            {pathname[pathname.length - 1].slice(0, 1).toUpperCase() +
-              pathname[pathname.length - 1].slice(1)}
+            {decodeURIComponent(
+              pathname[pathname.length - 1].slice(0, 1).toUpperCase() +
+                pathname[pathname.length - 1].slice(1)
+            )}
           </span>
           <div className="buttons">
             {location.search.includes("ruleId") && (
@@ -306,11 +395,17 @@ const DetailInfo: React.FC<{
               loading={saveLoading}
               onClick={
                 location.search.includes("ruleId")
-                  ? handleUpdateRule
+                  ? location.search.includes("type=cache")
+                    ? handleCreateAndSave
+                    : handleUpdateRule
                   : handleOpenDialog
               }
             >
-              {location.search.includes("ruleId") ? "Save" : "Add Rule"}
+              {location.search.includes("ruleId")
+                ? location.search.includes("type=cache")
+                  ? "Create & Save"
+                  : "Save"
+                : "Add Rule"}
             </Button>
 
             <Button
@@ -330,6 +425,7 @@ const DetailInfo: React.FC<{
 
         <div
           className="container"
+          ref={containerRef}
           style={
             pathname.length > 1
               ? {
@@ -341,7 +437,7 @@ const DetailInfo: React.FC<{
           {pathname.length > 1 ? (
             <DetailRule ref={ruleFormRef} />
           ) : (
-            <AllRule rules={rules} />
+            <AllRule rules={rules} cacheData={cacheData} />
           )}
         </div>
       </Content>

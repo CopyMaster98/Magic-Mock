@@ -87,6 +87,14 @@ const Detail: React.FC = () => {
           });
         }
 
+        if (item.cacheData.length > 0) {
+          folderInfo.cacheData = item.cacheData.map((cacheData: any) => ({
+            ...cacheData,
+            key: "cache_" + cacheData.name,
+            parent: item,
+          }));
+        }
+
         return folderInfo;
       });
 
@@ -128,6 +136,11 @@ const Detail: React.FC = () => {
               projectData.find(
                 (item: any) => item.id === search.split("projectId=")[1]
               )?.children || []
+            }
+            cacheData={
+              projectData.find(
+                (item: any) => item.id === search.split("projectId=")[1]
+              )?.cacheData || []
             }
           />
         ) : (

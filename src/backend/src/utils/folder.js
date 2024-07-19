@@ -44,20 +44,21 @@ const folderContent = (folderPath) => {
 };
 
 const watchFolder = (folderPath, clients) => {
+  if (!folderExists(folderPath)) createFolder(folderPath);
   const watcher = chokidar.watch(folderPath, {
     ignored: /(^|[/\\])\../, // 忽略隐藏文件
     persistent: true, // 持续监听
   });
   watcher.on("all", (event, path) => {
-    if (["unlinkDir", "addDir"].includes(event)) {
+    if (["unlinkDir", "addDir", "change", "add"].includes(event)) {
       const reactClient = clients.get("React");
       if (reactClient) reactClient.send("update");
     }
   });
 };
 
-const findFile = (id, path = "") => {
-  return (fs.readdirSync(folderPath(path)) ?? []).find(
+const findFile = (id, path = "", rootPath = CONSTANT.MAGIC_MOCK_DATA) => {
+  return (fs.readdirSync(folderPath(path, rootPath)) ?? []).find(
     (item) => hashUtils.getHash(item) === id
   );
 };
@@ -90,6 +91,28 @@ const deleteFolderRecursive = async (folderPath) => {
   }
 };
 
+const renameFile = (oldPath, newPath) => {
+  try {
+    fs.renameSync(oldPath, newPath);
+    console.log("文件已成功重命名: ", newPath);
+    return true;
+  } catch (err) {
+    if (err.toString().includes("operation not permitted")) {
+      try {
+        fs.cpSync(oldPath, newPath, { recursive: true });
+        fs.rmdirSync(oldPath, { recursive: true });
+        return true;
+      } catch (err) {
+        console.error("重命名文件失败:", err);
+        return false;
+      }
+    } else {
+      console.error("重命名文件失败:", err);
+      return false;
+    }
+  }
+};
+
 module.exports = {
   createFolder,
   folderExists,
@@ -101,4 +124,5 @@ module.exports = {
   findFile,
   deleteFolderRecursive,
   deleteFile,
+  renameFile,
 };
