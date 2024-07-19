@@ -694,34 +694,9 @@ async function intercept(data, page) {
             body: btoa(JSON.stringify(responseData)),
           });
         } else if (params.request.method !== "OPTIONS") {
-          // const data = commonUtils.isValidJSON(params.request.postData)
-          //   ? JSON.parse(params.request.postData)
-          //   : params.request.postData;
-          // // modify requestData
           const headersArray = Object.entries(params.request.headers).map(
             ([name, value]) => ({ name, value: value?.toString() })
           );
-          // const matchedRequestHeader = config.requestHeader?.find(
-          //   (item) => item.rulePattern === matchedPattern.urlPattern
-          // );
-          // let newHeaders = headersArray;
-          // if (matchedRequestHeader) {
-          //   if (matchedRequestHeader?.requestHeaderType === "text") {
-          //     const formatMatchedRequestHeader = matchedRequestHeader.value.map(
-          //       (item) => {
-          //         const [name, value] = Object.entries(item)[0];
-          //         return {
-          //           name,
-          //           value: value?.toString(),
-          //         };
-          //       }
-          //     );
-          //     newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-          //   } else if (matchedRequestHeader.value)
-          //     newHeaders = Object.entries(matchedRequestHeader?.value).map(
-          //       ([name, value]) => ({ name, value: value?.toString() })
-          //     );
-          // }
           await Fetch.continueRequest({
             headers: headersArray,
             requestId: params.requestId,
