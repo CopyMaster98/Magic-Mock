@@ -101,7 +101,6 @@ const DetailInfo: React.FC<{
                 payload,
                 responseStatusCode: formValue.responseStatusCode ?? 200,
                 ruleStatus: true,
-                responseStatusCode: formValue.responseStatusCode ?? 200,
               });
               setRefresh();
               info.ref?.current?.onReset();
