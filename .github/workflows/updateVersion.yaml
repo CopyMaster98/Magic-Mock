@@ -1,0 +1,26 @@
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  workflow_dispatch: 
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: update-version
+
+jobs:
+  update-version:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: node
+          package-name: release-please-action
+          extra-files: |
+            README.md
+            CHANGELOG.md
