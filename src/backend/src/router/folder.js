@@ -57,7 +57,7 @@ router.get("/info", async (ctx, next) => {
             );
             return {
               id: hashUtils.getHash(item),
-              name: item,
+              name: decodeURIComponent(item),
               stats: folderInfo(`${_folderPath}/${item}`),
               content: content.length ? JSON.parse(content) : {},
               type: "mock",

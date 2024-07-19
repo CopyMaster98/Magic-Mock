@@ -22,9 +22,9 @@ const AllRule: React.FC<{
   const [switchLoading, setSwitchLoading] = useState(false);
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
-      let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
-        item.id
-      }&type=${type}`;
+      let url = `/${pathname.join("/")}/${encodeURIComponent(
+        item.key
+      )}${search}&ruleId=${item.id}&type=${type}`;
 
       if (type === "cache") url += `&methodType=${item.method}`;
 
@@ -96,6 +96,130 @@ const AllRule: React.FC<{
       (item) => item.name === method.content.params.request.method
     );
   }, []);
+
+  const methodTypeItems = useMemo(() => {
+    const methodTypes: any = [];
+    cacheData?.forEach((item) => {
+      if (
+        methodTypes.find(
+          (method: any) => method.label === item.content.params.request.method
+        )
+      )
+        return;
+      methodTypes.push({
+        key: methodTypes.length,
+        label: item.content.params.request.method,
+        children: (function (cacheData: any) {
+          return (
+            <div
+              style={{
+                display: "flex",
+              }}
+            >
+              {cacheData?.map((item: any) => (
+                <div
+                  key={item.id}
+                  className={item?.content?.cacheStatus ? "rule-card" : ""}
+                  style={{
+                    padding: "5px",
+                    margin: "5px 5px 30px 5px",
+                    borderRadius: "8px",
+                    backgroundColor: "transparent",
+                  }}
+                >
+                  <Card
+                    className="card-container"
+                    style={{
+                      height: "100%",
+                      width: 460,
+                      marginLeft: 0,
+                    }}
+                    actions={[
+                      <SettingOutlined
+                        key="setting"
+                        onClick={() => handleNavigate(item, "cache")}
+                      />,
+                    ]}
+                    hoverable
+                  >
+                    {/* <RightClickMenu item={item} handleClick={openConfirmDialog} /> */}
+                    <Skeleton loading={false} avatar active>
+                      <Meta
+                        title={
+                          <>
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flex: 1,
+                                  width: 0,
+                                  marginRight: "20px",
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                  }}
+                                >
+                                  {new URL(item.content.params.request.url)
+                                    .pathname === "/"
+                                    ? item.content.params.request.url
+                                    : new URL(item.content.params.request.url)
+                                        .pathname}
+                                </span>
+                                <Tag
+                                  color={findMethod(item)?.color ?? "default"}
+                                  style={{ marginLeft: "10px" }}
+                                >
+                                  <span>
+                                    {findMethod(item)?.name ?? "null"}
+                                  </span>
+                                </Tag>
+                                <Tag
+                                  color="processing"
+                                  style={{ marginLeft: "10px" }}
+                                >
+                                  <span>Cache</span>
+                                </Tag>
+                              </div>
+                              <Switch
+                                checkedChildren="开启"
+                                unCheckedChildren="关闭"
+                                loading={switchLoading}
+                                defaultValue={item?.content?.cacheStatus}
+                                style={{ float: "right" }}
+                                onClick={() => toggleCacheStatus(item)}
+                              />
+                            </div>
+                          </>
+                        }
+                        // description="This is the description"
+                      />
+                    </Skeleton>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          );
+        })(
+          cacheData.filter(
+            (_item) =>
+              _item.content.params.request.method ===
+              item.content.params.request.method
+          )
+        ),
+      });
+    });
+
+    return methodTypes;
+  }, [cacheData, findMethod, handleNavigate, switchLoading, toggleCacheStatus]);
 
   const items = useMemo(() => {
     return [
@@ -193,118 +317,29 @@ const AllRule: React.FC<{
         key: "2",
         label: "Cache",
         children: (
-          <div
+          <Tabs
+            tabPosition={"left"}
             style={{
-              display: "flex",
+              flexWrap: "nowrap",
             }}
-          >
-            {cacheData?.map((item) => (
-              <div
-                key={item.id}
-                className={item?.content?.cacheStatus ? "rule-card" : ""}
-                style={{
-                  padding: "5px",
-                  margin: "5px 5px 30px 5px",
-                  borderRadius: "8px",
-                  backgroundColor: "transparent",
-                }}
-              >
-                <Card
-                  className="card-container"
-                  style={{
-                    height: "100%",
-                    width: 500,
-                    marginLeft: 0,
-                  }}
-                  actions={[
-                    <SettingOutlined
-                      key="setting"
-                      onClick={() => handleNavigate(item, "cache")}
-                    />,
-                  ]}
-                  hoverable
-                >
-                  {/* <RightClickMenu item={item} handleClick={openConfirmDialog} /> */}
-                  <Skeleton loading={false} avatar active>
-                    <Meta
-                      title={
-                        <>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                flex: 1,
-                                width: 0,
-                                marginRight: "20px",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                              >
-                                {new URL(item.content.params.request.url)
-                                  .pathname === "/"
-                                  ? item.content.params.request.url
-                                  : new URL(item.content.params.request.url)
-                                      .pathname}
-                              </span>
-                              <Tag
-                                color={findMethod(item)?.color ?? "default"}
-                                style={{ marginLeft: "10px" }}
-                              >
-                                <span>{findMethod(item)?.name ?? "null"}</span>
-                              </Tag>
-                              <Tag
-                                color="processing"
-                                style={{ marginLeft: "10px" }}
-                              >
-                                <span>Cache</span>
-                              </Tag>
-                            </div>
-                            <Switch
-                              checkedChildren="开启"
-                              unCheckedChildren="关闭"
-                              loading={switchLoading}
-                              defaultValue={item?.content?.cacheStatus}
-                              style={{ float: "right" }}
-                              onClick={() => toggleCacheStatus(item)}
-                            />
-                          </div>
-                        </>
-                      }
-                      // description="This is the description"
-                    />
-                  </Skeleton>
-                </Card>
-              </div>
-            ))}
-          </div>
+            items={methodTypeItems}
+          />
         ),
       },
     ];
   }, [
-    cacheData,
-    findMethod,
     handleNavigate,
+    methodTypeItems,
     openConfirmDialog,
     rules,
     switchLoading,
-    toggleCacheStatus,
     toggleRuleStatus,
   ]);
 
   return (
     <>
       <Tabs defaultActiveKey="1" items={items} />
-      <div className="method-select">
+      {/* <div className="method-select">
         <label htmlFor="methodSelect">Method Filter: </label>
         <Select
           style={{
@@ -317,7 +352,7 @@ const AllRule: React.FC<{
           placeholder="Please select"
           options={methodOptions}
         />
-      </div>
+      </div> */}
     </>
   );
 };

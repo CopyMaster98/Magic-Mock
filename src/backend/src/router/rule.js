@@ -126,14 +126,15 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 router.put("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
   const { ruleInfo } = ctx.request.body;
+  const ruleInfoName = encodeURIComponent(ruleInfo.ruleName);
   const folderName = folderUtils.findFile(projectId);
   const oldRuleName = folderUtils.findFile(ruleId, folderName);
   const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
-  const newRuleName = ruleInfo.ruleName + ".config.json";
+  const newRuleName = ruleInfoName + ".config.json";
   const newRulePath = folderPath(`${folderName}/${newRuleName}`);
 
   if (
-    ruleInfo.ruleName &&
+    ruleInfoName &&
     newRuleName !== oldRuleName &&
     folderExists(newRulePath)
   ) {
@@ -176,7 +177,7 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
       statusCode: 0,
     };
 
-    if (ruleInfo.ruleName && newRuleName !== oldRuleName)
+    if (ruleInfoName && newRuleName !== oldRuleName)
       renameFile(oldRulePath, newRulePath);
   } catch (error) {
     ctx.response.body = {

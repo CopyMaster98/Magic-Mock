@@ -44,6 +44,7 @@ const folderContent = (folderPath) => {
 };
 
 const watchFolder = (folderPath, clients) => {
+  if (!folderExists(folderPath)) createFolder(folderPath);
   const watcher = chokidar.watch(folderPath, {
     ignored: /(^|[/\\])\../, // 忽略隐藏文件
     persistent: true, // 持续监听
