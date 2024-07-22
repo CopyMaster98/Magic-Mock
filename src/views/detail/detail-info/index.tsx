@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbProps, Button, theme } from "antd";
+import { Breadcrumb, BreadcrumbProps, Button, Checkbox, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PoweroffOutlined } from "@ant-design/icons";
@@ -37,7 +37,14 @@ const DetailInfo: React.FC<{
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [currentTab, setCurrentTab] = useState("1");
+  const [checkList, setCheckList] = useState([]);
+  const [isSelectStatus, setIsSelectStatus] = useState(false);
   const containerRef = useRef(null);
+  const indeterminate = false;
+  const checkAll = false;
+
+  const onCheckAllChange = useCallback((e: any) => {}, []);
 
   // scroll.useHorizontalScroll(containerRef, pathname.length > 1);
 
@@ -378,6 +385,7 @@ const DetailInfo: React.FC<{
                 pathname[pathname.length - 1].slice(1)
             )}
           </span>
+
           <div className="buttons">
             {location.search.includes("ruleId") && (
               <Button
@@ -389,6 +397,44 @@ const DetailInfo: React.FC<{
               >
                 Back
               </Button>
+            )}
+            {currentTab === "2" && pathname.length <= 1 && (
+              <>
+                {/* <Checkbox
+                  indeterminate={indeterminate}
+                  onChange={onCheckAllChange}
+                  checked={checkAll}
+                >
+                  Check all
+                </Checkbox> */}
+                <Button
+                  type="primary"
+                  danger
+                  style={{
+                    display: isSelectStatus ? "" : "none",
+                    marginLeft: "30px",
+                    marginRight: "30px",
+                  }}
+                  onClick={() => {
+                    setIsSelectStatus(false);
+                    setCheckList([]);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="primary"
+                  style={{
+                    marginLeft: "30px",
+                    marginRight: "50px",
+                    backgroundColor: checkList.length > 0 ? "#52c41a" : "",
+                  }}
+                  disabled={isSelectStatus && checkList.length === 0}
+                  onClick={() => setIsSelectStatus((oldValue) => !oldValue)}
+                >
+                  Multiple Create & Save
+                </Button>
+              </>
             )}
             <Button
               type="primary"
@@ -437,7 +483,15 @@ const DetailInfo: React.FC<{
           {pathname.length > 1 ? (
             <DetailRule ref={ruleFormRef} />
           ) : (
-            <AllRule rules={rules} cacheData={cacheData} />
+            <AllRule
+              rules={rules}
+              currentTab={currentTab}
+              setCurrentTab={setCurrentTab}
+              cacheData={cacheData}
+              checkList={checkList}
+              setCheckList={setCheckList}
+              isSelectStatus={isSelectStatus}
+            />
           )}
         </div>
       </Content>

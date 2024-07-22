@@ -1,15 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Empty, Layout, Menu, MenuProps, theme } from "antd";
+import { Empty, Layout, Menu, theme } from "antd";
 import {
-  LaptopOutlined,
-  NotificationOutlined,
-  UserOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   FolderOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation } from "react-router-dom";
-import { get } from "../../utils/fetch";
+import { Link } from "react-router-dom";
 import { FolderAPI } from "../../api";
 import { useData } from "../../context";
 import DetailInfo from "./detail-info";

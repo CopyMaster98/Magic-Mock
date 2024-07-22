@@ -1,4 +1,4 @@
-import { Button, Card, Select, Skeleton, Switch, Tabs, Tag } from "antd";
+import { Card, Skeleton, Switch, Tabs, Tag, Checkbox } from "antd";
 import Meta from "antd/es/card/Meta";
 import { SettingOutlined } from "@ant-design/icons";
 import RightClickMenu from "../../../components/right-click-menu";
@@ -6,16 +6,31 @@ import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
 import { useCallback, useMemo, useState } from "react";
-import { CacheAPI, FolderAPI, RuleAPI } from "../../../api";
+import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import { methodColors, methodOptions } from "../../../constant";
+import { methodColors } from "../../../constant";
+
+const CheckboxGroup = Checkbox.Group;
 
 const AllRule: React.FC<{
   rules: any[];
+  checkList: any[];
+  setCheckList: any;
+  setCurrentTab: any;
+  isSelectStatus: boolean;
+  currentTab: string;
   cacheData?: any[];
 }> = (props) => {
-  const { rules, cacheData } = props;
+  const {
+    rules,
+    cacheData,
+    checkList,
+    setCheckList,
+    setCurrentTab,
+    isSelectStatus,
+    currentTab,
+  } = props;
   const navigate = useNavigate();
   const { pathname, search } = url.usePathname();
   const { setRefresh, openDialog, updateDialogInfo, closeDialog } = useData();
@@ -97,6 +112,130 @@ const AllRule: React.FC<{
     );
   }, []);
 
+  const isSelectedCard = useCallback(
+    (cardInfo: any) => {
+      return checkList.find((item) => item.id === cardInfo.id);
+    },
+    [checkList]
+  );
+
+  const getCards = useCallback(
+    (cacheData: any) => {
+      return (cacheData || [])?.map((item: any) => {
+        let html = (
+          <div
+            key={item.id}
+            className={item?.content?.cacheStatus ? "rule-card" : ""}
+            style={{
+              padding: "5px",
+              margin: "5px 5px 30px 5px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+            }}
+          >
+            <Card
+              className={
+                isSelectedCard(item)
+                  ? "card-selected card-container"
+                  : isSelectStatus
+                  ? "card-container card-select"
+                  : "card-container"
+              }
+              style={{
+                height: "100%",
+                width: 460,
+                marginLeft: 0,
+              }}
+              actions={[
+                <SettingOutlined
+                  key="setting"
+                  onClick={() => handleNavigate(item, "cache")}
+                />,
+              ]}
+              hoverable
+            >
+              {/* <RightClickMenu item={item} handleClick={openConfirmDialog} /> */}
+              <Skeleton loading={false} avatar active>
+                <Meta
+                  title={
+                    <>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            flex: 1,
+                            width: 0,
+                            marginRight: "20px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                          >
+                            {new URL(item.content.params.request.url)
+                              .pathname === "/"
+                              ? item.content.params.request.url
+                              : new URL(item.content.params.request.url)
+                                  .pathname}
+                          </span>
+                          <Tag
+                            color={findMethod(item)?.color ?? "default"}
+                            style={{ marginLeft: "10px" }}
+                          >
+                            <span>{findMethod(item)?.name ?? "null"}</span>
+                          </Tag>
+                          <Tag
+                            color="processing"
+                            style={{ marginLeft: "10px" }}
+                          >
+                            <span>Cache</span>
+                          </Tag>
+                        </div>
+                        <Switch
+                          checkedChildren="开启"
+                          unCheckedChildren="关闭"
+                          loading={switchLoading}
+                          defaultValue={item?.content?.cacheStatus}
+                          style={{ float: "right" }}
+                          onClick={() => toggleCacheStatus(item)}
+                        />
+                      </div>
+                    </>
+                  }
+                  // description="This is the description"
+                />
+              </Skeleton>
+            </Card>
+          </div>
+        );
+
+        if (isSelectStatus)
+          return {
+            label: html,
+            value: item,
+          };
+
+        return html;
+      });
+    },
+    [
+      findMethod,
+      handleNavigate,
+      isSelectStatus,
+      isSelectedCard,
+      switchLoading,
+      toggleCacheStatus,
+    ]
+  );
+
   const methodTypeItems = useMemo(() => {
     const methodTypes: any = [];
     cacheData?.forEach((item) => {
@@ -117,96 +256,18 @@ const AllRule: React.FC<{
                 display: "flex",
               }}
             >
-              {cacheData?.map((item: any) => (
-                <div
-                  key={item.id}
-                  className={item?.content?.cacheStatus ? "rule-card" : ""}
+              {isSelectStatus ? (
+                <CheckboxGroup
                   style={{
-                    padding: "5px",
-                    margin: "5px 5px 30px 5px",
-                    borderRadius: "8px",
-                    backgroundColor: "transparent",
+                    justifyContent: "space-around",
                   }}
-                >
-                  <Card
-                    className="card-container"
-                    style={{
-                      height: "100%",
-                      width: 460,
-                      marginLeft: 0,
-                    }}
-                    actions={[
-                      <SettingOutlined
-                        key="setting"
-                        onClick={() => handleNavigate(item, "cache")}
-                      />,
-                    ]}
-                    hoverable
-                  >
-                    {/* <RightClickMenu item={item} handleClick={openConfirmDialog} /> */}
-                    <Skeleton loading={false} avatar active>
-                      <Meta
-                        title={
-                          <>
-                            <div
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                              }}
-                            >
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flex: 1,
-                                  width: 0,
-                                  marginRight: "20px",
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden",
-                                    textOverflow: "ellipsis",
-                                  }}
-                                >
-                                  {new URL(item.content.params.request.url)
-                                    .pathname === "/"
-                                    ? item.content.params.request.url
-                                    : new URL(item.content.params.request.url)
-                                        .pathname}
-                                </span>
-                                <Tag
-                                  color={findMethod(item)?.color ?? "default"}
-                                  style={{ marginLeft: "10px" }}
-                                >
-                                  <span>
-                                    {findMethod(item)?.name ?? "null"}
-                                  </span>
-                                </Tag>
-                                <Tag
-                                  color="processing"
-                                  style={{ marginLeft: "10px" }}
-                                >
-                                  <span>Cache</span>
-                                </Tag>
-                              </div>
-                              <Switch
-                                checkedChildren="开启"
-                                unCheckedChildren="关闭"
-                                loading={switchLoading}
-                                defaultValue={item?.content?.cacheStatus}
-                                style={{ float: "right" }}
-                                onClick={() => toggleCacheStatus(item)}
-                              />
-                            </div>
-                          </>
-                        }
-                        // description="This is the description"
-                      />
-                    </Skeleton>
-                  </Card>
-                </div>
-              ))}
+                  options={getCards(cacheData)}
+                  value={checkList}
+                  onChange={setCheckList}
+                />
+              ) : (
+                getCards(cacheData)
+              )}
             </div>
           );
         })(
@@ -220,7 +281,7 @@ const AllRule: React.FC<{
     });
 
     return methodTypes;
-  }, [cacheData, findMethod, handleNavigate, switchLoading, toggleCacheStatus]);
+  }, [cacheData, checkList, getCards, isSelectStatus, setCheckList]);
 
   const items = useMemo(() => {
     return [
@@ -339,7 +400,11 @@ const AllRule: React.FC<{
 
   return (
     <>
-      <Tabs defaultActiveKey="1" items={items} />
+      <Tabs
+        defaultActiveKey={currentTab}
+        items={items}
+        onChange={setCurrentTab}
+      />
       {/* <div className="method-select">
         <label htmlFor="methodSelect">Method Filter: </label>
         <Select
