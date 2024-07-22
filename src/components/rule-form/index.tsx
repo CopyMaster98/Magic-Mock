@@ -78,7 +78,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const [responseDataEditor, setResponseDataEditor] = useState<any>();
   const [requestHeaderEditor, setRequestHeaderEditor] = useState<any>();
   const [payloadEditor, setPayloadEditor] = useState<any>();
-  const isInitialRenderRef = useRef(true);
+  const isInitialRenderRef = useRef(null);
   const requestHeaderEditorRef = useRef<HTMLDivElement>(null);
   const responseDataEditorRef = useRef<HTMLDivElement>(null);
   const payloadEditorRef = useRef<HTMLDivElement>(null);
@@ -217,7 +217,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   }, [handleUpdateForm]);
 
   useEffect(() => {
-    if (data && isInitialRenderRef.current) {
+    if (data && isInitialRenderRef.current !== data?.id) {
       setRequestHeaderInputType(data?.requestHeaderType === "text");
       setResponseDataInputType(data?.responseDataType === "text");
       requestHeaderEditorValueRef.current = data.requestHeaderJSON;
@@ -258,13 +258,18 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
 
         form.setFieldValue("payloadJSON", data.payloadJSON);
       });
-
-      isInitialRenderRef.current = false;
     }
+    if (data?.id !== isInitialRenderRef.current)
+      isInitialRenderRef.current = data?.id;
   }, [data, form]);
 
   useEffect(() => {
-    if (isInitialRenderRef.current && isUpdate) return;
+    if (
+      (!isInitialRenderRef.current ||
+        isInitialRenderRef.current !== data?.id) &&
+      isUpdate
+    )
+      return;
     const { ruleName, rulePattern, ruleMethod, responseStatusCode } =
       formBaseValueRef.current;
 
@@ -295,6 +300,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     requestHeaderInputType,
     responseDataInputType,
     payloadStatus,
+    data?.id,
   ]);
 
   return (

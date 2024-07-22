@@ -131,7 +131,18 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
   const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
   const ruleInfoName = ruleInfo.ruleName
     ? encodeURIComponent(ruleInfo.ruleName)
-    : oldRuleName.split(".config.json")[0];
+    : oldRuleName?.split(".config.json")[0];
+
+  if (!ruleInfoName) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "Rule不存在",
+      statusCode: -1,
+    };
+
+    return;
+  }
+
   const newRuleName = ruleInfoName + ".config.json";
   const newRulePath = folderPath(`${folderName}/${newRuleName}`);
 

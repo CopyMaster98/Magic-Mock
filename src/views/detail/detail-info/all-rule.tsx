@@ -22,9 +22,9 @@ const AllRule: React.FC<{
   const [switchLoading, setSwitchLoading] = useState(false);
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
-      let url = `/${pathname.join("/")}/${encodeURIComponent(
-        item.key
-      )}${search}&ruleId=${item.id}&type=${type}`;
+      let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
+        item.id
+      }&type=${type}`;
 
       if (type === "cache") url += `&methodType=${item.method}`;
 
@@ -106,6 +106,7 @@ const AllRule: React.FC<{
         )
       )
         return;
+
       methodTypes.push({
         key: methodTypes.length,
         label: item.content.params.request.method,
@@ -284,7 +285,7 @@ const AllRule: React.FC<{
                                   textOverflow: "ellipsis",
                                 }}
                               >
-                                {item.name}
+                                {decodeURIComponent(item.name)}
                               </span>
                               <Tag
                                 color="success"

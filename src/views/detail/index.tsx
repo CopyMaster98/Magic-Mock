@@ -22,6 +22,7 @@ const Detail: React.FC = () => {
   } = theme.useToken();
   const [collapsed, setCollapsed] = useState(false);
   const { refresh, setRefresh } = useData();
+  const [updateMenu, setUpdateMenu] = useState(0);
   const [projectData, setProjectData] = useState<any>([]);
   const { pathname, search } = url.usePathname();
   const prevPathName = useRef<string[]>();
@@ -36,6 +37,7 @@ const Detail: React.FC = () => {
       prevPathName.current = paths;
       setRefresh();
     }
+    setUpdateMenu((prev) => prev + 1);
 
     return paths;
   }, [pathname, setRefresh]);
@@ -70,11 +72,15 @@ const Detail: React.FC = () => {
 
             const ruleInfo = {
               id: rule?.id,
-              key: "rule_" + ruleName,
-              name: ruleName,
+              key: "rule_" + encodeURIComponent(ruleName),
+              name: encodeURIComponent(ruleName),
               label: (
                 <Link
-                  to={`/detail/project_${item.name}/rule_${ruleName}?projectId=${item.id}&ruleId=${rule.id}`}
+                  to={`/detail/project_${encodeURIComponent(
+                    item.name
+                  )}/rule_${encodeURIComponent(ruleName)}?projectId=${
+                    item.id
+                  }&ruleId=${rule.id}&type=mock`}
                 >
                   rule_{ruleName}
                 </Link>
@@ -119,7 +125,7 @@ const Detail: React.FC = () => {
         onCollapse={(value: boolean) => setCollapsed(value)}
       >
         <Menu
-          key={refresh}
+          key={updateMenu}
           mode="inline"
           defaultSelectedKeys={currentPathname}
           defaultOpenKeys={[currentPathname[0]]}
