@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.0...v1.1.1) (2024-07-22)
+
+
+### Bug Fixes
+
+* 1. click mock data but selected item of menu doesn't update 2. detail info page doesn't update when click the mock data setting button ([a5aaaa0](https://github.com/CopyMaster98/Magic-Mock/commit/a5aaaa05a246a1b8c7106e78dd26c019d6135735))
+
 ## [1.1.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.0.2...v1.1.0) (2024-07-19)
 
 
