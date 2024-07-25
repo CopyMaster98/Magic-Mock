@@ -4,7 +4,8 @@ const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
 const { resolve } = require("path");
 const { info } = require("console");
-const { renameFile } = require("../utils/folder");
+const { renameFile, folderInfo } = require("../utils/folder");
+const { LOCAL_SERVER } = require("../constants");
 const { folderPath, folderExists, createFolder, createFile, folderContent } =
   folderUtils;
 
@@ -98,6 +99,21 @@ router.post("/create", async (ctx) => {
     }
   }
   ctx.set("notification", true);
+});
+
+router.post("/multipleCreate", async (ctx) => {
+  const { projectName, rulesInfo, newRulePatternPrefix } = ctx.request.body;
+
+  const cachePath = folderPath(
+    `${projectName}/${rulesInfo[0].method}`,
+    LOCAL_SERVER
+  );
+
+  if (folderExists(cachePath)) {
+    const cacheData = fs.readdirSync(cachePath);
+    console.log(cacheData);
+  }
+  console.log(projectName, rulesInfo, newRulePatternPrefix);
 });
 
 router.get("/info/:projectId/:ruleId", async (ctx) => {

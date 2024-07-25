@@ -405,20 +405,6 @@ const AllRule: React.FC<{
         items={items}
         onChange={setCurrentTab}
       />
-      {/* <div className="method-select">
-        <label htmlFor="methodSelect">Method Filter: </label>
-        <Select
-          style={{
-            minWidth: "150px",
-            marginLeft: "15px",
-          }}
-          id="methodSelect"
-          mode="multiple"
-          allowClear
-          placeholder="Please select"
-          options={methodOptions}
-        />
-      </div> */}
     </>
   );
 };

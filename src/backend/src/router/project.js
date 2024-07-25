@@ -12,8 +12,8 @@ router.post("/start", async (ctx, next) => {
 
   let port = null;
 
-  if (global.projectStatus.has(name)) {
-    port = global.projectStatus.get(name).port;
+  if (global.projectStatus.has(name + url)) {
+    port = global.projectStatus.get(name + url).port;
   } else {
     port = portUtils.getRandomPort();
   }
@@ -40,7 +40,7 @@ router.post("/start", async (ctx, next) => {
       };
     })
     .catch((err) => {
-      console.log(err);
+      console.log(err.toString("utf8"));
       ctx.response.body = {
         message: "启动失败",
         statusCode: -1,
@@ -51,9 +51,9 @@ router.post("/start", async (ctx, next) => {
 });
 
 router.post("/stop", async (ctx) => {
-  const { name } = ctx.request.body;
+  const { name, url } = ctx.request.body;
 
-  const projectStatus = global.projectStatus.get(name);
+  const projectStatus = global.projectStatus.get(name + url);
 
   if (projectStatus) projectStatus.childProcess?.stdin.write("Page: close");
 

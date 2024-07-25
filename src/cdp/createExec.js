@@ -48,8 +48,8 @@ const createChildProcess = (projectInfo, resolve, reject) => {
     console.log(`child process exited with code ${code}`);
   });
 
-  if (!global.projectStatus.has(name))
-    global.projectStatus.set(name, {
+  if (!global.projectStatus.has(name + url))
+    global.projectStatus.set(name + url, {
       url,
       name,
       port,

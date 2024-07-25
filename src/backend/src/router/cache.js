@@ -1,6 +1,6 @@
 const Router = require("koa-router");
-const { createFile, renameFile, folderPath } = require("../utils/folder");
-const { folderUtils } = require("../utils");
+const { createFile, folderPath } = require("../utils/folder");
+const { folderUtils, ruleUtils } = require("../utils");
 const { LOCAL_SERVER } = require("../constants");
 const { isValidJSON } = require("../utils/common");
 const router = new Router();
@@ -8,64 +8,26 @@ const router = new Router();
 router.get("/info/:projectId/:ruleId", async (ctx) => {
   const { projectId, ruleId } = ctx.params;
   const methodType = ctx.originalUrl.split("methodType=")[1];
-  const folder =
-    folderUtils.findFile(projectId, "", LOCAL_SERVER) + "/" + methodType;
-  const cacheFile = folderUtils.findFile(ruleId, folder, LOCAL_SERVER);
+  const res = ruleUtils.formatRule({
+    projectId,
+    methodType,
+    ruleId,
+  });
 
-  if (cacheFile) {
-    let content = folderUtils.folderContent(
-      folderPath(`${folder}/${cacheFile}`, LOCAL_SERVER)
-    );
-
-    let res = null;
-
-    if (content) {
-      content = JSON.parse(content);
-      const { id, params, cacheStatus } = content;
-      const ruleName = new URL(params.request.url).pathname;
-
-      const payload = params?.request?.postData;
-      let newPayLoadJSON = null;
-      if (payload) {
-        const payloadKeyValues = payload
-          .split("&")
-          .map((item) => item.split("="));
-
-        newPayLoadJSON = payloadKeyValues.reduce(
-          (pre, cur) => ({
-            ...pre,
-            [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
-          }),
-          {}
-        );
-      }
-
-      res = {
-        id,
-        cacheStatus,
-        payloadJSON: newPayLoadJSON,
-        requestHeaderJSON: params?.request?.headers,
-        requestHeaderType: "json",
-        responseDataJSON: params?.responseData,
-        responseDataType: "json",
-        responseStatusCode: 200,
-        ruleName: ruleName === "/" ? params?.request?.url : ruleName,
-        rulePattern: params?.request?.url,
-      };
-    }
-
+  if (res) {
+    res.cacheStatus = res.status;
+    delete res.status;
     ctx.response.body = {
       message: "规则信息获取成功",
       statusCode: 0,
       data: res ?? {},
     };
-  } else {
+  } else
     ctx.response.body = {
       message: "规则信息获取失败",
       statusCode: -1,
       data: null,
     };
-  }
   ctx.set("notification", true);
 });
 

@@ -318,12 +318,14 @@ async function intercept(data, page) {
         );
         cacheDataConfig[method].push(content);
       } else if (folderUtils.folderExists(cacheDataProjectName)) {
-        const methods = fs.readdirSync(cacheDataProjectName);
+        const methods = fs
+          .readdirSync(cacheDataProjectName)
+          ?.filter((method) => CONSTANT.METHODS.includes(method));
 
         methods.forEach((method) => {
-          const cacheFilePath = fs.readdirSync(
-            `${cacheDataProjectName}/${method}`
-          );
+          const cacheFilePath = fs
+            .readdirSync(`${cacheDataProjectName}/${method}`)
+            ?.filter((file) => file.endsWith(".request.json"));
           cacheFilePath.forEach((fileName) => {
             const localPath = `${cacheDataProjectName}/${method}/${fileName}`;
             const content = JSON.parse(fs.readFileSync(localPath, "utf8"));
@@ -431,9 +433,20 @@ async function intercept(data, page) {
       await initCacheDataConfig(path);
     });
 
-    watcher.on("unlink", async (path, stats) => {
-      // TODO need finish when delete cache file then update cacheDataUrlPatterns
-      console.log(path, stats);
+    watcher.on("unlink", async (_path, stats) => {
+      const name = path.basename(_path).split(".request.json")[0];
+      const methodType = path.basename(path.dirname(_path));
+
+      const currentRule = cacheDataUrlPatterns.find(
+        (item) => item.ruleName === name
+      );
+
+      if (currentRule)
+        currentRule.value = currentRule.value.filter(
+          (item) => item.methodType !== methodType
+        );
+
+      console.log(name, methodType);
     });
     await initCacheDataConfig();
     if (configFile.length) {
@@ -629,9 +642,9 @@ async function intercept(data, page) {
               responseHeaders: params.responseHeaders,
               responseCode:
                 matchedPattern.responseStatusCode ?? params.responseStatusCode,
-              body:
-                responseData &&
-                Buffer.from(JSON.stringify(responseData)).toString("base64"),
+              body: Buffer.from(JSON.stringify(responseData)).toString(
+                "base64"
+              ),
             });
           } else if (params.request.method !== "OPTIONS") {
             const data = commonUtils.isValidJSON(params.request.postData)
@@ -695,9 +708,7 @@ async function intercept(data, page) {
             responseCode:
               cacheMatchedPattern.params.responseStatusCode ??
               params.responseStatusCode,
-            body:
-              responseData &&
-              Buffer.from(JSON.stringify(responseData)).toString("base64"),
+            body: Buffer.from(JSON.stringify(responseData)).toString("base64"),
           });
         } else if (params.request.method !== "OPTIONS") {
           const headersArray = Object.entries(params.request.headers).map(

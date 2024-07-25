@@ -50,7 +50,7 @@ const watchFolder = (folderPath, clients) => {
     persistent: true, // 持续监听
   });
   watcher.on("all", (event, path) => {
-    if (["unlinkDir", "addDir", "change", "add"].includes(event)) {
+    if (["unlinkDir", "addDir", "change", "add", "unlink"].includes(event)) {
       const reactClient = clients.get("React");
       if (reactClient) reactClient.send("update");
     }

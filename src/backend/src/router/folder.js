@@ -2,6 +2,7 @@ const Router = require("koa-router");
 const fs = require("fs");
 const { folderUtils, hashUtils } = require("../utils/index");
 const { getLocalServerProjectData } = require("../core");
+const { LOCAL_SERVER } = require("../constants");
 const router = new Router();
 
 const { folderPath, folderExists, createFolder, folderInfo, folderContent } =
@@ -18,7 +19,7 @@ router.post("/create", async (ctx) => {
 
     if (!isExist) {
       createFolder(path);
-      global.projectStatus.set(name, {
+      global.projectStatus.set(name + url, {
         url: url,
         name: name,
         status: false,
@@ -65,7 +66,9 @@ router.get("/info", async (ctx, next) => {
           })
           .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
         const [name, url] = item.split("@@");
-        const currentProjectStatus = global.projectStatus.get(name);
+        const currentProjectStatus = global.projectStatus.get(
+          name + decodeURIComponent(url)
+        );
 
         folder.push({
           id: hashUtils.getHash(item),
@@ -107,8 +110,11 @@ router.put("/project/:projectName", async (ctx) => {
     (item) => hashUtils.getHash(item) === id
   );
   const projectPath = folderPath(projectName);
+  const cacheProjectPath = folderPath(projectName, LOCAL_SERVER);
   const newProjectName = [name, encodeURIComponent(url)].join("@@");
   const newProjectPath = folderPath("") + "/" + newProjectName;
+  const newCacheProjectPath =
+    folderPath("", LOCAL_SERVER) + "/" + newProjectName;
   const isExist = folderExists(newProjectPath);
 
   if (isExist) {
@@ -122,6 +128,18 @@ router.put("/project/:projectName", async (ctx) => {
   }
   try {
     fs.renameSync(projectPath, newProjectPath);
+
+    if (folderExists(cacheProjectPath)) {
+      try {
+        fs.renameSync(cacheProjectPath, newCacheProjectPath);
+      } catch (err) {
+        if (err.toString().includes("operation not permitted")) {
+          fs.cpSync(cacheProjectPath, newCacheProjectPath, { recursive: true });
+          fs.rmdirSync(cacheProjectPath, { recursive: true });
+        }
+      }
+    }
+
     console.log("文件已成功重命名为:", newProjectName);
     ctx.response.body = {
       message: "修改成功",

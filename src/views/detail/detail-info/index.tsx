@@ -1,6 +1,15 @@
-import { Breadcrumb, BreadcrumbProps, Button, Checkbox, theme } from "antd";
+import {
+  Breadcrumb,
+  BreadcrumbProps,
+  Button,
+  Checkbox,
+  Descriptions,
+  Input,
+  Radio,
+  theme,
+} from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PoweroffOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../../context";
@@ -12,6 +21,7 @@ import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
+import { multipleCreateRule } from "../../../api/rule";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -41,6 +51,8 @@ const DetailInfo: React.FC<{
   const [checkList, setCheckList] = useState([]);
   const [isSelectStatus, setIsSelectStatus] = useState(false);
   const containerRef = useRef(null);
+  const [isReplaceHostName, setIsReplaceHostName] = useState(0);
+  const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
   const indeterminate = false;
   const checkAll = false;
 
@@ -262,6 +274,181 @@ const DetailInfo: React.FC<{
     });
   }, [location, navigate]);
 
+  const dialogInfo = useMemo(() => {
+    let idx = 0;
+
+    const items = checkList
+      .map((item: any) => {
+        let res = [
+          {
+            key: idx++,
+            label: "ID",
+            children: item.id,
+          },
+        ];
+        res.push({
+          key: idx++,
+          label: "Rule Pattern",
+          children: (
+            <div
+              style={{
+                position: "relative",
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: "22vw",
+                }}
+              >
+                <span
+                  style={{
+                    textDecoration:
+                      newReplaceHostNameValue.length > 0
+                        ? "line-through"
+                        : "none",
+                  }}
+                >
+                  {newReplaceHostNameValue.length > 0
+                    ? new URL(item.content.params.request.url).origin
+                    : item.content.params.request.url}
+                </span>
+
+                <div>
+                  <span
+                    style={{
+                      display:
+                        newReplaceHostNameValue.length > 0
+                          ? "inline-block"
+                          : "none",
+
+                      color: "#52c41a",
+                    }}
+                  >
+                    {newReplaceHostNameValue}
+                  </span>
+
+                  <span
+                    style={{
+                      display:
+                        newReplaceHostNameValue.length > 0
+                          ? "inline-block"
+                          : "none",
+                    }}
+                  >
+                    {new URL(item.content.params.request.url).pathname}
+                  </span>
+                </div>
+              </div>
+
+              {/* <Button
+                style={{
+                  position: "absolute",
+                  right: "0",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                }}
+              >
+                Edit
+              </Button> */}
+            </div>
+          ),
+        });
+
+        return res;
+      })
+      .flat(Infinity) as any;
+
+    return {
+      title: "Crete & Save",
+      content: (
+        <>
+          <div
+            style={{
+              marginBottom: "20px",
+            }}
+          >
+            <label
+              style={{
+                display: "block",
+                marginBottom: "10px",
+              }}
+            >
+              Modify all rule patterns
+            </label>
+            <Radio.Group
+              onChange={(e) => {
+                setIsReplaceHostName(e.target.value);
+                setNewReplaceHostNameValue("");
+              }}
+              value={isReplaceHostName}
+            >
+              <Radio value={1}>Yes</Radio>
+              <Radio value={0}>No</Radio>
+            </Radio.Group>
+          </div>
+          {isReplaceHostName === 1 ? (
+            <Input
+              value={newReplaceHostNameValue}
+              onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
+              style={{
+                marginBottom: "20px",
+              }}
+            />
+          ) : null}
+          <Descriptions column={2} title="" bordered items={items} />
+        </>
+      ),
+      handleConfirm: async () => {
+        await multipleCreateRule({
+          projectName: project._name + "@@" + encodeURIComponent(project._url),
+          rulesInfo: checkList.map((item: any) => ({
+            id: item.id,
+            method: item.method,
+          })),
+          newRulePatternPrefix: newReplaceHostNameValue,
+        });
+        closeDialog?.();
+        setIsSelectStatus(false);
+        setCheckList([]);
+        setNewReplaceHostNameValue("");
+        setIsReplaceHostName(0);
+      },
+      handleClose: () => {
+        setIsReplaceHostName(0);
+        setNewReplaceHostNameValue("");
+      },
+    };
+  }, [
+    checkList,
+    isReplaceHostName,
+    newReplaceHostNameValue,
+    project,
+    closeDialog,
+  ]);
+
+  const handleMultipleCreateSave = useCallback(async () => {
+    if (isSelectStatus) {
+      updateDialogInfo?.(dialogInfo);
+      updateModalConfig?.({
+        width: "45vw",
+        style: {
+          minWidth: "650px",
+        },
+      });
+      openDialog?.();
+    } else setIsSelectStatus((oldValue) => !oldValue);
+  }, [
+    dialogInfo,
+    isSelectStatus,
+    openDialog,
+    updateDialogInfo,
+    updateModalConfig,
+  ]);
+
+  useEffect(() => {
+    updateDialogInfo?.(dialogInfo);
+  }, [dialogInfo, updateDialogInfo]);
+
   const handleSaveCache = useCallback(
     async (
       formValue: {
@@ -430,7 +617,7 @@ const DetailInfo: React.FC<{
                     backgroundColor: checkList.length > 0 ? "#52c41a" : "",
                   }}
                   disabled={isSelectStatus && checkList.length === 0}
-                  onClick={() => setIsSelectStatus((oldValue) => !oldValue)}
+                  onClick={handleMultipleCreateSave}
                 >
                   Multiple Create & Save
                 </Button>

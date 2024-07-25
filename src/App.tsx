@@ -30,6 +30,14 @@ function App() {
     setTimeout(() => setRefresh((oldValue) => oldValue + 1));
   }, []);
 
+  const handleOpenDialog = useCallback(() => {
+    handleDialog(true);
+  }, [handleDialog]);
+
+  const handleCloseDialog = useCallback(() => {
+    handleDialog(false);
+  }, [handleDialog]);
+
   websocket.useCreateWebSocket(handleUpdateProjectInfo);
 
   return (
@@ -39,8 +47,8 @@ function App() {
         refresh,
         setRefresh: handleRefresh,
         setSpinning: updateSpinning,
-        openDialog: () => handleDialog(true),
-        closeDialog: () => handleDialog(false),
+        openDialog: handleOpenDialog,
+        closeDialog: handleCloseDialog,
         updateDialogInfo: (data?: DialogType.IDialogInfo) =>
           setDialogInfo(data ?? {}),
         updateModalConfig: (data?: ModalConfig) => setModalConfig(data ?? {}),
