@@ -4,8 +4,9 @@ const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
 const { resolve } = require("path");
 const { info } = require("console");
-const { renameFile, folderInfo } = require("../utils/folder");
+const { renameFile, folderInfo, findFile } = require("../utils/folder");
 const { LOCAL_SERVER } = require("../constants");
+const { formatRule } = require("../utils/rule");
 const { folderPath, folderExists, createFolder, createFile, folderContent } =
   folderUtils;
 
@@ -110,19 +111,65 @@ router.post("/multipleCreate", async (ctx) => {
   );
 
   if (folderExists(cachePath)) {
-    const cacheData = fs.readdirSync(cachePath);
-    console.log(cacheData);
-  }
-  console.log(projectName, rulesInfo, newRulePatternPrefix);
+    const cacheData = fs
+      .readdirSync(cachePath)
+      ?.filter((item) =>
+        rulesInfo.find((rule) => rule.id === hashUtils.getHash(item))
+      );
+
+    cacheData.forEach((item) => {
+      let content = folderContent(`${cachePath}/${item}`);
+
+      if (content) content = JSON.parse(content);
+
+      if (newRulePatternPrefix) {
+        let oldUrl = new URL(content.params.request.url);
+        content.params.request.url =
+          newRulePatternPrefix + oldUrl.pathname + oldUrl.search;
+      }
+
+      content = formatRule({
+        ruleContent: content,
+      });
+
+      content.ruleStatus = true;
+
+      try {
+        createFile(
+          folderPath(
+            `${projectName}/${encodeURIComponent(
+              content.ruleName.slice(0, 50)
+            )}.config.json`
+          ),
+          JSON.stringify(content, null, 2)
+        );
+      } catch (error) {
+        ctx.response.body = {
+          message: "创建失败",
+          statusCode: -1,
+        };
+      }
+    });
+
+    ctx.response.body = {
+      message: "创建成功",
+      statusCode: 0,
+    };
+  } else
+    ctx.response.body = {
+      message: "创建失败",
+      statusCode: -1,
+    };
+  ctx.set("notification", true);
 });
 
 router.get("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
-  const folder = folderUtils.findFile(projectId);
-  const rule = folderUtils.findFile(ruleId, folder);
+  const folder = findFile(projectId);
+  const rule = findFile(ruleId, folder);
 
   if (rule) {
-    const content = folderUtils.folderContent(folderPath(`${folder}/${rule}`));
+    const content = folderContent(folderPath(`${folder}/${rule}`));
 
     ctx.response.body = {
       message: "规则信息获取成功",
@@ -142,8 +189,8 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
 router.put("/info/:projectId/:ruleId", async (ctx) => {
   const { ruleId, projectId } = ctx.params;
   const { ruleInfo } = ctx.request.body;
-  const folderName = folderUtils.findFile(projectId);
-  const oldRuleName = folderUtils.findFile(ruleId, folderName);
+  const folderName = findFile(projectId);
+  const oldRuleName = findFile(ruleId, folderName);
   const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
   const ruleInfoName = ruleInfo.ruleName
     ? encodeURIComponent(ruleInfo.ruleName)

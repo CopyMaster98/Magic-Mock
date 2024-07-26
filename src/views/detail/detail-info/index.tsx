@@ -446,8 +446,8 @@ const DetailInfo: React.FC<{
   ]);
 
   useEffect(() => {
-    updateDialogInfo?.(dialogInfo);
-  }, [dialogInfo, updateDialogInfo]);
+    isSelectStatus && updateDialogInfo?.(dialogInfo);
+  }, [dialogInfo, isSelectStatus, updateDialogInfo]);
 
   const handleSaveCache = useCallback(
     async (
@@ -626,6 +626,7 @@ const DetailInfo: React.FC<{
             <Button
               type="primary"
               loading={saveLoading}
+              disabled={isSelectStatus}
               onClick={
                 location.search.includes("ruleId")
                   ? location.search.includes("type=cache")

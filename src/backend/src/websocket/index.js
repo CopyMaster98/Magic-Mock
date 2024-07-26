@@ -30,6 +30,10 @@ const createWebSocket = () => {
 
         map.get("React")?.send(message);
       }
+
+      if (message.includes("matched:")) {
+        map.get("React")?.send(message);
+      }
     });
 
     ws.send("connected");

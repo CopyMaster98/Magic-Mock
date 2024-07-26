@@ -1,8 +1,10 @@
 const { spawn } = require("child_process");
+const { folderContent } = require("../backend/src/utils/folder");
 const websocket = spawn("npm", ["run", "backend-client-websocket"], {
   shell: true,
 });
 
+let idx = 0;
 const createChildProcess = (projectInfo, resolve, reject) => {
   const { url, name, port } = projectInfo;
   const child = spawn("npm", ["run", "cdp"], {
@@ -14,8 +16,10 @@ const createChildProcess = (projectInfo, resolve, reject) => {
   });
 
   child.stdout.on("data", (data) => {
+    idx++;
     const info = data.toString();
-    if (info.includes("url=") && info.includes("projectName=")) {
+    console.log(idx, info);
+    if (info.includes("url=") && info.startsWith("projectName=")) {
       const [projectNameKeyValue, urlKeyValue] = info.split("&");
       const projectName = projectNameKeyValue.split("projectName=")[1];
       const url = urlKeyValue.split("url=")[1];
@@ -25,6 +29,22 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       resolve && resolve();
       websocket.stdin.write(
         `open:projectName=${projectName}&url=${url}&port=${port}`
+      );
+    }
+
+    if (info.startsWith("matchedPath")) {
+      const [matchedPathKeyValue, projectNameKeyValue, urlKeyValue] =
+        info.split("&");
+      const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
+      const projectName = projectNameKeyValue.split("projectName=")[1];
+      const url = urlKeyValue.split("url=")[1];
+
+      let content = folderContent(matchedPath);
+
+      if (content) content = JSON.parse(content);
+
+      websocket.stdin.write(
+        `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}`
       );
     }
 

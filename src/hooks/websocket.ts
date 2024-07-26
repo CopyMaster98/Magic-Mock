@@ -1,36 +1,40 @@
 import { useEffect } from "react";
-let timer: any = null
+let timer: any = null;
 const initWebSocket = (callback: any) => {
-  const ws = new WebSocket('ws://localhost:9090');
+  const ws = new WebSocket("ws://localhost:9090");
 
-    ws.onopen = function() {
-      console.log('Connected to server');
-      ws.send('React: open');
-    };
+  ws.onopen = function () {
+    console.log("Connected to server");
+    ws.send("React: open");
+  };
 
-    ws.onmessage = function(event) {
-      console.log('Received message from server:', event.data);
-      if(event.data.includes('open:') || event.data.includes('close:') || event.data.includes('update'))
-        callback && callback()
-    };
+  ws.onmessage = function (event) {
+    console.log("Received message from server:", event.data);
+    if (
+      event.data.includes("open:") ||
+      event.data.includes("close:") ||
+      event.data.includes("update") ||
+      event.data.includes("matched")
+    )
+      callback && callback(event.data.includes("matched") ? event.data : null);
+  };
 
-    ws.onclose = function(event) {
-      console.log('Connection closed');
-      if(timer)
-          clearTimeout(timer)
-      // 重连逻辑
-      timer = setTimeout(() => initWebSocket(callback));
-    };
+  ws.onclose = function (event) {
+    console.log("Connection closed");
+    if (timer) clearTimeout(timer);
+    // 重连逻辑
+    timer = setTimeout(() => initWebSocket(callback));
+  };
 
-    return ws
-}
+  return ws;
+};
 
 export const useCreateWebSocket = (callback: any) => {
   useEffect(() => {
-    const ws = initWebSocket(callback)    
+    const ws = initWebSocket(callback);
 
     return () => {
       ws.close();
     };
   }, [callback]);
-}
+};

@@ -486,7 +486,6 @@ async function intercept(data, page) {
         .map((item) => item.value)
         .flat(Infinity);
 
-      console.log(allUrlPatterns);
       let matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*]?([^*]+)[*]?$/g;
 
@@ -619,8 +618,17 @@ async function intercept(data, page) {
           console.log(
             `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
           );
+
           // 根据需要执行相应的逻辑
           if (params.responseStatusCode) {
+            // process.stdout.write(
+            //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
+            // );
+
+            // console.log(
+            //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
+            // );
+
             // modify responseData
 
             const matchedResponseData = config.responseData?.find(
@@ -697,8 +705,16 @@ async function intercept(data, page) {
         console.log(
           `请求 ${requestUrl} 符合Cache模式 ${cacheMatchedPattern.urlPattern}`
         );
+
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
+          // process.stdout.write(
+          //   `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}`
+          // );
+
+          console.log(
+            `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}`
+          );
           // modify responseData
           responseData = cacheMatchedPattern.params.responseData;
 

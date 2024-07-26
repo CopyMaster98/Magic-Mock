@@ -135,12 +135,12 @@ const Detail: React.FC = () => {
             pathname={currentPathname}
             project={currentProject}
             rules={
-              projectData.find(
+              projectData?.find(
                 (item: any) => item.id === search.split("projectId=")[1]
               )?.children || []
             }
             cacheData={
-              projectData.find(
+              projectData?.find(
                 (item: any) => item.id === search.split("projectId=")[1]
               )?.cacheData || []
             }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 import Home from "./views/home";
 import Dialog from "./components/dialog";
@@ -10,6 +10,7 @@ import { ModalConfig } from "antd/es/config-provider/context";
 
 function App() {
   const [openDialog, setOpenDialog] = useState(false);
+  const matchedMap = useRef(new Map());
   const [refresh, setRefresh] = useState(0);
   const [dialogConfig, setDialogInfo] = useState<DialogType.IDialogInfo>();
   const [modalConfig, setModalConfig] = useState<ModalConfig>();
@@ -22,7 +23,17 @@ function App() {
     return setSpinning(spinning);
   }, []);
 
-  const handleUpdateProjectInfo = useCallback(() => {
+  const handleUpdateProjectInfo = useCallback((data: any) => {
+    if (data) {
+      const [matchedIdStr, projectName, url] = data.split("&");
+      const matchedId = matchedIdStr.split("=")[1];
+      matchedMap.current.set(
+        matchedId,
+        (matchedMap.current.get(matchedId) || 0) + 1
+      );
+      console.log(matchedMap.current);
+    }
+
     setTimeout(() => setRefresh((oldValue) => oldValue + 1));
   }, []);
 
@@ -45,6 +56,7 @@ function App() {
       value={{
         theme: "light",
         refresh,
+        matchedMap: matchedMap.current,
         setRefresh: handleRefresh,
         setSpinning: updateSpinning,
         openDialog: handleOpenDialog,
