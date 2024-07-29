@@ -625,9 +625,9 @@ async function intercept(data, page) {
             //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
             // );
 
-            // console.log(
-            //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
-            // );
+            console.log(
+              `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}&type=Mock`
+            );
 
             // modify responseData
 
@@ -713,7 +713,7 @@ async function intercept(data, page) {
           // );
 
           console.log(
-            `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}`
+            `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}&type=Cache`
           );
           // modify responseData
           responseData = cacheMatchedPattern.params.responseData;
@@ -774,8 +774,15 @@ async function intercept(data, page) {
     // 在页面加载前执行你的操作
     await page.goto(url);
 
-    process.stdin.on("data", (data) => {
-      if (data.includes("Page: close")) Page.close();
+    process.stdin.on("data", async (data) => {
+      if (data?.toString().includes("Page: close")) {
+        try {
+          await Page.close();
+        } catch (error) {
+          console.log(error);
+          process.stdout.write("Page: close");
+        }
+      }
     });
 
     process.stdout.write(`projectName=${name}&url=${url}`);

@@ -3,9 +3,11 @@ import { useState } from "react";
 
 const RightClickMenu: React.FC<{
   item: any;
+  menuButtons?: any;
   handleClick?: (arg: any) => void;
+  style?: React.CSSProperties;
 }> = (props) => {
-  const { item, handleClick } = props;
+  const { item, handleClick, menuButtons, style } = props;
   const handleMenuClick = (e: any) => {
     e.domEvent.stopPropagation();
     handleClick && handleClick(item);
@@ -20,18 +22,22 @@ const RightClickMenu: React.FC<{
           padding: 0,
         }}
       >
-        <Button
-          danger={true}
-          type="primary"
-          // icon={<PoweroffOutlined />}
-          // loading={loadings[item.name]}
-          // onClick={(e) => {
-          //   e.stopPropagation();
-          //   handleChangeStatus(item, !item.status);
-          // }}
-        >
-          Delete
-        </Button>
+        {menuButtons ? (
+          menuButtons
+        ) : (
+          <Button
+            danger={true}
+            type="primary"
+            // icon={<PoweroffOutlined />}
+            // loading={loadings[item.name]}
+            // onClick={(e) => {
+            //   e.stopPropagation();
+            //   handleChangeStatus(item, !item.status);
+            // }}
+          >
+            Delete
+          </Button>
+        )}
       </Menu.Item>
     </Menu>
   );
@@ -47,7 +53,9 @@ const RightClickMenu: React.FC<{
           background: "#f0f0f0",
           textAlign: "center",
           top: 0,
+          left: 0,
           backgroundColor: "transparent",
+          ...style,
         }}
       ></div>
     </Dropdown>

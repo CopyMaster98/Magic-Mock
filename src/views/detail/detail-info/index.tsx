@@ -41,6 +41,7 @@ const DetailInfo: React.FC<{
     closeDialog,
     setRefresh,
     setSpinning,
+    matchedMap,
   } = useData();
 
   const location = useLocation();
@@ -258,10 +259,13 @@ const DetailInfo: React.FC<{
         })
         .finally(() => {
           setLoading(false);
+          if (!status) {
+            matchedMap?.set(`${project._name}&${project._url}`, new Map());
+          }
           setRefresh();
         });
     },
-    [setRefresh]
+    [matchedMap, setRefresh]
   );
 
   const handleBack = useCallback(() => {
@@ -650,7 +654,7 @@ const DetailInfo: React.FC<{
               }}
               loading={loading}
               icon={<PoweroffOutlined />}
-              onClick={(e) => handleChangeStatus(project, !project?._status)}
+              onClick={() => handleChangeStatus(project, !project?._status)}
             >
               {project?._status ? "Stop" : "Start"}
             </Button>

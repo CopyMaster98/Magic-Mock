@@ -25,13 +25,30 @@ function App() {
 
   const handleUpdateProjectInfo = useCallback((data: any) => {
     if (data) {
-      const [matchedIdStr, projectName, url] = data.split("&");
-      const matchedId = matchedIdStr.split("=")[1];
-      matchedMap.current.set(
-        matchedId,
-        (matchedMap.current.get(matchedId) || 0) + 1
-      );
-      console.log(matchedMap.current);
+      const [matchedIdStr, projectNameStr, urlStr, portStr, typeStr] =
+        data.split("&");
+      const matchedId = matchedIdStr.split("=")[1].trim();
+      const projectName = projectNameStr.split("=")[1].trim();
+      const url = urlStr.split("=")[1].trim();
+      const type = typeStr.split("=")[1].trim();
+      const mapName = `${projectName}&${url}`;
+
+      if (!matchedMap.current.has(mapName))
+        matchedMap.current.set(mapName, new Map());
+
+      if (!matchedMap.current.get(mapName).has(type.toLowerCase()))
+        matchedMap.current.get(mapName).set(type.toLowerCase(), new Map());
+
+      matchedMap.current
+        .get(mapName)
+        .get(type.toLowerCase())
+        .set(
+          matchedId,
+          (matchedMap.current
+            .get(mapName)
+            .get(type.toLowerCase())
+            .get(matchedId) || 0) + 1
+        );
     }
 
     setTimeout(() => setRefresh((oldValue) => oldValue + 1));

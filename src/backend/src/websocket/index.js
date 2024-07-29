@@ -9,7 +9,7 @@ const createWebSocket = () => {
     console.log("Client connected");
 
     ws.on("message", function incoming(message) {
-      console.log("Received message from client:", message);
+      console.log("Received message from Node WebSocket Client:", message);
       if (message.includes("React:")) map.set("React", ws);
       else message.includes("Spawn:");
       map.set("Spawn", ws);
@@ -27,12 +27,13 @@ const createWebSocket = () => {
           status,
           timer: moment().format("YYYY-MM-DD HH:mm:ss"),
         });
-
-        map.get("React")?.send(message);
+        if (map.get("React")?.readyState === WebSocket.OPEN)
+          map.get("React")?.send(message);
       }
 
       if (message.includes("matched:")) {
-        map.get("React")?.send(message);
+        if (map.get("React")?.readyState === WebSocket.OPEN)
+          map.get("React")?.send(message);
       }
     });
 

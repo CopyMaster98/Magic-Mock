@@ -4,7 +4,6 @@ const websocket = spawn("npm", ["run", "backend-client-websocket"], {
   shell: true,
 });
 
-let idx = 0;
 const createChildProcess = (projectInfo, resolve, reject) => {
   const { url, name, port } = projectInfo;
   const child = spawn("npm", ["run", "cdp"], {
@@ -16,9 +15,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
   });
 
   child.stdout.on("data", (data) => {
-    idx++;
     const info = data.toString();
-    console.log(idx, info);
     if (info.includes("url=") && info.startsWith("projectName=")) {
       const [projectNameKeyValue, urlKeyValue] = info.split("&");
       const projectName = projectNameKeyValue.split("projectName=")[1];
@@ -33,29 +30,34 @@ const createChildProcess = (projectInfo, resolve, reject) => {
     }
 
     if (info.startsWith("matchedPath")) {
-      const [matchedPathKeyValue, projectNameKeyValue, urlKeyValue] =
-        info.split("&");
+      const [
+        matchedPathKeyValue,
+        projectNameKeyValue,
+        urlKeyValue,
+        typeKeyValue,
+      ] = info.split("&");
       const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
       const projectName = projectNameKeyValue.split("projectName=")[1];
       const url = urlKeyValue.split("url=")[1];
+      const type = typeKeyValue.split("type=")[1];
 
       let content = folderContent(matchedPath);
 
       if (content) content = JSON.parse(content);
 
       websocket.stdin.write(
-        `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}`
+        `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}&type=${type}`
       );
     }
 
-    if (data.includes("clean exit") || data.includes("Page: close")) {
+    if (info.includes("clean exit") || info.includes("Page: close")) {
       websocket.stdin.write(
         `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
       );
     }
 
-    if (data.includes("Error:")) {
-      reject(data);
+    if (info.includes("Error:")) {
+      reject(info);
     }
   });
 
