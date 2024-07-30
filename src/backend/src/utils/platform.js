@@ -1,5 +1,4 @@
 const os = require("os");
-const { exec } = require("child_process");
 
 const isOperatingSystem = () => {
   const platform = os.platform();

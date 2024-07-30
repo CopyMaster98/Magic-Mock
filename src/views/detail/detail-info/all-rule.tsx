@@ -15,7 +15,7 @@ import RightClickMenu from "../../../components/right-click-menu";
 import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
@@ -25,27 +25,33 @@ const CheckboxGroup = Checkbox.Group;
 
 const AllRule: React.FC<{
   rules: any[];
-  checkList: any[];
-  setCheckList: any;
   setCurrentTab: any;
   isSelectStatus: boolean;
   currentTab: string;
   cacheData?: any[];
+  onStateChange?: any;
+  [key: string]: any;
 }> = (props) => {
   const {
     rules,
     cacheData,
-    checkList,
-    setCheckList,
     setCurrentTab,
     isSelectStatus,
     currentTab,
+    onStateChange,
   } = props;
+
+  const [checkList, setCheckList] = useState<any>([]);
   const navigate = useNavigate();
   const { pathname, search } = url.usePathname();
   const { setRefresh, openDialog, updateDialogInfo, closeDialog, matchedMap } =
     useData();
   const [switchLoading, setSwitchLoading] = useState(false);
+
+  useEffect(() => {
+    onStateChange?.(checkList);
+  }, [checkList, onStateChange]);
+
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
       let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
@@ -140,7 +146,7 @@ const AllRule: React.FC<{
 
   const isSelectedCard = useCallback(
     (cardInfo: any) => {
-      return checkList.find((item) => item.id === cardInfo.id);
+      return checkList.find((item: any) => item.id === cardInfo.id);
     },
     [checkList]
   );

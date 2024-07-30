@@ -53,6 +53,8 @@ const DetailInfo: React.FC<{
   const [isSelectStatus, setIsSelectStatus] = useState(false);
   const containerRef = useRef(null);
   const [isReplaceHostName, setIsReplaceHostName] = useState(0);
+  const [oldReplaceHostNameValue, setOldReplaceHostNameValue] = useState("");
+
   const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
   const indeterminate = false;
   const checkAll = false;
@@ -63,6 +65,8 @@ const DetailInfo: React.FC<{
 
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
+  const allRuleRef = useRef();
+
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
       title: "Add Rule",
@@ -149,6 +153,27 @@ const DetailInfo: React.FC<{
     updateDialogInfo,
     updateModalConfig,
   ]);
+
+  const formatUrl = useCallback(
+    (item: any) => {
+      let str = oldReplaceHostNameValue;
+      let idx = str.length;
+
+      while (idx > 0) {
+        let reg = new RegExp(str);
+
+        if (reg.test(item.content.params.request.url))
+          return item.content.params.request.url.replace(
+            reg,
+            newReplaceHostNameValue
+          );
+        str = str.slice(0, --idx);
+      }
+
+      return "";
+    },
+    [newReplaceHostNameValue, oldReplaceHostNameValue]
+  );
   const itemRender: BreadcrumbProps["itemRender"] = (
     currentRoute,
     params,
@@ -243,6 +268,10 @@ const DetailInfo: React.FC<{
       .catch((err: any) => console.log(err))
       .finally(() => setSaveLoading(false));
   }, [location, navigate, project]);
+
+  const handleStateChange = useCallback((checkList: any) => {
+    setCheckList(checkList);
+  }, []);
 
   const handleChangeStatus = useCallback(
     async (project: any, status: boolean) => {
@@ -391,13 +420,28 @@ const DetailInfo: React.FC<{
             </Radio.Group>
           </div>
           {isReplaceHostName === 1 ? (
-            <Input
-              value={newReplaceHostNameValue}
-              onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
-              style={{
-                marginBottom: "20px",
-              }}
-            />
+            <>
+              <div>
+                <label htmlFor="">需要匹配的字符串</label>
+                <Input
+                  value={oldReplaceHostNameValue}
+                  onChange={(e) => setOldReplaceHostNameValue(e.target.value)}
+                  style={{
+                    marginBottom: "20px",
+                  }}
+                />
+              </div>
+              <div>
+                <label htmlFor="">需要替换的字符串</label>
+                <Input
+                  value={newReplaceHostNameValue}
+                  onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
+                  style={{
+                    marginBottom: "20px",
+                  }}
+                />
+              </div>
+            </>
           ) : null}
           <Descriptions column={2} title="" bordered items={items} />
         </>
@@ -426,6 +470,7 @@ const DetailInfo: React.FC<{
     checkList,
     isReplaceHostName,
     newReplaceHostNameValue,
+    oldReplaceHostNameValue,
     project,
     closeDialog,
   ]);
@@ -676,12 +721,12 @@ const DetailInfo: React.FC<{
             <DetailRule ref={ruleFormRef} />
           ) : (
             <AllRule
+              onStateChange={handleStateChange}
+              ref={allRuleRef}
               rules={rules}
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
               cacheData={cacheData}
-              checkList={checkList}
-              setCheckList={setCheckList}
               isSelectStatus={isSelectStatus}
             />
           )}

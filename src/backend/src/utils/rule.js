@@ -5,7 +5,11 @@ const { findFile, folderContent, folderPath } = require("./folder");
 const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
   if (ruleContent) {
     const { id, params, cacheStatus } = ruleContent;
-    const ruleName = new URL(params.request.url).pathname;
+    let ruleName = params.request.url;
+
+    try {
+      ruleName = new URL(params.request.url).pathname;
+    } catch (error) {}
 
     const payload = params?.request?.postData;
     let newPayLoadJSON = null;
