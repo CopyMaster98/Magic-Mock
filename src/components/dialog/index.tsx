@@ -1,5 +1,5 @@
 import { Button, Modal, ModalProps } from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { DialogType } from "../../types";
@@ -46,6 +46,19 @@ const Dialog: React.FC<{
     });
   };
 
+  const handleModalRender = useCallback(
+    (modal: any) => (
+      <Draggable
+        disabled={disabled}
+        bounds={bounds}
+        nodeRef={draggleRef}
+        onStart={(event, uiData) => onStart(event, uiData)}
+      >
+        <div ref={draggleRef}>{modal}</div>
+      </Draggable>
+    ),
+    [bounds, disabled]
+  );
   // useEffect(() => {
   //   const handleKeyDown = (event: any) => {
   //     if (event.key === "Enter") {
@@ -91,16 +104,7 @@ const Dialog: React.FC<{
       open={open}
       onOk={handleOk}
       onCancel={handleCancel}
-      modalRender={(modal) => (
-        <Draggable
-          disabled={disabled}
-          bounds={bounds}
-          nodeRef={draggleRef}
-          onStart={(event, uiData) => onStart(event, uiData)}
-        >
-          <div ref={draggleRef}>{modal}</div>
-        </Draggable>
-      )}
+      modalRender={handleModalRender}
       {...modalConfig}
     >
       {dialogConfig?.content}

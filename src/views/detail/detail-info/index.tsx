@@ -9,7 +9,14 @@ import {
   theme,
 } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { PoweroffOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../../context";
@@ -57,12 +64,10 @@ const DetailInfo: React.FC<{
   const containerRef = useRef(null);
   const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
   const [oldReplaceRulePattern, setOldReplaceRulePattern] = useState("");
+  const deferredOldReplaceRulePattern = useDeferredValue(oldReplaceRulePattern);
   const [newReplaceRulePattern, setNewReplaceRulePattern] = useState("");
+  const deferredNewReplaceRulePattern = useDeferredValue(newReplaceRulePattern);
 
-  const [debouncedOldReplaceRulePattern, setDebouncedOldReplaceRulePattern] =
-    useDebouncedState("");
-  const [debouncedNewReplaceRulePattern, setDebouncedNewReplaceRulePattern] =
-    useDebouncedState("");
   const [refreshNumber, setRefreshNumber] = useState(0);
   const editRulePatternInfoRef = useRef(new Map());
   const editRulePatternPrefixRef = useRef<any>(null);
@@ -303,6 +308,7 @@ const DetailInfo: React.FC<{
           data.id,
           editRulePatternPrefixRef.current.input.value
         );
+      else editRulePatternInfoRef.current.delete(data.id);
 
       setDoubleClickEditId(null);
     },
@@ -315,10 +321,9 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Match Prefix Rule Pattern </label>
           <Input
-            value={oldReplaceRulePattern}
+            value={deferredOldReplaceRulePattern}
             onChange={(e) => {
               setOldReplaceRulePattern(e.target.value);
-              setDebouncedOldReplaceRulePattern(e.target.value);
             }}
             style={{
               marginBottom: "20px",
@@ -328,10 +333,9 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Replace Prefix Rule Pattern</label>
           <Input
-            value={newReplaceRulePattern}
+            value={deferredNewReplaceRulePattern}
             onChange={(e) => {
               setNewReplaceRulePattern(e.target.value);
-              setDebouncedNewReplaceRulePattern(e.target.value);
             }}
             style={{
               marginBottom: "20px",
@@ -340,41 +344,25 @@ const DetailInfo: React.FC<{
         </div>
       </>
     );
-  }, [
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
-    setDebouncedNewReplaceRulePattern,
-    setDebouncedOldReplaceRulePattern,
-  ]);
+  }, [deferredNewReplaceRulePattern, deferredOldReplaceRulePattern]);
 
   const handleConfirmMultiple = useCallback(async () => {
     await multipleCreateRule({
       projectName: project._name + "@@" + encodeURIComponent(project._url),
-      rulesInfo: checkList.map((item: any) => {
-        console.log(
-          editRulePatternInfoRef.current,
-          item,
+      rulesInfo: checkList.map((item: any) => ({
+        id: item.id,
+        method: item.method,
+        newRulePattern:
           editRulePatternInfoRef.current.get(item.id) ||
-            (item.content.params.request.url.startsWith(oldReplaceRulePattern)
-              ? newReplaceRulePattern +
-                item.content.params.request.url.slice(
-                  oldReplaceRulePattern.length
-                )
-              : "")
-        );
-        return {
-          id: item.id,
-          method: item.method,
-          newRulePattern:
-            editRulePatternInfoRef.current.get(item.id) ||
-            (item.content.params.request.url.startsWith(oldReplaceRulePattern)
-              ? newReplaceRulePattern +
-                item.content.params.request.url.slice(
-                  oldReplaceRulePattern.length
-                )
-              : ""),
-        };
-      }),
+          (item.content.params.request.url.startsWith(
+            deferredOldReplaceRulePattern
+          )
+            ? deferredNewReplaceRulePattern +
+              item.content.params.request.url.slice(
+                deferredOldReplaceRulePattern.length
+              )
+            : ""),
+      })),
     });
     closeDialog?.();
     setRefreshNumber((oldValue) => oldValue + 1);
@@ -387,8 +375,8 @@ const DetailInfo: React.FC<{
   }, [
     checkList,
     closeDialog,
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
+    deferredNewReplaceRulePattern,
+    deferredOldReplaceRulePattern,
     project,
   ]);
 
@@ -415,7 +403,10 @@ const DetailInfo: React.FC<{
               {doubleClickEditId === item.id ? (
                 <Input
                   ref={editRulePatternPrefixRef}
-                  defaultValue={item.content.params.request.url}
+                  defaultValue={
+                    editRulePatternInfoRef.current.get(item.id) ??
+                    item.content.params.request.url
+                  }
                   onBlur={() =>
                     handleBlur({
                       id: item.id,
@@ -450,19 +441,19 @@ const DetailInfo: React.FC<{
                       <span
                         style={{
                           textDecoration:
-                            debouncedOldReplaceRulePattern.length > 0 &&
+                            deferredOldReplaceRulePattern.length > 0 &&
                             item.content.params.request.url.startsWith(
-                              debouncedOldReplaceRulePattern
+                              deferredOldReplaceRulePattern
                             )
                               ? "line-through"
                               : "none",
                         }}
                       >
-                        {debouncedOldReplaceRulePattern.length > 0 &&
+                        {deferredOldReplaceRulePattern.length > 0 &&
                         item.content.params.request.url.startsWith(
-                          debouncedOldReplaceRulePattern
+                          deferredOldReplaceRulePattern
                         )
-                          ? debouncedOldReplaceRulePattern
+                          ? deferredOldReplaceRulePattern
                           : item.content.params.request.url}
                       </span>
 
@@ -470,10 +461,10 @@ const DetailInfo: React.FC<{
                         <span
                           style={{
                             display:
-                              debouncedNewReplaceRulePattern.length > 0 &&
-                              debouncedOldReplaceRulePattern.length > 0 &&
+                              deferredNewReplaceRulePattern.length > 0 &&
+                              deferredOldReplaceRulePattern.length > 0 &&
                               item.content.params.request.url.startsWith(
-                                debouncedOldReplaceRulePattern
+                                deferredOldReplaceRulePattern
                               )
                                 ? "inline-block"
                                 : "none",
@@ -481,22 +472,22 @@ const DetailInfo: React.FC<{
                             color: "#52c41a",
                           }}
                         >
-                          {debouncedNewReplaceRulePattern}
+                          {deferredNewReplaceRulePattern}
                         </span>
 
                         <span
                           style={{
                             display:
-                              debouncedOldReplaceRulePattern.length > 0 &&
+                              deferredOldReplaceRulePattern.length > 0 &&
                               item.content.params.request.url.startsWith(
-                                debouncedOldReplaceRulePattern
+                                deferredOldReplaceRulePattern
                               )
                                 ? "inline-block"
                                 : "none",
                           }}
                         >
                           {item.content.params.request.url.slice(
-                            debouncedOldReplaceRulePattern.length
+                            deferredOldReplaceRulePattern.length
                           )}
                         </span>
                       </div>
@@ -558,8 +549,8 @@ const DetailInfo: React.FC<{
     replaceRulePatternInput,
     handleConfirmMultiple,
     doubleClickEditId,
-    debouncedOldReplaceRulePattern,
-    debouncedNewReplaceRulePattern,
+    deferredOldReplaceRulePattern,
+    deferredNewReplaceRulePattern,
     handleBlur,
   ]);
 
