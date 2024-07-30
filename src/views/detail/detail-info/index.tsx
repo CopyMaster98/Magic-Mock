@@ -22,6 +22,7 @@ import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
 import { multipleCreateRule } from "../../../api/rule";
+import RightClickMenu from "../../../components/right-click-menu";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -51,11 +52,14 @@ const DetailInfo: React.FC<{
   const [currentTab, setCurrentTab] = useState("1");
   const [checkList, setCheckList] = useState([]);
   const [isSelectStatus, setIsSelectStatus] = useState(false);
+  const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
   const [isReplaceHostName, setIsReplaceHostName] = useState(0);
   const [oldReplaceHostNameValue, setOldReplaceHostNameValue] = useState("");
   const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
   const [refreshNumber, setRefreshNumber] = useState(0);
+  const editRulePatternInfoRef = useRef(new Map());
+  const editRulePatternPrefixRef = useRef<any>(null);
   const indeterminate = false;
   const checkAll = false;
 
@@ -306,6 +310,19 @@ const DetailInfo: React.FC<{
     });
   }, [location, navigate]);
 
+  const handleBlur = useCallback(
+    (data: { id: string; rulePattern: string }) => {
+      if (editRulePatternPrefixRef.current.input.value !== data.rulePattern)
+        editRulePatternInfoRef.current.set(
+          data.id,
+          editRulePatternPrefixRef.current.input.value
+        );
+
+      setDoubleClickEditId(null);
+    },
+    []
+  );
+
   const dialogInfo = useMemo(() => {
     let idx = 0;
 
@@ -327,65 +344,101 @@ const DetailInfo: React.FC<{
                 position: "relative",
               }}
             >
-              <div
-                style={{
-                  maxWidth: "22vw",
-                }}
-              >
-                <span
+              {doubleClickEditId === item.id ? (
+                <Input
+                  ref={editRulePatternPrefixRef}
+                  defaultValue={item.content.params.request.url}
+                  onBlur={() =>
+                    handleBlur({
+                      id: item.id,
+                      rulePattern: item.content.params.request.url,
+                    })
+                  }
+                />
+              ) : (
+                <div
                   style={{
-                    textDecoration:
-                      newReplaceHostNameValue.length > 0
-                        ? "line-through"
-                        : "none",
+                    maxWidth: "22vw",
+                  }}
+                  onDoubleClick={() => {
+                    setDoubleClickEditId(item.id);
                   }}
                 >
-                  {newReplaceHostNameValue.length > 0
-                    ? new URL(item.content.params.request.url).origin
-                    : item.content.params.request.url}
-                </span>
+                  <RightClickMenu
+                    item={item}
+                    menuButtons={
+                      <Button
+                        type="primary"
+                        onClick={() => setDoubleClickEditId(item.id)}
+                      >
+                        Edit
+                      </Button>
+                    }
+                  ></RightClickMenu>
+                  {editRulePatternInfoRef.current.has(item.id) ? (
+                    <span>{editRulePatternInfoRef.current.get(item.id)}</span>
+                  ) : (
+                    <>
+                      <span
+                        style={{
+                          textDecoration:
+                            oldReplaceHostNameValue.length > 0 &&
+                            item.content.params.request.url.startsWith(
+                              oldReplaceHostNameValue
+                            )
+                              ? "line-through"
+                              : "none",
+                        }}
+                      >
+                        {oldReplaceHostNameValue.length > 0 &&
+                        item.content.params.request.url.startsWith(
+                          oldReplaceHostNameValue
+                        )
+                          ? oldReplaceHostNameValue
+                          : item.content.params.request.url}
+                      </span>
 
-                <div>
-                  <span
-                    style={{
-                      display:
-                        newReplaceHostNameValue.length > 0
-                          ? "inline-block"
-                          : "none",
+                      <div>
+                        <span
+                          style={{
+                            display:
+                              newReplaceHostNameValue.length > 0 &&
+                              oldReplaceHostNameValue.length > 0 &&
+                              item.content.params.request.url.startsWith(
+                                oldReplaceHostNameValue
+                              )
+                                ? "inline-block"
+                                : "none",
 
-                      color: "#52c41a",
-                    }}
-                  >
-                    {newReplaceHostNameValue}
-                  </span>
+                            color: "#52c41a",
+                          }}
+                        >
+                          {newReplaceHostNameValue}
+                        </span>
 
-                  <span
-                    style={{
-                      display:
-                        newReplaceHostNameValue.length > 0
-                          ? "inline-block"
-                          : "none",
-                    }}
-                  >
-                    {new URL(item.content.params.request.url).pathname}
-                  </span>
+                        <span
+                          style={{
+                            display:
+                              oldReplaceHostNameValue.length > 0 &&
+                              item.content.params.request.url.startsWith(
+                                oldReplaceHostNameValue
+                              )
+                                ? "inline-block"
+                                : "none",
+                          }}
+                        >
+                          {item.content.params.request.url.slice(
+                            oldReplaceHostNameValue.length
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-
-              {/* <Button
-                style={{
-                  position: "absolute",
-                  right: "0",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                }}
-              >
-                Edit
-              </Button> */}
+              )}
             </div>
           ),
         });
-
         return res;
       })
       .flat(Infinity) as any;
@@ -410,6 +463,7 @@ const DetailInfo: React.FC<{
             <Radio.Group
               onChange={(e) => {
                 setIsReplaceHostName(e.target.value);
+                setOldReplaceHostNameValue("");
                 setNewReplaceHostNameValue("");
               }}
               value={isReplaceHostName}
@@ -421,7 +475,7 @@ const DetailInfo: React.FC<{
           {isReplaceHostName === 1 ? (
             <>
               <div>
-                <label htmlFor="">需要匹配的字符串</label>
+                <label htmlFor="">Match Prefix Rule Pattern </label>
                 <Input
                   value={oldReplaceHostNameValue}
                   onChange={(e) => setOldReplaceHostNameValue(e.target.value)}
@@ -431,7 +485,7 @@ const DetailInfo: React.FC<{
                 />
               </div>
               <div>
-                <label htmlFor="">需要替换的字符串</label>
+                <label htmlFor="">Replace Prefix Rule Pattern</label>
                 <Input
                   value={newReplaceHostNameValue}
                   onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
@@ -448,29 +502,59 @@ const DetailInfo: React.FC<{
       handleConfirm: async () => {
         await multipleCreateRule({
           projectName: project._name + "@@" + encodeURIComponent(project._url),
-          rulesInfo: checkList.map((item: any) => ({
-            id: item.id,
-            method: item.method,
-          })),
-          newRulePatternPrefix: newReplaceHostNameValue,
+          rulesInfo: checkList.map((item: any) => {
+            console.log(
+              editRulePatternInfoRef.current,
+              item,
+              editRulePatternInfoRef.current.get(item.id) ||
+                (item.content.params.request.url.startsWith(
+                  oldReplaceHostNameValue
+                )
+                  ? newReplaceHostNameValue +
+                    item.content.params.request.url.slice(
+                      oldReplaceHostNameValue.length
+                    )
+                  : "")
+            );
+            return {
+              id: item.id,
+              method: item.method,
+              newRulePattern:
+                editRulePatternInfoRef.current.get(item.id) ||
+                (item.content.params.request.url.startsWith(
+                  oldReplaceHostNameValue
+                )
+                  ? newReplaceHostNameValue +
+                    item.content.params.request.url.slice(
+                      oldReplaceHostNameValue.length
+                    )
+                  : ""),
+            };
+          }),
         });
         closeDialog?.();
         setRefreshNumber((oldValue) => oldValue + 1);
         setIsSelectStatus(false);
         setCheckList([]);
         setNewReplaceHostNameValue("");
+        setOldReplaceHostNameValue("");
+        editRulePatternInfoRef.current.clear();
         setIsReplaceHostName(0);
       },
       handleClose: () => {
         setIsReplaceHostName(0);
+        setOldReplaceHostNameValue("");
         setNewReplaceHostNameValue("");
+        editRulePatternInfoRef.current.clear();
       },
     };
   }, [
     checkList,
     isReplaceHostName,
-    newReplaceHostNameValue,
     oldReplaceHostNameValue,
+    newReplaceHostNameValue,
+    doubleClickEditId,
+    handleBlur,
     project,
     closeDialog,
   ]);
@@ -482,6 +566,14 @@ const DetailInfo: React.FC<{
         width: "45vw",
         style: {
           minWidth: "650px",
+        },
+        className: "multiple-create-dialog",
+        styles: {
+          body: {
+            overflowY: "hidden",
+            padding: "20px 30px",
+            scrollbarWidth: "none",
+          },
         },
       });
       openDialog?.();
@@ -654,6 +746,7 @@ const DetailInfo: React.FC<{
                   onClick={() => {
                     setIsSelectStatus(false);
                     setCheckList([]);
+                    setRefreshNumber((oldValue) => oldValue + 1);
                   }}
                 >
                   Cancel

@@ -152,7 +152,7 @@ const AllRule: React.FC<{
 
   const getCards = useCallback(
     (cacheData: any) => {
-      return (cacheData || [])?.map((item: any) => {
+      return (cacheData || [])?.map((item: any, index: number) => {
         const matchedNum =
           matchedMap
             ?.get(`${item.parent.name}&${item.parent.url}`)
@@ -194,11 +194,7 @@ const AllRule: React.FC<{
                 {isSelectStatus && (
                   <RightClickMenu
                     item={item}
-                    menuButtons={
-                      <Button danger={true} type="primary">
-                        All Select
-                      </Button>
-                    }
+                    menuButtons={<Button type="primary">All Select</Button>}
                     style={{
                       zIndex: 999,
                     }}
@@ -268,6 +264,8 @@ const AllRule: React.FC<{
             </Badge>
           </div>
         );
+
+        item[Symbol.toStringTag] = item.id;
 
         if (isSelectStatus)
           return {
