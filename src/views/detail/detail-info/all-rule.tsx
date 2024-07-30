@@ -28,9 +28,8 @@ const AllRule: React.FC<{
   setCurrentTab: any;
   isSelectStatus: boolean;
   currentTab: string;
+  onCheckListChange: any;
   cacheData?: any[];
-  onStateChange?: any;
-  [key: string]: any;
 }> = (props) => {
   const {
     rules,
@@ -38,7 +37,7 @@ const AllRule: React.FC<{
     setCurrentTab,
     isSelectStatus,
     currentTab,
-    onStateChange,
+    onCheckListChange,
   } = props;
 
   const [checkList, setCheckList] = useState<any>([]);
@@ -49,8 +48,8 @@ const AllRule: React.FC<{
   const [switchLoading, setSwitchLoading] = useState(false);
 
   useEffect(() => {
-    onStateChange?.(checkList);
-  }, [checkList, onStateChange]);
+    onCheckListChange?.(checkList);
+  }, [checkList, onCheckListChange]);
 
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {

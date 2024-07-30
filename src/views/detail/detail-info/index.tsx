@@ -54,8 +54,8 @@ const DetailInfo: React.FC<{
   const containerRef = useRef(null);
   const [isReplaceHostName, setIsReplaceHostName] = useState(0);
   const [oldReplaceHostNameValue, setOldReplaceHostNameValue] = useState("");
-
   const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
+  const [refreshNumber, setRefreshNumber] = useState(0);
   const indeterminate = false;
   const checkAll = false;
 
@@ -65,7 +65,6 @@ const DetailInfo: React.FC<{
 
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
-  const allRuleRef = useRef();
 
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
@@ -269,7 +268,7 @@ const DetailInfo: React.FC<{
       .finally(() => setSaveLoading(false));
   }, [location, navigate, project]);
 
-  const handleStateChange = useCallback((checkList: any) => {
+  const handleCheckListChange = useCallback((checkList: any) => {
     setCheckList(checkList);
   }, []);
 
@@ -456,6 +455,7 @@ const DetailInfo: React.FC<{
           newRulePatternPrefix: newReplaceHostNameValue,
         });
         closeDialog?.();
+        setRefreshNumber((oldValue) => oldValue + 1);
         setIsSelectStatus(false);
         setCheckList([]);
         setNewReplaceHostNameValue("");
@@ -721,8 +721,8 @@ const DetailInfo: React.FC<{
             <DetailRule ref={ruleFormRef} />
           ) : (
             <AllRule
-              onStateChange={handleStateChange}
-              ref={allRuleRef}
+              key={refreshNumber}
+              onCheckListChange={handleCheckListChange}
               rules={rules}
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
