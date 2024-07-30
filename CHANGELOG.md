@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.2.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.1...v1.2.0) (2024-07-30)
+
+
+### Features
+
+* add all select to right menu in the cache data page ([4ba517c](https://github.com/CopyMaster98/Magic-Mock/commit/4ba517c330afa2fb5adce9a25369d2a419ae702c))
+* add multiple create mock data ([1441ec6](https://github.com/CopyMaster98/Magic-Mock/commit/1441ec6057afeca28644260e34e563bdcea80895))
+* add multiple select ([c5719da](https://github.com/CopyMaster98/Magic-Mock/commit/c5719da2e04a953eaf09ba84919704af9a1b6152))
+* finish multiple cache data to mock data ([42005ae](https://github.com/CopyMaster98/Magic-Mock/commit/42005aed3ade0623277b739a20d315948750a408))
+
+
+### Bug Fixes
+
+* can't watch folder when have no config files in the first time ([6cafce5](https://github.com/CopyMaster98/Magic-Mock/commit/6cafce5d694660efbd334a5aed955fd5020a16ad))
+
 ## [1.1.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.0...v1.1.1) (2024-07-22)
 
 
