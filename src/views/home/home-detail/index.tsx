@@ -30,7 +30,7 @@ const HomeDetail: React.FC = () => {
     async (project: any, status: boolean) => {
       setLoading((oldValue: any) => ({
         ...oldValue,
-        [project.name]: status,
+        [project.id]: status,
       }));
 
       const fn = status ? ProjectAPI.startProject : ProjectAPI.stopProject;
@@ -45,7 +45,7 @@ const HomeDetail: React.FC = () => {
         .finally(() => {
           setLoading((oldValue: any) => ({
             ...oldValue,
-            [project.name]: false,
+            [project.id]: false,
           }));
           setRefresh();
         });
@@ -194,7 +194,7 @@ const HomeDetail: React.FC = () => {
                   danger={item.status ? true : false}
                   type="primary"
                   icon={<PoweroffOutlined />}
-                  loading={loading[item.name]}
+                  loading={loading[item.id]}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleChangeStatus(item, !item.status);

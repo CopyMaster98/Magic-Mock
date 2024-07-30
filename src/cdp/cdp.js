@@ -185,6 +185,10 @@ async function intercept(data, page) {
         urlPatterns = [];
       }
 
+      if (!config.responseData) config.responseData = [];
+
+      if (!config.requestHeader) config.requestHeader = [];
+
       let isFileExists = folderUtils.folderExists(configPath);
 
       let fileContent = !isFileExists
@@ -192,7 +196,7 @@ async function intercept(data, page) {
         : updateConfig(configPath);
 
       if (!isFileExists) {
-        config.responseData = config.responseData.filter(
+        config.responseData = config.responseData?.filter(
           (item) => item.ruleName !== fileContent?.ruleName
         );
         urlPatterns = urlPatterns.filter(
@@ -217,14 +221,14 @@ async function intercept(data, page) {
         responseStatusCode,
       } = fileContent;
 
-      config.responseData = config.responseData.filter(
+      config.responseData = config.responseData?.filter(
         (item) => item.ruleName !== ruleName
       );
-      config.requestHeader = config.requestHeader.filter(
+      config.requestHeader = config.requestHeader?.filter(
         (item) => item.ruleName !== ruleName
       );
 
-      config.responseData.push({
+      config.responseData?.push({
         ruleName,
         rulePattern,
         path: configPath,
@@ -234,7 +238,7 @@ async function intercept(data, page) {
         responseStatusCode,
       });
 
-      config.requestHeader.push({
+      config.requestHeader?.push({
         value: requestHeader,
         requestHeaderType,
         ruleMethod,
@@ -277,7 +281,8 @@ async function intercept(data, page) {
         });
       }
       // TODO need delete
-      process.stdout.write(JSON.stringify(config.responseData));
+      config.responseData &&
+        process.stdout.write(JSON.stringify(config.responseData));
     };
     const initWatch = async () =>
       await new Promise(async (resolve) => {
@@ -318,12 +323,14 @@ async function intercept(data, page) {
         );
         cacheDataConfig[method].push(content);
       } else if (folderUtils.folderExists(cacheDataProjectName)) {
-        const methods = fs.readdirSync(cacheDataProjectName);
+        const methods = fs
+          .readdirSync(cacheDataProjectName)
+          ?.filter((method) => CONSTANT.METHODS.includes(method));
 
         methods.forEach((method) => {
-          const cacheFilePath = fs.readdirSync(
-            `${cacheDataProjectName}/${method}`
-          );
+          const cacheFilePath = fs
+            .readdirSync(`${cacheDataProjectName}/${method}`)
+            ?.filter((file) => file.endsWith(".request.json"));
           cacheFilePath.forEach((fileName) => {
             const localPath = `${cacheDataProjectName}/${method}/${fileName}`;
             const content = JSON.parse(fs.readFileSync(localPath, "utf8"));
@@ -431,9 +438,20 @@ async function intercept(data, page) {
       await initCacheDataConfig(path);
     });
 
-    watcher.on("unlink", async (path, stats) => {
-      // TODO need finish when delete cache file then update cacheDataUrlPatterns
-      console.log(path, stats);
+    watcher.on("unlink", async (_path, stats) => {
+      const name = path.basename(_path).split(".request.json")[0];
+      const methodType = path.basename(path.dirname(_path));
+
+      const currentRule = cacheDataUrlPatterns.find(
+        (item) => item.ruleName === name
+      );
+
+      if (currentRule)
+        currentRule.value = currentRule.value.filter(
+          (item) => item.methodType !== methodType
+        );
+
+      console.log(name, methodType);
     });
     await initCacheDataConfig();
     if (configFile.length) {
@@ -465,6 +483,8 @@ async function intercept(data, page) {
       await Fetch.enable({
         patterns: urlPatterns.map((item) => item.value).flat(Infinity),
       });
+
+      await initWatch();
     }
 
     Fetch.requestPaused(async (params) => {
@@ -473,7 +493,6 @@ async function intercept(data, page) {
         .map((item) => item.value)
         .flat(Infinity);
 
-      console.log(allUrlPatterns);
       let matchedPattern = allUrlPatterns.find((pattern) => {
         const regex = /^[*]?([^*]+)[*]?$/g;
 
@@ -606,8 +625,17 @@ async function intercept(data, page) {
           console.log(
             `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
           );
+
           // 根据需要执行相应的逻辑
           if (params.responseStatusCode) {
+            // process.stdout.write(
+            //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
+            // );
+
+            console.log(
+              `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}&type=Mock`
+            );
+
             // modify responseData
 
             const matchedResponseData = config.responseData?.find(
@@ -629,9 +657,9 @@ async function intercept(data, page) {
               responseHeaders: params.responseHeaders,
               responseCode:
                 matchedPattern.responseStatusCode ?? params.responseStatusCode,
-              body:
-                responseData &&
-                Buffer.from(JSON.stringify(responseData)).toString("base64"),
+              body: Buffer.from(JSON.stringify(responseData)).toString(
+                "base64"
+              ),
             });
           } else if (params.request.method !== "OPTIONS") {
             const data = commonUtils.isValidJSON(params.request.postData)
@@ -684,8 +712,16 @@ async function intercept(data, page) {
         console.log(
           `请求 ${requestUrl} 符合Cache模式 ${cacheMatchedPattern.urlPattern}`
         );
+
         // 根据需要执行相应的逻辑
         if (params.responseStatusCode) {
+          // process.stdout.write(
+          //   `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}`
+          // );
+
+          console.log(
+            `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}&type=Cache`
+          );
           // modify responseData
           responseData = cacheMatchedPattern.params.responseData;
 
@@ -695,9 +731,7 @@ async function intercept(data, page) {
             responseCode:
               cacheMatchedPattern.params.responseStatusCode ??
               params.responseStatusCode,
-            body:
-              responseData &&
-              Buffer.from(JSON.stringify(responseData)).toString("base64"),
+            body: Buffer.from(JSON.stringify(responseData)).toString("base64"),
           });
         } else if (params.request.method !== "OPTIONS") {
           const headersArray = Object.entries(params.request.headers).map(
@@ -747,8 +781,15 @@ async function intercept(data, page) {
     // 在页面加载前执行你的操作
     await page.goto(url);
 
-    process.stdin.on("data", (data) => {
-      if (data.includes("Page: close")) Page.close();
+    process.stdin.on("data", async (data) => {
+      if (data?.toString().includes("Page: close")) {
+        try {
+          await Page.close();
+        } catch (error) {
+          console.log(error);
+          process.stdout.write("Page: close");
+        }
+      }
     });
 
     process.stdout.write(`projectName=${name}&url=${url}`);

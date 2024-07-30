@@ -1,4 +1,5 @@
 const { spawn } = require("child_process");
+const { folderContent } = require("../backend/src/utils/folder");
 const websocket = spawn("npm", ["run", "backend-client-websocket"], {
   shell: true,
 });
@@ -15,7 +16,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
 
   child.stdout.on("data", (data) => {
     const info = data.toString();
-    if (info.includes("url=") && info.includes("projectName=")) {
+    if (info.includes("url=") && info.startsWith("projectName=")) {
       const [projectNameKeyValue, urlKeyValue] = info.split("&");
       const projectName = projectNameKeyValue.split("projectName=")[1];
       const url = urlKeyValue.split("url=")[1];
@@ -28,14 +29,35 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       );
     }
 
-    if (data.includes("clean exit") || data.includes("Page: close")) {
+    if (info.startsWith("matchedPath")) {
+      const [
+        matchedPathKeyValue,
+        projectNameKeyValue,
+        urlKeyValue,
+        typeKeyValue,
+      ] = info.split("&");
+      const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
+      const projectName = projectNameKeyValue.split("projectName=")[1];
+      const url = urlKeyValue.split("url=")[1];
+      const type = typeKeyValue.split("type=")[1];
+
+      let content = folderContent(matchedPath);
+
+      if (content) content = JSON.parse(content);
+
+      websocket.stdin.write(
+        `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}&type=${type}`
+      );
+    }
+
+    if (info.includes("clean exit") || info.includes("Page: close")) {
       websocket.stdin.write(
         `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
       );
     }
 
-    if (data.includes("Error:")) {
-      reject(data);
+    if (info.includes("Error:")) {
+      reject(info);
     }
   });
 
@@ -48,8 +70,8 @@ const createChildProcess = (projectInfo, resolve, reject) => {
     console.log(`child process exited with code ${code}`);
   });
 
-  if (!global.projectStatus.has(name))
-    global.projectStatus.set(name, {
+  if (!global.projectStatus.has(name + url))
+    global.projectStatus.set(name + url, {
       url,
       name,
       port,

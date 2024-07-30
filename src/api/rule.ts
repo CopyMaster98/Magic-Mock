@@ -17,6 +17,17 @@ const createRule = (
   return post("/rule/create", data, config);
 };
 
+const multipleCreateRule = (
+  data: {
+    projectName: string;
+    rulesInfo: { id: string; method: string }[];
+    newRulePatternPrefix?: string;
+  },
+  config = {}
+) => {
+  return post("/rule/multipleCreate", data, config);
+};
+
 const getRuleInfo = (
   data: {
     projectId: string;
@@ -60,4 +71,10 @@ const deleteRule = (
   return _delete(`/rule/info/${projectId}/${ruleId}`, config);
 };
 
-export { createRule, getRuleInfo, updateRuleInfo, deleteRule };
+export {
+  createRule,
+  getRuleInfo,
+  updateRuleInfo,
+  deleteRule,
+  multipleCreateRule,
+};
