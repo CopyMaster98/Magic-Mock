@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.0...v1.2.1) (2024-07-30)
+
+
+### Bug Fixes
+
+* unable to control shutdown spwan when not the first to start ([cd8b733](https://github.com/CopyMaster98/Magic-Mock/commit/cd8b73376f749848a72340eab2e72f7dd420c3d1))
+
 ## [1.2.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.1...v1.2.0) (2024-07-30)
 
 
