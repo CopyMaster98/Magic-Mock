@@ -251,8 +251,8 @@ const DetailInfo: React.FC<{
       const fn = status ? ProjectAPI.startProject : ProjectAPI.stopProject;
 
       fn({
-        name: project._name,
-        url: project._url,
+        name: project?._name,
+        url: project?._url,
       })
         .then((res) => {
           console.log(res);

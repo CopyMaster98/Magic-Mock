@@ -18,9 +18,9 @@ const createWebSocket = () => {
         const status = message.includes("open:");
         const [projectNameKeyValue, urlKeyValue, portKeyValue] =
           message.split("&");
-        const name = projectNameKeyValue.split("projectName=")[1];
-        const url = urlKeyValue.split("url=")[1];
-        const port = +portKeyValue.split("port=")[1];
+        const name = projectNameKeyValue?.split("projectName=")[1];
+        const url = urlKeyValue?.split("url=")[1];
+        const port = +portKeyValue?.split("port=")[1];
 
         global.projectStatus.set(name + url, {
           ...global.projectStatus.get(name + url),

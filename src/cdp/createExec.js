@@ -54,6 +54,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       websocket.stdin.write(
         `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
       );
+      child.kill();
     }
 
     if (info.includes("Error:")) {
@@ -67,6 +68,10 @@ const createChildProcess = (projectInfo, resolve, reject) => {
   });
 
   child.on("close", (code) => {
+    console.log(`child process closed with code ${code}`);
+  });
+
+  child.on("exit", (code) => {
     console.log(`child process exited with code ${code}`);
   });
 
@@ -77,6 +82,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       port,
       childProcess: child,
     });
+  else global.projectStatus.get(name + url).childProcess = child;
 };
 
 // createChildProcess({

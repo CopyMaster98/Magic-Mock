@@ -64,6 +64,7 @@ const Dialog: React.FC<{
           maxHeight: "50vh",
           overflowY: "auto",
           padding: "20px 30px",
+          scrollbarWidth: "none",
         },
       }}
       title={
