@@ -185,6 +185,10 @@ async function intercept(data, page) {
         urlPatterns = [];
       }
 
+      if (!config.responseData) config.responseData = [];
+
+      if (!config.requestHeader) config.requestHeader = [];
+
       let isFileExists = folderUtils.folderExists(configPath);
 
       let fileContent = !isFileExists
@@ -192,7 +196,7 @@ async function intercept(data, page) {
         : updateConfig(configPath);
 
       if (!isFileExists) {
-        config.responseData = config.responseData.filter(
+        config.responseData = config.responseData?.filter(
           (item) => item.ruleName !== fileContent?.ruleName
         );
         urlPatterns = urlPatterns.filter(
@@ -217,14 +221,14 @@ async function intercept(data, page) {
         responseStatusCode,
       } = fileContent;
 
-      config.responseData = config.responseData.filter(
+      config.responseData = config.responseData?.filter(
         (item) => item.ruleName !== ruleName
       );
-      config.requestHeader = config.requestHeader.filter(
+      config.requestHeader = config.requestHeader?.filter(
         (item) => item.ruleName !== ruleName
       );
 
-      config.responseData.push({
+      config.responseData?.push({
         ruleName,
         rulePattern,
         path: configPath,
@@ -234,7 +238,7 @@ async function intercept(data, page) {
         responseStatusCode,
       });
 
-      config.requestHeader.push({
+      config.requestHeader?.push({
         value: requestHeader,
         requestHeaderType,
         ruleMethod,
@@ -277,7 +281,8 @@ async function intercept(data, page) {
         });
       }
       // TODO need delete
-      process.stdout.write(JSON.stringify(config.responseData));
+      config.responseData &&
+        process.stdout.write(JSON.stringify(config.responseData));
     };
     const initWatch = async () =>
       await new Promise(async (resolve) => {
@@ -478,6 +483,8 @@ async function intercept(data, page) {
       await Fetch.enable({
         patterns: urlPatterns.map((item) => item.value).flat(Infinity),
       });
+
+      await initWatch();
     }
 
     Fetch.requestPaused(async (params) => {
