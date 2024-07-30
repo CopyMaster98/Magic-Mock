@@ -66,6 +66,16 @@ function App() {
     handleDialog(false);
   }, [handleDialog]);
 
+  const handleUpdateDialogInfo = useCallback(
+    (data?: DialogType.IDialogInfo) => setDialogInfo(data ?? {}),
+    []
+  );
+
+  const handleUpdateModalConfig = useCallback(
+    (data?: ModalConfig) => setModalConfig(data ?? {}),
+    []
+  );
+
   websocket.useCreateWebSocket(handleUpdateProjectInfo);
 
   return (
@@ -78,9 +88,8 @@ function App() {
         setSpinning: updateSpinning,
         openDialog: handleOpenDialog,
         closeDialog: handleCloseDialog,
-        updateDialogInfo: (data?: DialogType.IDialogInfo) =>
-          setDialogInfo(data ?? {}),
-        updateModalConfig: (data?: ModalConfig) => setModalConfig(data ?? {}),
+        updateDialogInfo: handleUpdateDialogInfo,
+        updateModalConfig: handleUpdateModalConfig,
       }}
     >
       <div className="App">

@@ -23,6 +23,7 @@ import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
 import { multipleCreateRule } from "../../../api/rule";
 import RightClickMenu from "../../../components/right-click-menu";
+import { useDebouncedState } from "../../../hooks/debounce";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -54,9 +55,14 @@ const DetailInfo: React.FC<{
   const [isSelectStatus, setIsSelectStatus] = useState(false);
   const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
-  const [isReplaceHostName, setIsReplaceHostName] = useState(0);
-  const [oldReplaceHostNameValue, setOldReplaceHostNameValue] = useState("");
-  const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
+  const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
+  const [oldReplaceRulePattern, setOldReplaceRulePattern] = useState("");
+  const [newReplaceRulePattern, setNewReplaceRulePattern] = useState("");
+
+  const [debouncedOldReplaceRulePattern, setDebouncedOldReplaceRulePattern] =
+    useDebouncedState("");
+  const [debouncedNewReplaceRulePattern, setDebouncedNewReplaceRulePattern] =
+    useDebouncedState("");
   const [refreshNumber, setRefreshNumber] = useState(0);
   const editRulePatternInfoRef = useRef(new Map());
   const editRulePatternPrefixRef = useRef<any>(null);
@@ -157,26 +163,6 @@ const DetailInfo: React.FC<{
     updateModalConfig,
   ]);
 
-  const formatUrl = useCallback(
-    (item: any) => {
-      let str = oldReplaceHostNameValue;
-      let idx = str.length;
-
-      while (idx > 0) {
-        let reg = new RegExp(str);
-
-        if (reg.test(item.content.params.request.url))
-          return item.content.params.request.url.replace(
-            reg,
-            newReplaceHostNameValue
-          );
-        str = str.slice(0, --idx);
-      }
-
-      return "";
-    },
-    [newReplaceHostNameValue, oldReplaceHostNameValue]
-  );
   const itemRender: BreadcrumbProps["itemRender"] = (
     currentRoute,
     params,
@@ -323,9 +309,91 @@ const DetailInfo: React.FC<{
     []
   );
 
+  const replaceRulePatternInput = useMemo(() => {
+    return (
+      <>
+        <div>
+          <label htmlFor="">Match Prefix Rule Pattern </label>
+          <Input
+            value={oldReplaceRulePattern}
+            onChange={(e) => {
+              setOldReplaceRulePattern(e.target.value);
+              setDebouncedOldReplaceRulePattern(e.target.value);
+            }}
+            style={{
+              marginBottom: "20px",
+            }}
+          />
+        </div>
+        <div>
+          <label htmlFor="">Replace Prefix Rule Pattern</label>
+          <Input
+            value={newReplaceRulePattern}
+            onChange={(e) => {
+              setNewReplaceRulePattern(e.target.value);
+              setDebouncedNewReplaceRulePattern(e.target.value);
+            }}
+            style={{
+              marginBottom: "20px",
+            }}
+          />
+        </div>
+      </>
+    );
+  }, [
+    newReplaceRulePattern,
+    oldReplaceRulePattern,
+    setDebouncedNewReplaceRulePattern,
+    setDebouncedOldReplaceRulePattern,
+  ]);
+
+  const handleConfirmMultiple = useCallback(async () => {
+    await multipleCreateRule({
+      projectName: project._name + "@@" + encodeURIComponent(project._url),
+      rulesInfo: checkList.map((item: any) => {
+        console.log(
+          editRulePatternInfoRef.current,
+          item,
+          editRulePatternInfoRef.current.get(item.id) ||
+            (item.content.params.request.url.startsWith(oldReplaceRulePattern)
+              ? newReplaceRulePattern +
+                item.content.params.request.url.slice(
+                  oldReplaceRulePattern.length
+                )
+              : "")
+        );
+        return {
+          id: item.id,
+          method: item.method,
+          newRulePattern:
+            editRulePatternInfoRef.current.get(item.id) ||
+            (item.content.params.request.url.startsWith(oldReplaceRulePattern)
+              ? newReplaceRulePattern +
+                item.content.params.request.url.slice(
+                  oldReplaceRulePattern.length
+                )
+              : ""),
+        };
+      }),
+    });
+    closeDialog?.();
+    setRefreshNumber((oldValue) => oldValue + 1);
+    setIsSelectStatus(false);
+    setCheckList([]);
+    setNewReplaceRulePattern("");
+    setOldReplaceRulePattern("");
+    editRulePatternInfoRef.current.clear();
+    setIsReplaceRulePattern(0);
+  }, [
+    checkList,
+    closeDialog,
+    newReplaceRulePattern,
+    oldReplaceRulePattern,
+    project,
+  ]);
+
   const dialogInfo = useMemo(() => {
     let idx = 0;
-
     const items = checkList
       .map((item: any) => {
         let res = [
@@ -382,19 +450,19 @@ const DetailInfo: React.FC<{
                       <span
                         style={{
                           textDecoration:
-                            oldReplaceHostNameValue.length > 0 &&
+                            debouncedOldReplaceRulePattern.length > 0 &&
                             item.content.params.request.url.startsWith(
-                              oldReplaceHostNameValue
+                              debouncedOldReplaceRulePattern
                             )
                               ? "line-through"
                               : "none",
                         }}
                       >
-                        {oldReplaceHostNameValue.length > 0 &&
+                        {debouncedOldReplaceRulePattern.length > 0 &&
                         item.content.params.request.url.startsWith(
-                          oldReplaceHostNameValue
+                          debouncedOldReplaceRulePattern
                         )
-                          ? oldReplaceHostNameValue
+                          ? debouncedOldReplaceRulePattern
                           : item.content.params.request.url}
                       </span>
 
@@ -402,10 +470,10 @@ const DetailInfo: React.FC<{
                         <span
                           style={{
                             display:
-                              newReplaceHostNameValue.length > 0 &&
-                              oldReplaceHostNameValue.length > 0 &&
+                              debouncedNewReplaceRulePattern.length > 0 &&
+                              debouncedOldReplaceRulePattern.length > 0 &&
                               item.content.params.request.url.startsWith(
-                                oldReplaceHostNameValue
+                                debouncedOldReplaceRulePattern
                               )
                                 ? "inline-block"
                                 : "none",
@@ -413,22 +481,22 @@ const DetailInfo: React.FC<{
                             color: "#52c41a",
                           }}
                         >
-                          {newReplaceHostNameValue}
+                          {debouncedNewReplaceRulePattern}
                         </span>
 
                         <span
                           style={{
                             display:
-                              oldReplaceHostNameValue.length > 0 &&
+                              debouncedOldReplaceRulePattern.length > 0 &&
                               item.content.params.request.url.startsWith(
-                                oldReplaceHostNameValue
+                                debouncedOldReplaceRulePattern
                               )
                                 ? "inline-block"
                                 : "none",
                           }}
                         >
                           {item.content.params.request.url.slice(
-                            oldReplaceHostNameValue.length
+                            debouncedOldReplaceRulePattern.length
                           )}
                         </span>
                       </div>
@@ -462,101 +530,37 @@ const DetailInfo: React.FC<{
             </label>
             <Radio.Group
               onChange={(e) => {
-                setIsReplaceHostName(e.target.value);
-                setOldReplaceHostNameValue("");
-                setNewReplaceHostNameValue("");
+                setIsReplaceRulePattern(e.target.value);
+                setOldReplaceRulePattern("");
+                setNewReplaceRulePattern("");
               }}
-              value={isReplaceHostName}
+              value={isReplaceRulePattern}
             >
               <Radio value={1}>Yes</Radio>
               <Radio value={0}>No</Radio>
             </Radio.Group>
           </div>
-          {isReplaceHostName === 1 ? (
-            <>
-              <div>
-                <label htmlFor="">Match Prefix Rule Pattern </label>
-                <Input
-                  value={oldReplaceHostNameValue}
-                  onChange={(e) => setOldReplaceHostNameValue(e.target.value)}
-                  style={{
-                    marginBottom: "20px",
-                  }}
-                />
-              </div>
-              <div>
-                <label htmlFor="">Replace Prefix Rule Pattern</label>
-                <Input
-                  value={newReplaceHostNameValue}
-                  onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
-                  style={{
-                    marginBottom: "20px",
-                  }}
-                />
-              </div>
-            </>
-          ) : null}
+          {isReplaceRulePattern === 1 ? replaceRulePatternInput : null}
           <Descriptions column={2} title="" bordered items={items} />
         </>
       ),
-      handleConfirm: async () => {
-        await multipleCreateRule({
-          projectName: project._name + "@@" + encodeURIComponent(project._url),
-          rulesInfo: checkList.map((item: any) => {
-            console.log(
-              editRulePatternInfoRef.current,
-              item,
-              editRulePatternInfoRef.current.get(item.id) ||
-                (item.content.params.request.url.startsWith(
-                  oldReplaceHostNameValue
-                )
-                  ? newReplaceHostNameValue +
-                    item.content.params.request.url.slice(
-                      oldReplaceHostNameValue.length
-                    )
-                  : "")
-            );
-            return {
-              id: item.id,
-              method: item.method,
-              newRulePattern:
-                editRulePatternInfoRef.current.get(item.id) ||
-                (item.content.params.request.url.startsWith(
-                  oldReplaceHostNameValue
-                )
-                  ? newReplaceHostNameValue +
-                    item.content.params.request.url.slice(
-                      oldReplaceHostNameValue.length
-                    )
-                  : ""),
-            };
-          }),
-        });
-        closeDialog?.();
-        setRefreshNumber((oldValue) => oldValue + 1);
-        setIsSelectStatus(false);
-        setCheckList([]);
-        setNewReplaceHostNameValue("");
-        setOldReplaceHostNameValue("");
-        editRulePatternInfoRef.current.clear();
-        setIsReplaceHostName(0);
-      },
+      handleConfirm: handleConfirmMultiple,
       handleClose: () => {
-        setIsReplaceHostName(0);
-        setOldReplaceHostNameValue("");
-        setNewReplaceHostNameValue("");
+        setIsReplaceRulePattern(0);
+        setOldReplaceRulePattern("");
+        setNewReplaceRulePattern("");
         editRulePatternInfoRef.current.clear();
       },
     };
   }, [
     checkList,
-    isReplaceHostName,
-    oldReplaceHostNameValue,
-    newReplaceHostNameValue,
+    isReplaceRulePattern,
+    replaceRulePatternInput,
+    handleConfirmMultiple,
     doubleClickEditId,
+    debouncedOldReplaceRulePattern,
+    debouncedNewReplaceRulePattern,
     handleBlur,
-    project,
-    closeDialog,
   ]);
 
   const handleMultipleCreateSave = useCallback(async () => {
