@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.1...v1.2.2) (2024-07-31)
+
+
+### Performance Improvements
+
+* perf dialog and select ([2bfb904](https://github.com/CopyMaster98/Magic-Mock/commit/2bfb904ac793f1ef8b841c55586cff1fac6c7975))
+* perf dialog and select ([f6f0c48](https://github.com/CopyMaster98/Magic-Mock/commit/f6f0c4890973941b6f5b3752811fb003e6976518))
+* perf dialog and select ([d408183](https://github.com/CopyMaster98/Magic-Mock/commit/d4081836ab696604d8305cd1f50c7ac03d9b6a46))
+* perf dialog and select ([5c12dc9](https://github.com/CopyMaster98/Magic-Mock/commit/5c12dc987a2b732e10591f8c5884650f77f1e948))
+* perf dialog and select ([2ee78ac](https://github.com/CopyMaster98/Magic-Mock/commit/2ee78ac2d615d775f6475d82d870a57495b4f201))
+* perf dialog and select ([85d770d](https://github.com/CopyMaster98/Magic-Mock/commit/85d770d0823b18807540c19a77a720f9b706a0d5))
+
 ## [1.2.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.0...v1.2.1) (2024-07-30)
 
 
