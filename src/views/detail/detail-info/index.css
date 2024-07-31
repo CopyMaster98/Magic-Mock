@@ -3,12 +3,13 @@
   margin-top: 20px;
   overflow-y: auto;
 }
+
 .sub-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
 
-  > span {
+  >span {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -20,4 +21,10 @@
   >.buttons {
     flex-shrink: 0;
   }
+}
+
+.multiple-create-dialog .ant-modal-body .ant-descriptions {
+  overflow-y: auto;
+  scrollbar-width: none;
+  max-height: 50vh;
 }

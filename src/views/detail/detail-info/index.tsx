@@ -9,7 +9,14 @@ import {
   theme,
 } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { PoweroffOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../../context";
@@ -22,6 +29,8 @@ import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
 import { multipleCreateRule } from "../../../api/rule";
+import RightClickMenu from "../../../components/right-click-menu";
+import { useDebouncedState } from "../../../hooks/debounce";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -51,9 +60,18 @@ const DetailInfo: React.FC<{
   const [currentTab, setCurrentTab] = useState("1");
   const [checkList, setCheckList] = useState([]);
   const [isSelectStatus, setIsSelectStatus] = useState(false);
+  const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
-  const [isReplaceHostName, setIsReplaceHostName] = useState(0);
-  const [newReplaceHostNameValue, setNewReplaceHostNameValue] = useState("");
+  const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
+  const [oldReplaceRulePattern, setOldReplaceRulePattern] = useState("");
+  const [newReplaceRulePattern, setNewReplaceRulePattern] = useState("");
+  const [debouncedOldReplaceRulePattern, setDebouncedOldReplaceRulePattern] =
+    useDebouncedState("");
+  const [debouncedNewReplaceRulePattern, setDebouncedNewReplaceRulePattern] =
+    useDebouncedState("");
+  const [refreshNumber, setRefreshNumber] = useState(0);
+  const editRulePatternInfoRef = useRef(new Map());
+  const editRulePatternPrefixRef = useRef<any>(null);
   const indeterminate = false;
   const checkAll = false;
 
@@ -63,6 +81,7 @@ const DetailInfo: React.FC<{
 
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
+
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
       title: "Add Rule",
@@ -149,6 +168,7 @@ const DetailInfo: React.FC<{
     updateDialogInfo,
     updateModalConfig,
   ]);
+
   const itemRender: BreadcrumbProps["itemRender"] = (
     currentRoute,
     params,
@@ -244,6 +264,10 @@ const DetailInfo: React.FC<{
       .finally(() => setSaveLoading(false));
   }, [location, navigate, project]);
 
+  const handleCheckListChange = useCallback((checkList: any) => {
+    setCheckList(checkList);
+  }, []);
+
   const handleChangeStatus = useCallback(
     async (project: any, status: boolean) => {
       setLoading(status);
@@ -278,9 +302,92 @@ const DetailInfo: React.FC<{
     });
   }, [location, navigate]);
 
+  const handleBlur = useCallback(
+    (data: { id: string; rulePattern: string }) => {
+      if (editRulePatternPrefixRef.current.input.value !== data.rulePattern)
+        editRulePatternInfoRef.current.set(
+          data.id,
+          editRulePatternPrefixRef.current.input.value
+        );
+      else editRulePatternInfoRef.current.delete(data.id);
+
+      setDoubleClickEditId(null);
+    },
+    []
+  );
+
+  const replaceRulePatternInput = useMemo(() => {
+    return (
+      <>
+        <div>
+          <label htmlFor="">Match Prefix Rule Pattern </label>
+          <Input
+            value={oldReplaceRulePattern}
+            onChange={(e) => {
+              setOldReplaceRulePattern(e.target.value);
+              setDebouncedOldReplaceRulePattern(e.target.value);
+            }}
+            style={{
+              marginBottom: "20px",
+            }}
+          />
+        </div>
+        <div>
+          <label htmlFor="">Replace Prefix Rule Pattern</label>
+          <Input
+            value={newReplaceRulePattern}
+            onChange={(e) => {
+              setNewReplaceRulePattern(e.target.value);
+              setDebouncedNewReplaceRulePattern(e.target.value);
+            }}
+            style={{
+              marginBottom: "20px",
+            }}
+          />
+        </div>
+      </>
+    );
+  }, [
+    newReplaceRulePattern,
+    oldReplaceRulePattern,
+    setDebouncedNewReplaceRulePattern,
+    setDebouncedOldReplaceRulePattern,
+  ]);
+
+  const handleConfirmMultiple = useCallback(async () => {
+    await multipleCreateRule({
+      projectName: project._name + "@@" + encodeURIComponent(project._url),
+      rulesInfo: checkList.map((item: any) => ({
+        id: item.id,
+        method: item.method,
+        newRulePattern:
+          editRulePatternInfoRef.current.get(item.id) ||
+          (item.content.params.request.url.startsWith(oldReplaceRulePattern)
+            ? newReplaceRulePattern +
+              item.content.params.request.url.slice(
+                oldReplaceRulePattern.length
+              )
+            : ""),
+      })),
+    });
+    closeDialog?.();
+    setRefreshNumber((oldValue) => oldValue + 1);
+    setIsSelectStatus(false);
+    setCheckList([]);
+    setNewReplaceRulePattern("");
+    setOldReplaceRulePattern("");
+    editRulePatternInfoRef.current.clear();
+    setIsReplaceRulePattern(0);
+  }, [
+    checkList,
+    closeDialog,
+    newReplaceRulePattern,
+    oldReplaceRulePattern,
+    project,
+  ]);
+
   const dialogInfo = useMemo(() => {
     let idx = 0;
-
     const items = checkList
       .map((item: any) => {
         let res = [
@@ -299,65 +406,104 @@ const DetailInfo: React.FC<{
                 position: "relative",
               }}
             >
-              <div
-                style={{
-                  maxWidth: "22vw",
-                }}
-              >
-                <span
+              {doubleClickEditId === item.id ? (
+                <Input
+                  ref={editRulePatternPrefixRef}
+                  defaultValue={
+                    editRulePatternInfoRef.current.get(item.id) ??
+                    item.content.params.request.url
+                  }
+                  onBlur={() =>
+                    handleBlur({
+                      id: item.id,
+                      rulePattern: item.content.params.request.url,
+                    })
+                  }
+                />
+              ) : (
+                <div
                   style={{
-                    textDecoration:
-                      newReplaceHostNameValue.length > 0
-                        ? "line-through"
-                        : "none",
+                    maxWidth: "22vw",
+                  }}
+                  onDoubleClick={() => {
+                    setDoubleClickEditId(item.id);
                   }}
                 >
-                  {newReplaceHostNameValue.length > 0
-                    ? new URL(item.content.params.request.url).origin
-                    : item.content.params.request.url}
-                </span>
+                  <RightClickMenu
+                    item={item}
+                    menuButtons={
+                      <Button
+                        type="primary"
+                        onClick={() => setDoubleClickEditId(item.id)}
+                      >
+                        Edit
+                      </Button>
+                    }
+                  ></RightClickMenu>
+                  {editRulePatternInfoRef.current.has(item.id) ? (
+                    <span>{editRulePatternInfoRef.current.get(item.id)}</span>
+                  ) : (
+                    <>
+                      <span
+                        style={{
+                          textDecoration:
+                            debouncedOldReplaceRulePattern.length > 0 &&
+                            item.content.params.request.url.startsWith(
+                              debouncedOldReplaceRulePattern
+                            )
+                              ? "line-through"
+                              : "none",
+                        }}
+                      >
+                        {debouncedOldReplaceRulePattern.length > 0 &&
+                        item.content.params.request.url.startsWith(
+                          debouncedOldReplaceRulePattern
+                        )
+                          ? debouncedOldReplaceRulePattern
+                          : item.content.params.request.url}
+                      </span>
 
-                <div>
-                  <span
-                    style={{
-                      display:
-                        newReplaceHostNameValue.length > 0
-                          ? "inline-block"
-                          : "none",
+                      <div>
+                        <span
+                          style={{
+                            display:
+                              debouncedNewReplaceRulePattern.length > 0 &&
+                              debouncedOldReplaceRulePattern.length > 0 &&
+                              item.content.params.request.url.startsWith(
+                                debouncedOldReplaceRulePattern
+                              )
+                                ? "inline-block"
+                                : "none",
 
-                      color: "#52c41a",
-                    }}
-                  >
-                    {newReplaceHostNameValue}
-                  </span>
+                            color: "#52c41a",
+                          }}
+                        >
+                          {debouncedNewReplaceRulePattern}
+                        </span>
 
-                  <span
-                    style={{
-                      display:
-                        newReplaceHostNameValue.length > 0
-                          ? "inline-block"
-                          : "none",
-                    }}
-                  >
-                    {new URL(item.content.params.request.url).pathname}
-                  </span>
+                        <span
+                          style={{
+                            display:
+                              debouncedOldReplaceRulePattern.length > 0 &&
+                              item.content.params.request.url.startsWith(
+                                debouncedOldReplaceRulePattern
+                              )
+                                ? "inline-block"
+                                : "none",
+                          }}
+                        >
+                          {item.content.params.request.url.slice(
+                            debouncedOldReplaceRulePattern.length
+                          )}
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-
-              {/* <Button
-                style={{
-                  position: "absolute",
-                  right: "0",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                }}
-              >
-                Edit
-              </Button> */}
+              )}
             </div>
           ),
         });
-
         return res;
       })
       .flat(Infinity) as any;
@@ -381,53 +527,37 @@ const DetailInfo: React.FC<{
             </label>
             <Radio.Group
               onChange={(e) => {
-                setIsReplaceHostName(e.target.value);
-                setNewReplaceHostNameValue("");
+                setIsReplaceRulePattern(e.target.value);
+                setOldReplaceRulePattern("");
+                setNewReplaceRulePattern("");
               }}
-              value={isReplaceHostName}
+              value={isReplaceRulePattern}
             >
               <Radio value={1}>Yes</Radio>
               <Radio value={0}>No</Radio>
             </Radio.Group>
           </div>
-          {isReplaceHostName === 1 ? (
-            <Input
-              value={newReplaceHostNameValue}
-              onChange={(e) => setNewReplaceHostNameValue(e.target.value)}
-              style={{
-                marginBottom: "20px",
-              }}
-            />
-          ) : null}
+          {isReplaceRulePattern === 1 ? replaceRulePatternInput : null}
           <Descriptions column={2} title="" bordered items={items} />
         </>
       ),
-      handleConfirm: async () => {
-        await multipleCreateRule({
-          projectName: project._name + "@@" + encodeURIComponent(project._url),
-          rulesInfo: checkList.map((item: any) => ({
-            id: item.id,
-            method: item.method,
-          })),
-          newRulePatternPrefix: newReplaceHostNameValue,
-        });
-        closeDialog?.();
-        setIsSelectStatus(false);
-        setCheckList([]);
-        setNewReplaceHostNameValue("");
-        setIsReplaceHostName(0);
-      },
+      handleConfirm: handleConfirmMultiple,
       handleClose: () => {
-        setIsReplaceHostName(0);
-        setNewReplaceHostNameValue("");
+        setIsReplaceRulePattern(0);
+        setOldReplaceRulePattern("");
+        setNewReplaceRulePattern("");
+        editRulePatternInfoRef.current.clear();
       },
     };
   }, [
     checkList,
-    isReplaceHostName,
-    newReplaceHostNameValue,
-    project,
-    closeDialog,
+    isReplaceRulePattern,
+    replaceRulePatternInput,
+    handleConfirmMultiple,
+    doubleClickEditId,
+    debouncedOldReplaceRulePattern,
+    debouncedNewReplaceRulePattern,
+    handleBlur,
   ]);
 
   const handleMultipleCreateSave = useCallback(async () => {
@@ -437,6 +567,14 @@ const DetailInfo: React.FC<{
         width: "45vw",
         style: {
           minWidth: "650px",
+        },
+        className: "multiple-create-dialog",
+        styles: {
+          body: {
+            overflowY: "hidden",
+            padding: "20px 30px",
+            scrollbarWidth: "none",
+          },
         },
       });
       openDialog?.();
@@ -609,6 +747,7 @@ const DetailInfo: React.FC<{
                   onClick={() => {
                     setIsSelectStatus(false);
                     setCheckList([]);
+                    setRefreshNumber((oldValue) => oldValue + 1);
                   }}
                 >
                   Cancel
@@ -676,12 +815,12 @@ const DetailInfo: React.FC<{
             <DetailRule ref={ruleFormRef} />
           ) : (
             <AllRule
+              key={refreshNumber}
+              onCheckListChange={handleCheckListChange}
               rules={rules}
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
               cacheData={cacheData}
-              checkList={checkList}
-              setCheckList={setCheckList}
               isSelectStatus={isSelectStatus}
             />
           )}

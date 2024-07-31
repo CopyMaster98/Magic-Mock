@@ -103,7 +103,7 @@ router.post("/create", async (ctx) => {
 });
 
 router.post("/multipleCreate", async (ctx) => {
-  const { projectName, rulesInfo, newRulePatternPrefix } = ctx.request.body;
+  const { projectName, rulesInfo } = ctx.request.body;
 
   const cachePath = folderPath(
     `${projectName}/${rulesInfo[0].method}`,
@@ -122,10 +122,12 @@ router.post("/multipleCreate", async (ctx) => {
 
       if (content) content = JSON.parse(content);
 
-      if (newRulePatternPrefix) {
-        let oldUrl = new URL(content.params.request.url);
-        content.params.request.url =
-          newRulePatternPrefix + oldUrl.pathname + oldUrl.search;
+      const currentRuleInfo = rulesInfo.find(
+        (info) => info.id === hashUtils.getHash(item)
+      );
+
+      if (currentRuleInfo.newRulePattern) {
+        content.params.request.url = currentRuleInfo.newRulePattern;
       }
 
       content = formatRule({

@@ -15,7 +15,7 @@ import RightClickMenu from "../../../components/right-click-menu";
 import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
@@ -25,27 +25,32 @@ const CheckboxGroup = Checkbox.Group;
 
 const AllRule: React.FC<{
   rules: any[];
-  checkList: any[];
-  setCheckList: any;
   setCurrentTab: any;
   isSelectStatus: boolean;
   currentTab: string;
+  onCheckListChange: any;
   cacheData?: any[];
 }> = (props) => {
   const {
     rules,
     cacheData,
-    checkList,
-    setCheckList,
     setCurrentTab,
     isSelectStatus,
     currentTab,
+    onCheckListChange,
   } = props;
+
+  const [checkList, setCheckList] = useState<any>([]);
   const navigate = useNavigate();
   const { pathname, search } = url.usePathname();
   const { setRefresh, openDialog, updateDialogInfo, closeDialog, matchedMap } =
     useData();
   const [switchLoading, setSwitchLoading] = useState(false);
+
+  useEffect(() => {
+    onCheckListChange?.(checkList);
+  }, [checkList, onCheckListChange]);
+
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
       let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
@@ -140,14 +145,14 @@ const AllRule: React.FC<{
 
   const isSelectedCard = useCallback(
     (cardInfo: any) => {
-      return checkList.find((item) => item.id === cardInfo.id);
+      return checkList.find((item: any) => item.id === cardInfo.id);
     },
     [checkList]
   );
 
   const getCards = useCallback(
     (cacheData: any) => {
-      return (cacheData || [])?.map((item: any) => {
+      return (cacheData || [])?.map((item: any, index: number) => {
         const matchedNum =
           matchedMap
             ?.get(`${item.parent.name}&${item.parent.url}`)
@@ -189,11 +194,7 @@ const AllRule: React.FC<{
                 {isSelectStatus && (
                   <RightClickMenu
                     item={item}
-                    menuButtons={
-                      <Button danger={true} type="primary">
-                        All Select
-                      </Button>
-                    }
+                    menuButtons={<Button type="primary">All Select</Button>}
                     style={{
                       zIndex: 999,
                     }}
@@ -263,6 +264,8 @@ const AllRule: React.FC<{
             </Badge>
           </div>
         );
+
+        item[Symbol.toStringTag] = item.id;
 
         if (isSelectStatus)
           return {
