@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.4](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.3...v1.2.4) (2024-07-31)
+
+
+### Bug Fixes
+
+* if url includes &, project status can't work ([e35ef1d](https://github.com/CopyMaster98/Magic-Mock/commit/e35ef1dfd3b80c8fd19c25e9ae22ff5471f9afd5))
+* if url includes &, project status can't work ([0093f32](https://github.com/CopyMaster98/Magic-Mock/commit/0093f322f61e45ab0e1742974a3e65a16d8a4e4b))
+
 ## [1.2.3](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.2...v1.2.3) (2024-07-31)
 
 
