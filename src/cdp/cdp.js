@@ -8,6 +8,7 @@ const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
 const { folderUtils, commonUtils, hashUtils } = require("../backend/src/utils");
 const { request } = require("http");
+const { isValidJSON } = require("../backend/src/utils/common");
 
 (async () => {
   const chromePath = findChrome();
@@ -315,7 +316,10 @@ async function intercept(data, page) {
     const initCacheDataConfig = async (dataPath) => {
       if (dataPath) {
         const method = path.basename(path.dirname(dataPath));
-        const content = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+        let content = fs.readFileSync(dataPath, "utf8");
+        content = isValidJSON(content)
+          ? JSON.parse(fs.readFileSync(dataPath, "utf8"))
+          : content;
         content.path = dataPath;
         if (!cacheDataConfig[method]) cacheDataConfig[method] = [];
         cacheDataConfig[method] = cacheDataConfig[method].filter(
@@ -450,8 +454,6 @@ async function intercept(data, page) {
         currentRule.value = currentRule.value.filter(
           (item) => item.methodType !== methodType
         );
-
-      console.log(name, methodType);
     });
     await initCacheDataConfig();
     if (configFile.length) {

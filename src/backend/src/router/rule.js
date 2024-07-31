@@ -71,14 +71,14 @@ router.post("/create", async (ctx) => {
 
         createFile(
           `${folderPath(`${isExistParentFolder}`)}/${encodeURIComponent(
-            ruleName
+            ruleName.replaceAll("*", "")
           )}.config.json`,
           JSON.stringify(
             {
               id: hashUtils.getHash(JSON.stringify(+new Date())),
               ruleName,
               rulePattern,
-              ruleMethod,
+              ruleMethod: Array.isArray(ruleMethod) ? ruleMethod : [ruleMethod],
               ruleStatus,
               ...info,
             },
@@ -140,11 +140,15 @@ router.post("/multipleCreate", async (ctx) => {
         createFile(
           folderPath(
             `${projectName}/${encodeURIComponent(
-              content.ruleName.slice(0, 50)
+              content.ruleName.slice(0, 50).replaceAll("*", "")
             )}.config.json`
           ),
           JSON.stringify(content, null, 2)
         );
+        ctx.response.body = {
+          message: "创建成功",
+          statusCode: 0,
+        };
       } catch (error) {
         ctx.response.body = {
           message: "创建失败",
@@ -152,11 +156,6 @@ router.post("/multipleCreate", async (ctx) => {
         };
       }
     });
-
-    ctx.response.body = {
-      message: "创建成功",
-      statusCode: 0,
-    };
   } else
     ctx.response.body = {
       message: "创建失败",

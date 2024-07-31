@@ -14,51 +14,57 @@ const createChildProcess = (projectInfo, resolve, reject) => {
     },
   });
 
+  let arr = [];
   child.stdout.on("data", (data) => {
-    const info = data.toString();
-    if (info.includes("url=") && info.startsWith("projectName=")) {
-      const [projectNameKeyValue, urlKeyValue] = info.split("&");
-      const projectName = projectNameKeyValue.split("projectName=")[1];
-      const url = urlKeyValue.split("url=")[1];
+    arr.push(...data.toString().split("\n"));
+    while (arr.length) {
+      let info = arr.shift();
 
-      projectInfo.name = projectName;
-      projectInfo.url = url;
-      resolve && resolve();
-      websocket.stdin.write(
-        `open:projectName=${projectName}&url=${url}&port=${port}`
-      );
-    }
+      if (info.includes("url=") && info.startsWith("projectName=")) {
+        const [projectNameKeyValue, urlKeyValue] = info.split("&");
+        const projectName = projectNameKeyValue.split("projectName=")[1];
+        const url = urlKeyValue.split("url=")[1];
 
-    if (info.startsWith("matchedPath")) {
-      const [
-        matchedPathKeyValue,
-        projectNameKeyValue,
-        urlKeyValue,
-        typeKeyValue,
-      ] = info.split("&");
-      const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
-      const projectName = projectNameKeyValue.split("projectName=")[1];
-      const url = urlKeyValue.split("url=")[1];
-      const type = typeKeyValue.split("type=")[1];
+        projectInfo.name = projectName;
+        projectInfo.url = url;
+        resolve && resolve();
+        websocket.stdin.write(
+          `open:projectName=${projectName}&url=${url}&port=${port}`
+        );
+      }
 
-      let content = folderContent(matchedPath);
+      if (info.startsWith("matchedPath")) {
+        info = info.replaceAll(/[\s]/g, "");
+        const [
+          matchedPathKeyValue,
+          projectNameKeyValue,
+          urlKeyValue,
+          typeKeyValue,
+        ] = info.split("&");
+        const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
+        const projectName = projectNameKeyValue.split("projectName=")[1];
+        const url = urlKeyValue.split("url=")[1];
+        const type = typeKeyValue.split("type=")[1];
 
-      if (content) content = JSON.parse(content);
+        let content = folderContent(matchedPath);
 
-      websocket.stdin.write(
-        `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}&type=${type}`
-      );
-    }
+        if (content) content = JSON.parse(content);
 
-    if (info.includes("clean exit") || info.includes("Page: close")) {
-      websocket.stdin.write(
-        `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
-      );
-      child.kill();
-    }
+        websocket.stdin.write(
+          `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}&type=${type}`
+        );
+      }
 
-    if (info.includes("Error:")) {
-      reject(info);
+      if (info.includes("clean exit") || info.includes("Page: close")) {
+        websocket.stdin.write(
+          `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
+        );
+        child.kill();
+      }
+
+      if (info.includes("Error:")) {
+        reject(info);
+      }
     }
   });
 

@@ -36,7 +36,7 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
       responseDataJSON: params?.responseData,
       responseDataType: "json",
       responseStatusCode: 200,
-      ruleMethod: params?.request?.method,
+      ruleMethod: [params?.request?.method],
       ruleName: ruleName === "/" ? params?.request?.url : ruleName,
       rulePattern: params?.request?.url,
     };
