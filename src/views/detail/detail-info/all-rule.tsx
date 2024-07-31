@@ -128,8 +128,8 @@ const AllRule: React.FC<{
         item
           ? cacheData?.filter(
               (_item) =>
-                _item.content.params.request.method ===
-                item.content.params.request.method
+                _item.content.params?.request.method ===
+                item.content.params?.request.method
             )
           : []
       );
@@ -293,14 +293,14 @@ const AllRule: React.FC<{
     cacheData?.forEach((item) => {
       if (
         methodTypes.find(
-          (method: any) => method.label === item.content.params.request.method
+          (method: any) => method.label === item.content.params?.request.method
         )
       )
         return;
 
       methodTypes.push({
         key: methodTypes.length,
-        label: item.content.params.request.method,
+        label: item.content.params?.request.method,
         children: (function (cacheData: any) {
           return (
             <div
@@ -325,8 +325,8 @@ const AllRule: React.FC<{
         })(
           cacheData.filter(
             (_item) =>
-              _item.content.params.request.method ===
-              item.content.params.request.method
+              _item.content.params?.request.method ===
+              item.content.params?.request.method
           )
         ),
       });

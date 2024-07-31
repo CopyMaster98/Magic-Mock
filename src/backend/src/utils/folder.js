@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const chokidar = require("chokidar");
+const _ = require("lodash");
 const CONSTANT = require("../constants/index");
 const hashUtils = require("./hash");
 
@@ -49,10 +50,18 @@ const watchFolder = (folderPath, clients) => {
     ignored: /(^|[/\\])\../, // 忽略隐藏文件
     persistent: true, // 持续监听
   });
+  const sendClientUpdate = _.debounce(
+    (reactClient) => reactClient.send("update"),
+    300
+  );
+
   watcher.on("all", (event, path) => {
+    const reactClient = clients.get("React");
     if (["unlinkDir", "addDir", "change", "add", "unlink"].includes(event)) {
-      const reactClient = clients.get("React");
-      if (reactClient) reactClient.send("update");
+      if (reactClient) {
+        sendClientUpdate(reactClient);
+        // reactClient.send("update" + path);
+      }
     }
   });
 };
