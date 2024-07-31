@@ -21,7 +21,8 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       let info = arr.shift();
 
       if (info.includes("url=") && info.startsWith("projectName=")) {
-        const [projectNameKeyValue, urlKeyValue] = info.split("&");
+        const projectNameKeyValue = info.split("&")[0];
+        const urlKeyValue = info.slice(projectNameKeyValue.length + 1);
         const projectName = projectNameKeyValue.split("projectName=")[1];
         const url = urlKeyValue.split("url=")[1];
 
