@@ -17,7 +17,7 @@ const createWebSocket = () => {
       if (message.includes("open:") || message.includes("close:")) {
         const status = message.includes("open:");
         const [projectNameKeyValue, urlKeyValue, portKeyValue] =
-          message.split("&");
+          message.split("δ");
         const name = projectNameKeyValue?.split("projectName=")[1];
         const url = urlKeyValue?.split("url=")[1];
         const port = +portKeyValue?.split("port=")[1];
