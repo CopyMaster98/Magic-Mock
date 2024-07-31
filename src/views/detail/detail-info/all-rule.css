@@ -31,6 +31,10 @@
     background: repeating-conic-gradient(from var(--dir), #0f0, #ff0, #0ff, #f0f, #0ff);
     animation: rotate 4s linear infinite
   }
+
+  >span {
+    height: 100%;
+  }
 }
 
 @keyframes rotate {
