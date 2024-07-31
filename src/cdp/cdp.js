@@ -635,7 +635,7 @@ async function intercept(data, page) {
             // );
 
             console.log(
-              `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}&type=Mock`
+              `matchedPath=${matchedPattern.configPath}δprojectName=${name}δurl=${url}δtype=Mock`
             );
 
             // modify responseData
@@ -722,7 +722,7 @@ async function intercept(data, page) {
           // );
 
           console.log(
-            `matchedPath=${cacheMatchedPattern.path}&projectName=${name}&url=${url}&type=Cache`
+            `matchedPath=${cacheMatchedPattern.path}δprojectName=${name}δurl=${url}δtype=Cache`
           );
           // modify responseData
           responseData = cacheMatchedPattern.params.responseData;
@@ -794,7 +794,7 @@ async function intercept(data, page) {
       }
     });
 
-    process.stdout.write(`projectName=${name}&url=${url}`);
+    process.stdout.write(`projectName=${name}δurl=${url}`);
 
     page.on("close", () => {
       console.log("Page: close");

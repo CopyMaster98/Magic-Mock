@@ -26,11 +26,11 @@ function App() {
   const handleUpdateProjectInfo = useCallback((data: any) => {
     if (data) {
       const [matchedIdStr, projectNameStr, urlStr, portStr, typeStr] =
-        data.split("&");
-      const matchedId = matchedIdStr.split("=")[1].trim();
-      const projectName = projectNameStr.split("=")[1].trim();
-      const url = urlStr.split("=")[1].trim();
-      const type = typeStr.split("=")[1].trim();
+        data.split("δ");
+      const matchedId = matchedIdStr.split("matchedId=")[1].trim();
+      const projectName = projectNameStr.split("projectName=")[1].trim();
+      const url = urlStr.split("url=")[1].trim();
+      const type = typeStr.split("type=")[1].trim();
       const mapName = `${projectName}&${url}`;
 
       if (!matchedMap.current.has(mapName))

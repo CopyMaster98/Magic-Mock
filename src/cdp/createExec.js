@@ -21,8 +21,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
       let info = arr.shift();
 
       if (info.includes("url=") && info.startsWith("projectName=")) {
-        const projectNameKeyValue = info.split("&")[0];
-        const urlKeyValue = info.slice(projectNameKeyValue.length + 1);
+        const [projectNameKeyValue, urlKeyValue] = info.split("δ");
         const projectName = projectNameKeyValue.split("projectName=")[1];
         const url = urlKeyValue.split("url=")[1];
 
@@ -30,7 +29,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
         projectInfo.url = url;
         resolve && resolve();
         websocket.stdin.write(
-          `open:projectName=${projectName}&url=${url}&port=${port}`
+          `open:projectName=${projectName}δurl=${url}δport=${port}`
         );
       }
 
@@ -41,7 +40,7 @@ const createChildProcess = (projectInfo, resolve, reject) => {
           projectNameKeyValue,
           urlKeyValue,
           typeKeyValue,
-        ] = info.split("&");
+        ] = info.split("δ");
         const matchedPath = matchedPathKeyValue.split("matchedPath=")[1];
         const projectName = projectNameKeyValue.split("projectName=")[1];
         const url = urlKeyValue.split("url=")[1];
@@ -52,13 +51,13 @@ const createChildProcess = (projectInfo, resolve, reject) => {
         if (content) content = JSON.parse(content);
 
         websocket.stdin.write(
-          `matched:matchedId=${content?.id}&projectName=${projectName}&url=${url}&port=${port}&type=${type}`
+          `matched:matchedId=${content?.id}δprojectName=${projectName}δurl=${url}δport=${port}δtype=${type}`
         );
       }
 
       if (info.includes("clean exit") || info.includes("Page: close")) {
         websocket.stdin.write(
-          `close:projectName=${projectInfo.name}&url=${projectInfo.url}&port=${port}`
+          `close:projectName=${projectInfo.name}δurl=${projectInfo.url}δport=${port}`
         );
         child.kill();
       }
