@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.2.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.1...v1.2.2) (2024-07-31)
+
+
+### Performance Improvements
+
+* perf dialog and select ([2bfb904](https://github.com/CopyMaster98/Magic-Mock/commit/2bfb904ac793f1ef8b841c55586cff1fac6c7975))
+* perf dialog and select ([f6f0c48](https://github.com/CopyMaster98/Magic-Mock/commit/f6f0c4890973941b6f5b3752811fb003e6976518))
+* perf dialog and select ([d408183](https://github.com/CopyMaster98/Magic-Mock/commit/d4081836ab696604d8305cd1f50c7ac03d9b6a46))
+* perf dialog and select ([5c12dc9](https://github.com/CopyMaster98/Magic-Mock/commit/5c12dc987a2b732e10591f8c5884650f77f1e948))
+* perf dialog and select ([2ee78ac](https://github.com/CopyMaster98/Magic-Mock/commit/2ee78ac2d615d775f6475d82d870a57495b4f201))
+* perf dialog and select ([85d770d](https://github.com/CopyMaster98/Magic-Mock/commit/85d770d0823b18807540c19a77a720f9b706a0d5))
+
+## [1.2.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.0...v1.2.1) (2024-07-30)
+
+
+### Bug Fixes
+
+* unable to control shutdown spwan when not the first to start ([cd8b733](https://github.com/CopyMaster98/Magic-Mock/commit/cd8b73376f749848a72340eab2e72f7dd420c3d1))
+
+## [1.2.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.1...v1.2.0) (2024-07-30)
+
+
+### Features
+
+* add all select to right menu in the cache data page ([4ba517c](https://github.com/CopyMaster98/Magic-Mock/commit/4ba517c330afa2fb5adce9a25369d2a419ae702c))
+* add multiple create mock data ([1441ec6](https://github.com/CopyMaster98/Magic-Mock/commit/1441ec6057afeca28644260e34e563bdcea80895))
+* add multiple select ([c5719da](https://github.com/CopyMaster98/Magic-Mock/commit/c5719da2e04a953eaf09ba84919704af9a1b6152))
+* finish multiple cache data to mock data ([42005ae](https://github.com/CopyMaster98/Magic-Mock/commit/42005aed3ade0623277b739a20d315948750a408))
+
+
+### Bug Fixes
+
+* can't watch folder when have no config files in the first time ([6cafce5](https://github.com/CopyMaster98/Magic-Mock/commit/6cafce5d694660efbd334a5aed955fd5020a16ad))
+
 ## [1.1.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.1.0...v1.1.1) (2024-07-22)
 
 
