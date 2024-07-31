@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.2...v1.2.3) (2024-07-31)
+
+
+### Bug Fixes
+
+* matched number can't show correctly ([03b49b0](https://github.com/CopyMaster98/Magic-Mock/commit/03b49b0d8b213b1fd1a4236cafd70d2335c0ac93))
+
 ## [1.2.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.1...v1.2.2) (2024-07-31)
 
 
