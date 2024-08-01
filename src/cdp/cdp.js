@@ -352,7 +352,7 @@ async function intercept(data, page) {
       const urlPattern = [];
       Object.keys(cacheDataConfig).forEach((method) => {
         cacheDataConfig[method].forEach((item) => {
-          const url = item.params.request.url.split("?")[0];
+          const url = item.params.request.url;
           const findCachePattern = urlPattern.find(
             (_item) => _item.rulePattern === `*${url}*`
           );
@@ -495,36 +495,57 @@ async function intercept(data, page) {
         .map((item) => item.value)
         .flat(Infinity);
 
-      let matchedPattern = allUrlPatterns.find((pattern) => {
+      let matchedPattern = null;
+      let matchedPatternStr = "";
+
+      allUrlPatterns.forEach((pattern) => {
         const regex = /^[*]?([^*]+)[*]?$/g;
 
         let match;
         while ((match = regex.exec(pattern.urlPattern)) !== null) {
           const res = params.request.url.includes(match[1]);
 
-          if (res) return true;
+          if (res) {
+            if (
+              !matchedPattern ||
+              (match[1].length > matchedPatternStr.length &&
+                (pattern.ruleMethod.includes(params.request.method) ||
+                  !pattern.ruleMethod.length))
+            ) {
+              matchedPattern = pattern;
+              matchedPatternStr = match[1];
+            }
+          }
         }
-        return false;
       });
 
-      let cacheMatchedPattern = false;
+      let cacheMatchedPattern = null;
+      let cacheMatchedPatternStr = "";
       if (!matchedPattern) {
-        cacheMatchedPattern = cacheDataUrlPatterns
+        cacheDataUrlPatterns
           .filter((item) => item.cacheStatus)
           .map((item) => item.value)
           .flat(Infinity)
-          .find((pattern) => {
+          .forEach((pattern) => {
             const regex = /^[*]?([^*]+)[*]?$/g;
 
             let match;
             while ((match = regex.exec(pattern.urlPattern)) !== null) {
               const res =
-                params.request.url.split("?")[0] === match[1] &&
+                params.request.url.includes(match[1]) &&
                 params.request.method === pattern.methodType;
 
-              if (res) return true;
+              if (res) {
+                if (
+                  !cacheMatchedPattern ||
+                  (match[1].length > cacheMatchedPatternStr.length &&
+                    pattern.methodType === params.request.method)
+                ) {
+                  cacheMatchedPattern = pattern;
+                  cacheMatchedPatternStr = match[1];
+                }
+              }
             }
-            return false;
           });
       }
 

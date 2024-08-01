@@ -2,11 +2,13 @@
 
 ### Install 
 
-If running  ```npm install``` fails, use  ```npm run install```
+**`npm install`**
+
+If running  **`npm install`** fails, use  **`npm run install`**.
 
 ### Start Cmd
-> Frontend: ```npm run frontend```
-Backend: ```npm run backend```
+> **Frontend**: **`npm run frontend`**
+**Backend**: **`npm run backend`**
 
 ### How to use it?
 
