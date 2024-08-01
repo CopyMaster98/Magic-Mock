@@ -78,7 +78,11 @@ router.post("/create", async (ctx) => {
               id: hashUtils.getHash(JSON.stringify(+new Date())),
               ruleName,
               rulePattern,
-              ruleMethod: Array.isArray(ruleMethod) ? ruleMethod : [ruleMethod],
+              ruleMethod: ruleMethod
+                ? Array.isArray(ruleMethod)
+                  ? ruleMethod
+                  : [ruleMethod]
+                : ruleMethod,
               ruleStatus,
               ...info,
             },
