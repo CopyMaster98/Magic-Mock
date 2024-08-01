@@ -19,6 +19,7 @@ router.post("/create", async (ctx) => {
     responseData,
     payload,
     ruleMethod,
+    resourceType,
     ruleStatus,
     responseStatusCode,
   } = ctx.request.body;
@@ -83,6 +84,11 @@ router.post("/create", async (ctx) => {
                   ? ruleMethod
                   : [ruleMethod]
                 : ruleMethod,
+              resourceType: resourceType
+                ? Array.isArray(resourceType)
+                  ? resourceType
+                  : [resourceType]
+                : resourceType,
               ruleStatus,
               ...info,
             },

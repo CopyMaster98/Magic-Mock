@@ -10,7 +10,33 @@ const methods = [
   "OPTIONS",
 ] as const;
 
+const resourceType = [
+  "Document",
+  "Stylesheet",
+  "Image",
+  "Media",
+  "Font",
+  "Script",
+  "TextTrack",
+  "XHR",
+  "Fetch",
+  "Prefetch",
+  "EventSource",
+  "WebSocket",
+  "Manifest",
+  "SignedExchange",
+  "Ping",
+  "CSPViolationReport",
+  "Preflight",
+  "Other",
+] as const;
+
 const methodOptions = methods.map((item) => ({
+  label: item,
+  value: item,
+}));
+
+const resourceTypeOptions = resourceType.map((item) => ({
   label: item,
   value: item,
 }));
@@ -22,4 +48,4 @@ const methodColors = methodOptions.map((item, index) => ({
   color: color[index],
 }));
 
-export { header, methodOptions, methodColors, methods };
+export { header, methodOptions, methodColors, methods, resourceTypeOptions };

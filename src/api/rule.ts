@@ -6,6 +6,7 @@ const createRule = (
     ruleName: string;
     rulePattern: string;
     ruleMethod?: string[];
+    resourceType?: string[];
     requestHeader: string | any;
     responseData: string | any;
     ruleStatus: boolean;
