@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.4...v1.3.0) (2024-08-01)
+
+
+### Features
+
+* update matched url ([e21548b](https://github.com/CopyMaster98/Magic-Mock/commit/e21548ba6ee8b56827f3b18c9e52efc3d1f7f83c))
+
 ## [1.2.4](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.3...v1.2.4) (2024-07-31)
 
 
