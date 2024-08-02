@@ -8,6 +8,7 @@ import {
   Badge,
   Menu,
   Button,
+  Empty,
 } from "antd";
 import Meta from "antd/es/card/Meta";
 import { SettingOutlined } from "@ant-design/icons";
@@ -19,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import { methodColors } from "../../../constant";
+import { methodColors, resourceTypeColors } from "../../../constant";
 
 const CheckboxGroup = Checkbox.Group;
 
@@ -124,22 +125,36 @@ const AllRule: React.FC<{
 
   const handleAllSelected = useCallback(
     (item: any | null) => {
-      setCheckList(
-        item
-          ? cacheData?.filter(
-              (_item) =>
-                _item.content.params?.request.method ===
-                item.content.params?.request.method
-            )
-          : []
-      );
+      if (!item) {
+        setCheckList([]);
+        return;
+      }
+      const newCheckList = (cacheData || [])
+        ?.filter(
+          (_item) =>
+            _item.content.params?.request.method ===
+            item.content.params?.request.method
+        )
+        .filter(
+          (item) => !checkList.find((_item: any) => _item.id === item.id)
+        );
+
+      currentTab === "1"
+        ? setCheckList(rules)
+        : setCheckList([...checkList, ...newCheckList]);
     },
-    [cacheData, setCheckList]
+    [cacheData, checkList, currentTab, rules]
   );
 
   const findMethod = useCallback((method: any) => {
     return methodColors.find(
       (item) => item.name === method.content.params.request.method
+    );
+  }, []);
+
+  const findResource = useCallback((data: any) => {
+    return resourceTypeColors.find(
+      (item) => item.name === data.content.params?.resourceType
     );
   }, []);
 
@@ -240,6 +255,12 @@ const AllRule: React.FC<{
                               <span>{findMethod(item)?.name ?? "null"}</span>
                             </Tag>
                             <Tag
+                              color={findResource(item)?.color ?? "default"}
+                              style={{ marginLeft: "10px" }}
+                            >
+                              <span>{findResource(item)?.name ?? "null"}</span>
+                            </Tag>
+                            <Tag
                               color="processing"
                               style={{ marginLeft: "10px" }}
                             >
@@ -252,9 +273,7 @@ const AllRule: React.FC<{
                             loading={switchLoading}
                             defaultValue={item?.content?.cacheStatus}
                             style={{ float: "right" }}
-                            onClick={() => {
-                              toggleCacheStatus(item);
-                            }}
+                            onClick={() => toggleCacheStatus(item)}
                           />
                         </div>
                       </>
@@ -279,6 +298,7 @@ const AllRule: React.FC<{
       });
     },
     [
+      findResource,
       findMethod,
       handleAllSelected,
       handleNavigate,
@@ -336,6 +356,23 @@ const AllRule: React.FC<{
 
     return methodTypes;
   }, [cacheData, checkList, getCacheDataCards, isSelectStatus, setCheckList]);
+
+  const mockDataCardsSwitch = useCallback(
+    (data: any) => {
+      return (
+        <Switch
+          key={data.id + data?.content?.ruleStatus}
+          checkedChildren="开启"
+          unCheckedChildren="关闭"
+          loading={switchLoading}
+          defaultValue={data?.content?.ruleStatus}
+          style={{ float: "right" }}
+          onClick={() => toggleRuleStatus(data)}
+        />
+      );
+    },
+    [switchLoading, toggleRuleStatus]
+  );
 
   const getMockDataCards = useCallback(
     (mockData: any) => {
@@ -422,16 +459,7 @@ const AllRule: React.FC<{
                               <span>Mock</span>
                             </Tag>
                           </div>
-                          <Switch
-                            checkedChildren="开启"
-                            unCheckedChildren="关闭"
-                            loading={switchLoading}
-                            defaultValue={data?.content?.ruleStatus}
-                            style={{ float: "right" }}
-                            onClick={() => {
-                              toggleRuleStatus(data);
-                            }}
-                          />
+                          {mockDataCardsSwitch(data)}
                         </div>
                       </>
                     }
@@ -461,9 +489,8 @@ const AllRule: React.FC<{
       isSelectStatus,
       isSelectedCard,
       matchedMap,
+      mockDataCardsSwitch,
       openConfirmDialog,
-      switchLoading,
-      toggleRuleStatus,
     ]
   );
 
@@ -485,17 +512,21 @@ const AllRule: React.FC<{
               display: "flex",
             }}
           >
-            {isSelectStatus ? (
-              <CheckboxGroup
-                style={{
-                  justifyContent: "space-around",
-                }}
-                options={getMockDataCards(rules)}
-                value={checkList}
-                onChange={setCheckList}
-              />
+            {rules.length > 0 ? (
+              isSelectStatus ? (
+                <CheckboxGroup
+                  style={{
+                    justifyContent: "space-around",
+                  }}
+                  options={getMockDataCards(rules)}
+                  value={checkList}
+                  onChange={setCheckList}
+                />
+              ) : (
+                getMockDataCards(rules)
+              )
             ) : (
-              getMockDataCards(rules)
+              <Empty />
             )}
           </div>
         ),
@@ -504,18 +535,25 @@ const AllRule: React.FC<{
         key: "2",
         label: "Cache",
         children: (
-          <Tabs
-            tabPosition={"left"}
-            style={{
-              flexWrap: "nowrap",
-            }}
-            onChange={() => handleAllSelected(null)}
-            items={methodTypeItems}
-          />
+          <>
+            {cacheData && cacheData?.length > 0 ? (
+              <Tabs
+                tabPosition={"left"}
+                style={{
+                  flexWrap: "nowrap",
+                }}
+                onChange={() => handleAllSelected(null)}
+                items={methodTypeItems}
+              />
+            ) : (
+              <Empty />
+            )}
+          </>
         ),
       },
     ];
   }, [
+    cacheData,
     checkList,
     getMockDataCards,
     handleAllSelected,

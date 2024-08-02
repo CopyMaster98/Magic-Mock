@@ -1,6 +1,7 @@
 ## Feature
 
 - [x] 匹配优先级 根据匹配最大长度优先级从高到低
-- [ ] 新增`Cache meta Type` 分组
-- [ ] 新增启动关闭过滤分组
-- [ ] 新增`url`搜索功能
+- [x] 新增启动关闭过滤分组
+- [x] 新增`Content-Type` 分组
+- [x] 新增`rule pattern` / `rule name`搜索功能
+- [ ] 完善其余`Content-Type`格式`Response Data`

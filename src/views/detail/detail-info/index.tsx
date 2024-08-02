@@ -29,9 +29,12 @@ import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
-import { multipleCreateRule } from "../../../api/rule";
+import { multipleCreateRule, updateRuleInfo } from "../../../api/rule";
 import RightClickMenu from "../../../components/right-click-menu";
 import { useDebouncedState } from "../../../hooks/debounce";
+import { resourceTypeOptions, statusOptions } from "../../../constant";
+import Search from "antd/es/input/Search";
+import { updateCacheInfo } from "../../../api/cache";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -77,6 +80,8 @@ const DetailInfo: React.FC<{
   const ruleFormRef = useRef<IFormRefProps>();
 
   const [ruleStatus, setRuleStatus] = useState("All");
+  const [ruleResourceType, setRuleResourceType] = useState("XHR");
+  const [searchValue, setSearchValue] = useState("");
 
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
@@ -590,7 +595,25 @@ const DetailInfo: React.FC<{
     updateModalConfig,
   ]);
 
-  const handleMultipleStart = useCallback(async () => {}, []);
+  const handleMultipleChange = useCallback(async () => {
+    if (currentTab === "1") {
+      await Promise.allSettled(
+        checkList.map(async (rule: any) => {
+          await updateRuleInfo({
+            ruleId: rule.id,
+            projectId: rule.parent.id,
+            ruleInfo: {
+              ruleStatus: !rule?.content?.ruleStatus,
+            },
+          });
+        })
+      ).then((res) => {
+        setIsSelectStatus(false);
+        setCheckList([]);
+        setRefreshNumber((oldValue) => oldValue + 1);
+      });
+    }
+  }, [checkList, currentTab]);
 
   const cardStatusSelectOptions = useMemo(
     () => [
@@ -598,21 +621,39 @@ const DetailInfo: React.FC<{
         label: "All",
         value: "All",
       },
-      {
-        label: "Start",
-        value: "Start",
-      },
-      {
-        label: "Stop",
-        value: "Stop",
-      },
+      ...statusOptions,
     ],
     []
   );
 
+  const resourceTypeSelectOptions = useMemo(() => {
+    const data = currentTab === "1" ? rules : cacheData;
+
+    return [
+      {
+        label: "All",
+        value: "All",
+      },
+      ...resourceTypeOptions.filter((option) =>
+        data?.find((item) =>
+          (
+            item.content.resourceType ?? item.content.params?.resourceType
+          ).includes(option.value)
+        )
+      ),
+    ];
+  }, [cacheData, currentTab, rules]);
+
   const handleCardStatusSelectChange = useCallback(
-    (value: any, type: string) => {
-      const updateData = (type === "1" ? rules : cacheData) || [];
+    (value: any, type?: string, data?: any[]) => {
+      const updateData = (
+        data ? data : (type === "1" ? rules : cacheData) || []
+      ).filter(
+        (item) =>
+          (
+            item.content.rulePattern ?? item.content.params.request.url
+          ).includes(searchValue) || item.name.includes(searchValue)
+      );
       switch (value) {
         case "All":
           return updateData;
@@ -628,17 +669,58 @@ const DetailInfo: React.FC<{
           return updateData;
       }
     },
+    [cacheData, rules, searchValue]
+  );
+
+  const handleCardResourceTypeChange = useCallback(
+    (value: any, type?: string, data?: any[]) => {
+      const updateData = data ? data : (type === "1" ? rules : cacheData) || [];
+      switch (value) {
+        case "All":
+          return updateData;
+        default:
+          return updateData?.filter((item) => {
+            const resourceType =
+              item.content.resourceType ?? item.content.params?.resourceType;
+
+            return (
+              (Array.isArray(resourceType) && resourceType.length === 0) ||
+              resourceType?.includes(value)
+            );
+          });
+      }
+    },
     [cacheData, rules]
   );
 
   const ruleCard = useMemo(
-    () => handleCardStatusSelectChange(ruleStatus, "1"),
-    [handleCardStatusSelectChange, ruleStatus]
+    () =>
+      handleCardResourceTypeChange(
+        ruleResourceType,
+        "",
+        handleCardStatusSelectChange(ruleStatus, "1")
+      ),
+    [
+      handleCardResourceTypeChange,
+      handleCardStatusSelectChange,
+      ruleResourceType,
+      ruleStatus,
+    ]
   );
 
   const cacheCard = useMemo(
-    () => handleCardStatusSelectChange(ruleStatus, "2"),
-    [handleCardStatusSelectChange, ruleStatus]
+    () =>
+      handleCardResourceTypeChange(
+        ruleResourceType,
+        "",
+        handleCardStatusSelectChange(ruleStatus, "2")
+      ),
+    [
+      handleCardResourceTypeChange,
+      handleCardStatusSelectChange,
+      ruleResourceType,
+      ruleStatus,
+    ]
   );
 
   useEffect(() => {
@@ -714,6 +796,10 @@ const DetailInfo: React.FC<{
     [closeDialog, location, navigate, project]
   );
 
+  const handleSearch = useCallback((e: any) => {
+    setSearchValue(e);
+  }, []);
+
   const handleCreateAndSave = useCallback(async () => {
     let form: any = null;
 
@@ -776,29 +862,82 @@ const DetailInfo: React.FC<{
           </span>
 
           {pathname.length <= 1 && (
-            <div className="filter">
-              <label
-                htmlFor="status"
+            <>
+              <div
+                className="filter"
                 style={{
-                  marginRight: "10px",
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                Status
-              </label>
-              <Select
-                id="status"
-                style={{
-                  width: "150px",
-                }}
-                disabled={!!checkList.length}
-                showSearch
-                value={ruleStatus}
-                placeholder="Select Status"
-                optionFilterProp="label"
-                onChange={setRuleStatus}
-                options={cardStatusSelectOptions}
-              />
-            </div>
+                <label
+                  htmlFor="status"
+                  style={{
+                    marginRight: "10px",
+                  }}
+                >
+                  Search
+                </label>
+                <Search
+                  style={{
+                    maxWidth: "300px",
+                  }}
+                  placeholder="Search url pattern"
+                  onSearch={handleSearch}
+                  onChange={(e) => {
+                    if (!e.target.value.length && searchValue.length)
+                      handleSearch("");
+                  }}
+                  enterButton
+                />
+              </div>
+              <div className="filter">
+                <label
+                  htmlFor="status"
+                  style={{
+                    marginRight: "10px",
+                  }}
+                >
+                  Status
+                </label>
+                <Select
+                  id="status"
+                  style={{
+                    width: "150px",
+                  }}
+                  // disabled={!!checkList.length}
+                  // showSearch
+                  value={ruleStatus}
+                  placeholder="Select Status"
+                  optionFilterProp="label"
+                  onChange={setRuleStatus}
+                  options={cardStatusSelectOptions}
+                />
+              </div>
+              <div className="filter">
+                <label
+                  htmlFor="resourceType"
+                  style={{
+                    marginRight: "10px",
+                  }}
+                >
+                  Resource Type
+                </label>
+                <Select
+                  id="resourceType"
+                  style={{
+                    width: "150px",
+                  }}
+                  // disabled={!!checkList.length}
+                  // showSearch
+                  value={ruleResourceType}
+                  placeholder="Select Status"
+                  optionFilterProp="label"
+                  onChange={setRuleResourceType}
+                  options={resourceTypeSelectOptions}
+                />
+              </div>
+            </>
           )}
 
           <div className="buttons">
@@ -835,12 +974,12 @@ const DetailInfo: React.FC<{
                   <Button
                     type="primary"
                     style={{
-                      marginRight: "50px",
+                      marginRight: currentTab === "1" ? "50px" : 0,
                     }}
                     disabled={isSelectStatus && checkList.length === 0}
-                    onClick={handleMultipleStart}
+                    onClick={handleMultipleChange}
                   >
-                    Multiple Start
+                    Multiple Change
                   </Button>
                 )}
                 <Button
@@ -854,7 +993,9 @@ const DetailInfo: React.FC<{
                     marginRight: "50px",
                     backgroundColor: checkList.length > 0 ? "#52c41a" : "",
                   }}
-                  disabled={isSelectStatus && checkList.length === 0}
+                  disabled={
+                    (isSelectStatus && checkList.length === 0) || !project
+                  }
                   onClick={handleMultipleCreateSave}
                 >
                   {isSelectStatus
@@ -866,7 +1007,7 @@ const DetailInfo: React.FC<{
             <Button
               type="primary"
               loading={saveLoading}
-              disabled={isSelectStatus}
+              disabled={isSelectStatus || !project}
               onClick={
                 location.search.includes("ruleId")
                   ? location.search.includes("type=cache")
@@ -889,6 +1030,7 @@ const DetailInfo: React.FC<{
                 marginLeft: "50px",
               }}
               loading={loading}
+              disabled={!project}
               icon={<PoweroffOutlined />}
               onClick={() => handleChangeStatus(project, !project?._status)}
             >

@@ -82,15 +82,36 @@ const updateConfig = (configPath) => {
     requestHeaderType,
     responseDataType,
     configPath,
-    patterns: resourceType.length
-      ? resourceType
-          .map((item) => [
+    patterns:
+      resourceType && resourceType.length
+        ? resourceType
+            .map((item) => [
+              {
+                urlPattern: rulePattern,
+                requestStage: "Request",
+                ruleMethod,
+                payload: payloadJSON,
+                resourceType: item,
+                responseStatusCode,
+                configPath,
+              },
+              {
+                urlPattern: rulePattern,
+                requestStage: "Response",
+                ruleMethod,
+                payload: payloadJSON,
+                resourceType: item,
+                responseStatusCode,
+                configPath,
+              },
+            ])
+            .flat(Infinity)
+        : [
             {
               urlPattern: rulePattern,
               requestStage: "Request",
               ruleMethod,
               payload: payloadJSON,
-              resourceType: item,
               responseStatusCode,
               configPath,
             },
@@ -99,30 +120,10 @@ const updateConfig = (configPath) => {
               requestStage: "Response",
               ruleMethod,
               payload: payloadJSON,
-              resourceType: item,
               responseStatusCode,
               configPath,
             },
-          ])
-          .flat(Infinity)
-      : [
-          {
-            urlPattern: rulePattern,
-            requestStage: "Request",
-            ruleMethod,
-            payload: payloadJSON,
-            responseStatusCode,
-            configPath,
-          },
-          {
-            urlPattern: rulePattern,
-            requestStage: "Response",
-            ruleMethod,
-            payload: payloadJSON,
-            responseStatusCode,
-            configPath,
-          },
-        ],
+          ],
   };
 };
 
@@ -402,7 +403,7 @@ async function intercept(data, page) {
         cacheDataConfig[method].forEach((item) => {
           const url = item.params.request.url;
           const findCachePattern = urlPattern.find(
-            (_item) => _item.rulePattern === `*${url}*`
+            (_item) => _item.rulePattern === url
           );
 
           if (findCachePattern) {
@@ -418,7 +419,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Request",
                     methodType: method,
                     patternType: "cache",
@@ -426,7 +427,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Response",
                     methodType: method,
                     patternType: "cache",
@@ -439,14 +440,14 @@ async function intercept(data, page) {
           } else {
             if (item.cacheStatus) {
               urlPattern.push({
-                rulePattern: `*${url}*`,
+                rulePattern: url,
                 ruleName: item.id,
                 cacheStatus: item.cacheStatus,
                 value: [
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Request",
                     methodType: method,
                     patternType: "cache",
@@ -454,7 +455,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Response",
                     methodType: method,
                     patternType: "cache",
@@ -547,22 +548,48 @@ async function intercept(data, page) {
       let matchedPatternStr = "";
 
       allUrlPatterns.forEach((pattern) => {
-        const regex = /^[*]?([^*]+)[*]?$/g;
+        const flag =
+          (!pattern.ruleMethod?.length ||
+            pattern.ruleMethod.includes(params.request.method)) &&
+          (!pattern.resourceType?.length ||
+            pattern.resourceType.includes(params.resourceType));
 
-        let match;
-        while ((match = regex.exec(pattern.urlPattern)) !== null) {
-          const res = params.request.url.includes(match[1]);
+        if (
+          pattern.urlPattern.length > 1 &&
+          pattern.urlPattern.endsWith("*") &&
+          params.request.url.startsWith(pattern.urlPattern.slice(0, -1))
+        ) {
+          if (
+            pattern.urlPattern.slice(0, -1).length > matchedPatternStr.length &&
+            flag
+          ) {
+            matchedPattern = pattern;
+            matchedPatternStr = pattern.urlPattern.slice(0, -1);
+          }
+        } else if (
+          pattern.urlPattern.length > 1 &&
+          pattern.urlPattern.startsWith("*") &&
+          params.request.url.endsWith(pattern.urlPattern.slice(1))
+        ) {
+          if (
+            pattern.urlPattern.slice(1).length > matchedPatternStr.length &&
+            flag
+          ) {
+            matchedPattern = pattern;
+            matchedPatternStr = pattern.urlPattern.slice(1);
+          }
+        } else {
+          const regex = /^[*]?([^*]+)[*]?$/g;
 
-          if (res) {
-            if (
-              match[1].length > matchedPatternStr.length &&
-              (pattern.ruleMethod.includes(params.request.method) ||
-                !pattern.ruleMethod.length) &&
-              (pattern.resourceType.includes(params.resourceType) ||
-                !pattern.resourceType.length)
-            ) {
-              matchedPattern = pattern;
-              matchedPatternStr = match[1];
+          let match;
+          while ((match = regex.exec(pattern.urlPattern)) !== null) {
+            const res = params.request.url.includes(match[1]);
+
+            if (res) {
+              if (match[1].length > matchedPatternStr.length && flag) {
+                matchedPattern = pattern;
+                matchedPatternStr = match[1];
+              }
             }
           }
         }

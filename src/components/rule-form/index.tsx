@@ -91,8 +91,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     ruleName: "",
     rulePattern: "",
     ruleMethod: [],
-    resourceType: [],
-    responseStatusCode: null,
+    resourceType: ["XHR", "Fetch"],
+    responseStatusCode: 200,
   });
 
   const handleInitRequestHeaderEditor = useCallback(() => {
@@ -362,7 +362,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           style={{ width: "100%" }}
           placeholder="Please select"
           options={resourceTypeOptions}
-          defaultValue={["XHR", "Fetch"]}
+          // defaultValue={["XHR", "Fetch"]}
         />
       </Form.Item>
       <Form.Item label="Rule Method" name="ruleMethod">
@@ -550,7 +550,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           max={599}
           controls={false}
           style={{ width: "100%" }}
-          defaultValue={200}
+          // defaultValue={200}
           placeholder="Default value is the original status code"
         />
       </Form.Item>
