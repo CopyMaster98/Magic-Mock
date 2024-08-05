@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.4.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.3.0...v1.4.0) (2024-08-05)
+
+
+### Features
+
+* add content type selector, rule status selector and rule pattern search function ([aa2f0be](https://github.com/CopyMaster98/Magic-Mock/commit/aa2f0befaaf34f01f4c8db7afcb1f06327b35919))
+* update matched rule ([a6a2c09](https://github.com/CopyMaster98/Magic-Mock/commit/a6a2c09c6f29f744ea392dc373288caadc0debe8))
+
+
+### Bug Fixes
+
+* Fetch.continueRequest don't catch error ([2bef391](https://github.com/CopyMaster98/Magic-Mock/commit/2bef391110b8e8477bb6d8faef63d6661da25350))
+
+
+### Performance Improvements
+
+* perf dialog and select ([d5ae9f2](https://github.com/CopyMaster98/Magic-Mock/commit/d5ae9f262d8f7785ffe95193a53101dc153925bb))
+
 ## [1.3.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.2.4...v1.3.0) (2024-08-01)
 
 
