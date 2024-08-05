@@ -37,6 +37,7 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
       responseDataType: "json",
       responseStatusCode: 200,
       ruleMethod: [params?.request?.method],
+      resourceType: [params?.resourceType],
       ruleName: ruleName === "/" ? params?.request?.url : ruleName,
       rulePattern: params?.request?.url,
     };
@@ -81,6 +82,7 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
         responseDataType: "json",
         responseStatusCode: 200,
         ruleMethod: params?.request?.method,
+        resourceType: params?.resourceType,
         ruleName: ruleName === "/" ? params?.request?.url : ruleName,
         rulePattern: params?.request?.url,
       };

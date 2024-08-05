@@ -6,8 +6,6 @@
 
 .sub-title {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
 
   >span {
     white-space: nowrap;
@@ -21,6 +19,44 @@
   >.buttons {
     flex-shrink: 0;
   }
+
+  .filter-container {
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    gap: 0 30px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 15px 30px;
+
+
+    >.filter {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+
+  }
+
+  @media (max-width: 1700px) {
+
+    .filters {
+      flex-direction: column;
+    }
+
+    .filter *:last-child {
+      flex: 1;
+    }
+
+    .buttons {
+      flex: 1;
+      justify-content: flex-end;
+    }
+  }
+
 }
 
 .multiple-create-dialog .ant-modal-body .ant-descriptions {

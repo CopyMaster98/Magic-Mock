@@ -6,6 +6,7 @@ import {
   Descriptions,
   Input,
   Radio,
+  Select,
   theme,
 } from "antd";
 import { Content } from "antd/es/layout/layout";
@@ -28,9 +29,12 @@ import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import { scroll } from "../../../hooks";
-import { multipleCreateRule } from "../../../api/rule";
+import { multipleCreateRule, updateRuleInfo } from "../../../api/rule";
 import RightClickMenu from "../../../components/right-click-menu";
 import { useDebouncedState } from "../../../hooks/debounce";
+import { resourceTypeOptions, statusOptions } from "../../../constant";
+import Search from "antd/es/input/Search";
+import { updateCacheInfo } from "../../../api/cache";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -63,8 +67,6 @@ const DetailInfo: React.FC<{
   const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
   const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
-  const [oldReplaceRulePattern, setOldReplaceRulePattern] = useState("");
-  const [newReplaceRulePattern, setNewReplaceRulePattern] = useState("");
   const [debouncedOldReplaceRulePattern, setDebouncedOldReplaceRulePattern] =
     useDebouncedState("");
   const [debouncedNewReplaceRulePattern, setDebouncedNewReplaceRulePattern] =
@@ -72,15 +74,12 @@ const DetailInfo: React.FC<{
   const [refreshNumber, setRefreshNumber] = useState(0);
   const editRulePatternInfoRef = useRef(new Map());
   const editRulePatternPrefixRef = useRef<any>(null);
-  const indeterminate = false;
-  const checkAll = false;
-
-  const onCheckAllChange = useCallback((e: any) => {}, []);
-
-  // scroll.useHorizontalScroll(containerRef, pathname.length > 1);
-
   const formRef = useRef<IFormRefProps>();
   const ruleFormRef = useRef<IFormRefProps>();
+
+  const [ruleStatus, setRuleStatus] = useState("All");
+  const [ruleResourceType, setRuleResourceType] = useState("XHR");
+  const [searchValue, setSearchValue] = useState("");
 
   const handleOpenDialog = useCallback(() => {
     const info: IDialogInfo<IFormRefProps | undefined> = {
@@ -95,6 +94,7 @@ const DetailInfo: React.FC<{
               ruleName: string;
               rulePattern: string;
               ruleMethod: string[];
+              resourceType: string[];
               requestHeader?: any[];
               responseData?: any[];
               requestHeaderJSON?: string;
@@ -125,6 +125,7 @@ const DetailInfo: React.FC<{
                 ruleName: formValue.ruleName,
                 rulePattern: formValue.rulePattern,
                 ruleMethod: formValue.ruleMethod,
+                resourceType: formValue.resourceType,
                 requestHeader: {
                   data: requestHeader,
                   type: info.ref?.current?.requestHeaderInputType
@@ -202,6 +203,7 @@ const DetailInfo: React.FC<{
           ruleName: string;
           rulePattern: string;
           ruleMethod: string[];
+          resourceType: string[];
           requestHeader?: any[];
           responseData?: any[];
           requestHeaderJSON?: object;
@@ -236,6 +238,7 @@ const DetailInfo: React.FC<{
               ruleName: formValue.ruleName,
               rulePattern: formValue.rulePattern,
               ruleMethod: formValue.ruleMethod,
+              resourceType: formValue.resourceType,
               requestHeader: {
                 data: requestHeader,
                 type: ruleFormRef?.current?.requestHeaderInputType
@@ -322,9 +325,8 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Match Prefix Rule Pattern </label>
           <Input
-            value={oldReplaceRulePattern}
+            // value={oldReplaceRulePattern}
             onChange={(e) => {
-              setOldReplaceRulePattern(e.target.value);
               setDebouncedOldReplaceRulePattern(e.target.value);
             }}
             style={{
@@ -335,9 +337,8 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Replace Prefix Rule Pattern</label>
           <Input
-            value={newReplaceRulePattern}
+            // value={newReplaceRulePattern}
             onChange={(e) => {
-              setNewReplaceRulePattern(e.target.value);
               setDebouncedNewReplaceRulePattern(e.target.value);
             }}
             style={{
@@ -347,12 +348,7 @@ const DetailInfo: React.FC<{
         </div>
       </>
     );
-  }, [
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
-    setDebouncedNewReplaceRulePattern,
-    setDebouncedOldReplaceRulePattern,
-  ]);
+  }, [setDebouncedNewReplaceRulePattern, setDebouncedOldReplaceRulePattern]);
 
   const handleConfirmMultiple = useCallback(async () => {
     await multipleCreateRule({
@@ -362,10 +358,12 @@ const DetailInfo: React.FC<{
         method: item.method,
         newRulePattern:
           editRulePatternInfoRef.current.get(item.id) ||
-          (item.content.params.request.url.startsWith(oldReplaceRulePattern)
-            ? newReplaceRulePattern +
+          (item.content.params.request.url.startsWith(
+            debouncedOldReplaceRulePattern
+          )
+            ? debouncedNewReplaceRulePattern +
               item.content.params.request.url.slice(
-                oldReplaceRulePattern.length
+                debouncedOldReplaceRulePattern.length
               )
             : ""),
       })),
@@ -374,182 +372,187 @@ const DetailInfo: React.FC<{
     setRefreshNumber((oldValue) => oldValue + 1);
     setIsSelectStatus(false);
     setCheckList([]);
-    setNewReplaceRulePattern("");
-    setOldReplaceRulePattern("");
+    setDebouncedNewReplaceRulePattern("");
+    setDebouncedOldReplaceRulePattern("");
     editRulePatternInfoRef.current.clear();
     setIsReplaceRulePattern(0);
   }, [
     checkList,
     closeDialog,
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
+    debouncedNewReplaceRulePattern,
+    debouncedOldReplaceRulePattern,
     project,
+    setDebouncedNewReplaceRulePattern,
+    setDebouncedOldReplaceRulePattern,
   ]);
 
   const dialogInfo = useMemo(() => {
-    let idx = 0;
-    const items = checkList
-      .map((item: any) => {
-        let res = [
-          {
+    if (currentTab === "2") {
+      let idx = 0;
+      const items = checkList
+        .map((item: any) => {
+          let res = [
+            {
+              key: idx++,
+              label: "ID",
+              children: item.id,
+            },
+          ];
+          res.push({
             key: idx++,
-            label: "ID",
-            children: item.id,
-          },
-        ];
-        res.push({
-          key: idx++,
-          label: "Rule Pattern",
-          children: (
+            label: "Rule Pattern",
+            children: (
+              <div
+                style={{
+                  position: "relative",
+                }}
+              >
+                {doubleClickEditId === item.id ? (
+                  <Input
+                    ref={editRulePatternPrefixRef}
+                    defaultValue={
+                      editRulePatternInfoRef.current.get(item.id) ??
+                      item.content.params.request.url
+                    }
+                    onBlur={() =>
+                      handleBlur({
+                        id: item.id,
+                        rulePattern: item.content.params.request.url,
+                      })
+                    }
+                  />
+                ) : (
+                  <div
+                    style={{
+                      maxWidth: "22vw",
+                    }}
+                    onDoubleClick={() => {
+                      setDoubleClickEditId(item.id);
+                    }}
+                  >
+                    <RightClickMenu
+                      item={item}
+                      menuButtons={
+                        <Button
+                          type="primary"
+                          onClick={() => setDoubleClickEditId(item.id)}
+                        >
+                          Edit
+                        </Button>
+                      }
+                    ></RightClickMenu>
+                    {editRulePatternInfoRef.current.has(item.id) ? (
+                      <span>{editRulePatternInfoRef.current.get(item.id)}</span>
+                    ) : (
+                      <>
+                        <span
+                          style={{
+                            textDecoration:
+                              debouncedOldReplaceRulePattern.length > 0 &&
+                              item.content.params.request.url.startsWith(
+                                debouncedOldReplaceRulePattern
+                              )
+                                ? "line-through"
+                                : "none",
+                          }}
+                        >
+                          {debouncedOldReplaceRulePattern.length > 0 &&
+                          item.content.params.request.url.startsWith(
+                            debouncedOldReplaceRulePattern
+                          )
+                            ? debouncedOldReplaceRulePattern
+                            : item.content.params.request.url}
+                        </span>
+
+                        <div>
+                          <span
+                            style={{
+                              display:
+                                debouncedNewReplaceRulePattern.length > 0 &&
+                                debouncedOldReplaceRulePattern.length > 0 &&
+                                item.content.params.request.url.startsWith(
+                                  debouncedOldReplaceRulePattern
+                                )
+                                  ? "inline-block"
+                                  : "none",
+
+                              color: "#52c41a",
+                            }}
+                          >
+                            {debouncedNewReplaceRulePattern}
+                          </span>
+
+                          <span
+                            style={{
+                              display:
+                                debouncedOldReplaceRulePattern.length > 0 &&
+                                item.content.params.request.url.startsWith(
+                                  debouncedOldReplaceRulePattern
+                                )
+                                  ? "inline-block"
+                                  : "none",
+                            }}
+                          >
+                            {item.content.params.request.url.slice(
+                              debouncedOldReplaceRulePattern.length
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ),
+          });
+          return res;
+        })
+        .flat(Infinity) as any;
+
+      return {
+        title: "Crete & Save",
+        content: (
+          <>
             <div
               style={{
-                position: "relative",
+                marginBottom: "20px",
               }}
             >
-              {doubleClickEditId === item.id ? (
-                <Input
-                  ref={editRulePatternPrefixRef}
-                  defaultValue={
-                    editRulePatternInfoRef.current.get(item.id) ??
-                    item.content.params.request.url
-                  }
-                  onBlur={() =>
-                    handleBlur({
-                      id: item.id,
-                      rulePattern: item.content.params.request.url,
-                    })
-                  }
-                />
-              ) : (
-                <div
-                  style={{
-                    maxWidth: "22vw",
-                  }}
-                  onDoubleClick={() => {
-                    setDoubleClickEditId(item.id);
-                  }}
-                >
-                  <RightClickMenu
-                    item={item}
-                    menuButtons={
-                      <Button
-                        type="primary"
-                        onClick={() => setDoubleClickEditId(item.id)}
-                      >
-                        Edit
-                      </Button>
-                    }
-                  ></RightClickMenu>
-                  {editRulePatternInfoRef.current.has(item.id) ? (
-                    <span>{editRulePatternInfoRef.current.get(item.id)}</span>
-                  ) : (
-                    <>
-                      <span
-                        style={{
-                          textDecoration:
-                            debouncedOldReplaceRulePattern.length > 0 &&
-                            item.content.params.request.url.startsWith(
-                              debouncedOldReplaceRulePattern
-                            )
-                              ? "line-through"
-                              : "none",
-                        }}
-                      >
-                        {debouncedOldReplaceRulePattern.length > 0 &&
-                        item.content.params.request.url.startsWith(
-                          debouncedOldReplaceRulePattern
-                        )
-                          ? debouncedOldReplaceRulePattern
-                          : item.content.params.request.url}
-                      </span>
-
-                      <div>
-                        <span
-                          style={{
-                            display:
-                              debouncedNewReplaceRulePattern.length > 0 &&
-                              debouncedOldReplaceRulePattern.length > 0 &&
-                              item.content.params.request.url.startsWith(
-                                debouncedOldReplaceRulePattern
-                              )
-                                ? "inline-block"
-                                : "none",
-
-                            color: "#52c41a",
-                          }}
-                        >
-                          {debouncedNewReplaceRulePattern}
-                        </span>
-
-                        <span
-                          style={{
-                            display:
-                              debouncedOldReplaceRulePattern.length > 0 &&
-                              item.content.params.request.url.startsWith(
-                                debouncedOldReplaceRulePattern
-                              )
-                                ? "inline-block"
-                                : "none",
-                          }}
-                        >
-                          {item.content.params.request.url.slice(
-                            debouncedOldReplaceRulePattern.length
-                          )}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "10px",
+                }}
+              >
+                Modify all rule patterns
+              </label>
+              <Radio.Group
+                onChange={(e) => {
+                  setIsReplaceRulePattern(e.target.value);
+                  setDebouncedOldReplaceRulePattern("");
+                  setDebouncedNewReplaceRulePattern("");
+                }}
+                value={isReplaceRulePattern}
+              >
+                <Radio value={1}>Yes</Radio>
+                <Radio value={0}>No</Radio>
+              </Radio.Group>
             </div>
-          ),
-        });
-        return res;
-      })
-      .flat(Infinity) as any;
-
-    return {
-      title: "Crete & Save",
-      content: (
-        <>
-          <div
-            style={{
-              marginBottom: "20px",
-            }}
-          >
-            <label
-              style={{
-                display: "block",
-                marginBottom: "10px",
-              }}
-            >
-              Modify all rule patterns
-            </label>
-            <Radio.Group
-              onChange={(e) => {
-                setIsReplaceRulePattern(e.target.value);
-                setOldReplaceRulePattern("");
-                setNewReplaceRulePattern("");
-              }}
-              value={isReplaceRulePattern}
-            >
-              <Radio value={1}>Yes</Radio>
-              <Radio value={0}>No</Radio>
-            </Radio.Group>
-          </div>
-          {isReplaceRulePattern === 1 ? replaceRulePatternInput : null}
-          <Descriptions column={2} title="" bordered items={items} />
-        </>
-      ),
-      handleConfirm: handleConfirmMultiple,
-      handleClose: () => {
-        setIsReplaceRulePattern(0);
-        setOldReplaceRulePattern("");
-        setNewReplaceRulePattern("");
-        editRulePatternInfoRef.current.clear();
-      },
-    };
+            {isReplaceRulePattern === 1 ? replaceRulePatternInput : null}
+            <Descriptions column={2} title="" bordered items={items} />
+          </>
+        ),
+        handleConfirm: handleConfirmMultiple,
+        handleClose: () => {
+          setIsReplaceRulePattern(0);
+          setDebouncedOldReplaceRulePattern("");
+          setDebouncedNewReplaceRulePattern("");
+          editRulePatternInfoRef.current.clear();
+        },
+      };
+    }
   }, [
+    currentTab,
     checkList,
     isReplaceRulePattern,
     replaceRulePatternInput,
@@ -558,6 +561,8 @@ const DetailInfo: React.FC<{
     debouncedOldReplaceRulePattern,
     debouncedNewReplaceRulePattern,
     handleBlur,
+    setDebouncedOldReplaceRulePattern,
+    setDebouncedNewReplaceRulePattern,
   ]);
 
   const handleMultipleCreateSave = useCallback(async () => {
@@ -587,6 +592,147 @@ const DetailInfo: React.FC<{
     updateModalConfig,
   ]);
 
+  const handleMultipleChange = useCallback(async () => {
+    if (currentTab === "1") {
+      await Promise.allSettled(
+        checkList.map(async (rule: any) => {
+          await updateRuleInfo({
+            ruleId: rule.id,
+            projectId: rule.parent.id,
+            ruleInfo: {
+              ruleStatus: !rule?.content?.ruleStatus,
+            },
+          });
+        })
+      );
+    } else if (currentTab === "2") {
+      await Promise.allSettled(
+        checkList.map(async (rule: any) => {
+          await updateCacheInfo({
+            ruleId: rule.id,
+            projectId: rule.parent.id,
+            cacheInfo: {
+              cacheStatus: !rule?.content?.cacheStatus,
+              cacheMethodType: rule?.content?.params?.request?.method,
+            },
+          });
+        })
+      );
+    }
+
+    setIsSelectStatus(false);
+    setCheckList([]);
+    setRefreshNumber((oldValue) => oldValue + 1);
+  }, [checkList, currentTab]);
+
+  const cardStatusSelectOptions = useMemo(
+    () => [
+      {
+        label: "All",
+        value: "All",
+      },
+      ...statusOptions,
+    ],
+    []
+  );
+
+  const resourceTypeSelectOptions = useMemo(() => {
+    const data = currentTab === "1" ? rules : cacheData;
+
+    return [
+      {
+        label: "All",
+        value: "All",
+      },
+      ...resourceTypeOptions.filter((option) =>
+        data?.find((item) =>
+          (
+            item.content.resourceType ?? item.content.params?.resourceType
+          ).includes(option.value)
+        )
+      ),
+    ];
+  }, [cacheData, currentTab, rules]);
+
+  const handleCardStatusSelectChange = useCallback(
+    (value: any, type?: string, data?: any[]) => {
+      const updateData = (
+        data ? data : (type === "1" ? rules : cacheData) || []
+      ).filter(
+        (item) =>
+          (
+            item.content.rulePattern ?? item.content.params.request.url
+          ).includes(searchValue) || item.name.includes(searchValue)
+      );
+      switch (value) {
+        case "All":
+          return updateData;
+        case "Start":
+          return updateData?.filter(
+            (item) => item.content.ruleStatus ?? item.content.cacheStatus
+          );
+        case "Stop":
+          return updateData?.filter(
+            (item) => !(item.content.ruleStatus ?? item.content.cacheStatus)
+          );
+        default:
+          return updateData;
+      }
+    },
+    [cacheData, rules, searchValue]
+  );
+
+  const handleCardResourceTypeChange = useCallback(
+    (value: any, type?: string, data?: any[]) => {
+      const updateData = data ? data : (type === "1" ? rules : cacheData) || [];
+      switch (value) {
+        case "All":
+          return updateData;
+        default:
+          return updateData?.filter((item) => {
+            const resourceType =
+              item.content.resourceType ?? item.content.params?.resourceType;
+
+            return (
+              (Array.isArray(resourceType) && resourceType.length === 0) ||
+              resourceType?.includes(value)
+            );
+          });
+      }
+    },
+    [cacheData, rules]
+  );
+
+  const ruleCard = useMemo(
+    () =>
+      handleCardResourceTypeChange(
+        ruleResourceType,
+        "",
+        handleCardStatusSelectChange(ruleStatus, "1")
+      ),
+    [
+      handleCardResourceTypeChange,
+      handleCardStatusSelectChange,
+      ruleResourceType,
+      ruleStatus,
+    ]
+  );
+
+  const cacheCard = useMemo(
+    () =>
+      handleCardResourceTypeChange(
+        ruleResourceType,
+        "",
+        handleCardStatusSelectChange(ruleStatus, "2")
+      ),
+    [
+      handleCardResourceTypeChange,
+      handleCardStatusSelectChange,
+      ruleResourceType,
+      ruleStatus,
+    ]
+  );
+
   useEffect(() => {
     isSelectStatus && updateDialogInfo?.(dialogInfo);
   }, [dialogInfo, isSelectStatus, updateDialogInfo]);
@@ -597,6 +743,7 @@ const DetailInfo: React.FC<{
         ruleName: string;
         rulePattern: string;
         ruleMethod: string[];
+        resourceType: string[];
         requestHeader?: any[];
         responseData?: any[];
         requestHeaderJSON?: object;
@@ -631,6 +778,7 @@ const DetailInfo: React.FC<{
           ruleName: formValue.ruleName,
           rulePattern: formValue.rulePattern,
           ruleMethod: formValue.ruleMethod,
+          resourceType: formValue.resourceType,
           requestHeader: {
             data: requestHeader,
             type: ruleFormRef?.current?.requestHeaderInputType
@@ -658,6 +806,10 @@ const DetailInfo: React.FC<{
     [closeDialog, location, navigate, project]
   );
 
+  const handleSearch = useCallback((e: any) => {
+    setSearchValue(e);
+  }, []);
+
   const handleCreateAndSave = useCallback(async () => {
     let form: any = null;
 
@@ -680,6 +832,10 @@ const DetailInfo: React.FC<{
     });
     openDialog?.();
   }, [handleSaveCache, openDialog, updateDialogInfo, updateModalConfig]);
+
+  useEffect(() => {
+    setRefreshNumber((oldValue) => oldValue + 1);
+  }, [ruleStatus]);
 
   return (
     <>
@@ -715,88 +871,172 @@ const DetailInfo: React.FC<{
             )}
           </span>
 
-          <div className="buttons">
-            {location.search.includes("ruleId") && (
+          <div className="filter-container">
+            {pathname.length <= 1 && (
+              <div className="filters">
+                <div className="filter">
+                  <label
+                    htmlFor="status"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Search
+                  </label>
+                  <Search
+                    style={{
+                      maxWidth: "300px",
+                      minWidth: "150px",
+                    }}
+                    placeholder="Search url pattern"
+                    onSearch={handleSearch}
+                    onChange={(e) => {
+                      if (!e.target.value.length && searchValue.length)
+                        handleSearch("");
+                    }}
+                    enterButton
+                  />
+                </div>
+                <div className="filter">
+                  <label
+                    htmlFor="status"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Status
+                  </label>
+                  <Select
+                    id="status"
+                    style={{
+                      width: "150px",
+                    }}
+                    // disabled={!!checkList.length}
+                    // showSearch
+                    value={ruleStatus}
+                    placeholder="Select Status"
+                    optionFilterProp="label"
+                    onChange={setRuleStatus}
+                    options={cardStatusSelectOptions}
+                  />
+                </div>
+                <div className="filter">
+                  <label
+                    htmlFor="resourceType"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Resource Type
+                  </label>
+                  <Select
+                    id="resourceType"
+                    style={{
+                      width: "150px",
+                    }}
+                    // disabled={!!checkList.length}
+                    // showSearch
+                    value={ruleResourceType}
+                    placeholder="Select Status"
+                    optionFilterProp="label"
+                    onChange={setRuleResourceType}
+                    options={resourceTypeSelectOptions}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div
+              className="buttons"
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                flex: 1,
+                justifyContent: "flex-end",
+                gap: "15px 30px",
+              }}
+            >
+              {location.search.includes("ruleId") && (
+                <Button type="primary" onClick={handleBack}>
+                  Back
+                </Button>
+              )}
+              {pathname.length <= 1 && (
+                <>
+                  <Button
+                    type="primary"
+                    danger
+                    style={{
+                      display: isSelectStatus ? "" : "none",
+                    }}
+                    onClick={() => {
+                      setIsSelectStatus(false);
+                      setCheckList([]);
+                      setRefreshNumber((oldValue) => oldValue + 1);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  {isSelectStatus && (
+                    <Button
+                      type="primary"
+                      disabled={isSelectStatus && checkList.length === 0}
+                      onClick={handleMultipleChange}
+                    >
+                      Multiple Change
+                    </Button>
+                  )}
+                  <Button
+                    type="primary"
+                    style={{
+                      display:
+                        currentTab === "1" && isSelectStatus
+                          ? "none"
+                          : "inline-block",
+
+                      backgroundColor: checkList.length > 0 ? "#52c41a" : "",
+                    }}
+                    disabled={
+                      (isSelectStatus && checkList.length === 0) || !project
+                    }
+                    onClick={handleMultipleCreateSave}
+                  >
+                    {isSelectStatus
+                      ? "Multiple Create & Save"
+                      : "Multiple Select"}
+                  </Button>
+                </>
+              )}
               <Button
                 type="primary"
-                onClick={handleBack}
-                style={{
-                  marginRight: "50px",
-                }}
+                loading={saveLoading}
+                disabled={isSelectStatus || !project}
+                onClick={
+                  location.search.includes("ruleId")
+                    ? location.search.includes("type=cache")
+                      ? handleCreateAndSave
+                      : handleUpdateRule
+                    : handleOpenDialog
+                }
               >
-                Back
-              </Button>
-            )}
-            {currentTab === "2" && pathname.length <= 1 && (
-              <>
-                {/* <Checkbox
-                  indeterminate={indeterminate}
-                  onChange={onCheckAllChange}
-                  checked={checkAll}
-                >
-                  Check all
-                </Checkbox> */}
-                <Button
-                  type="primary"
-                  danger
-                  style={{
-                    display: isSelectStatus ? "" : "none",
-                    marginLeft: "30px",
-                    marginRight: "30px",
-                  }}
-                  onClick={() => {
-                    setIsSelectStatus(false);
-                    setCheckList([]);
-                    setRefreshNumber((oldValue) => oldValue + 1);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  style={{
-                    marginLeft: "30px",
-                    marginRight: "50px",
-                    backgroundColor: checkList.length > 0 ? "#52c41a" : "",
-                  }}
-                  disabled={isSelectStatus && checkList.length === 0}
-                  onClick={handleMultipleCreateSave}
-                >
-                  Multiple Create & Save
-                </Button>
-              </>
-            )}
-            <Button
-              type="primary"
-              loading={saveLoading}
-              disabled={isSelectStatus}
-              onClick={
-                location.search.includes("ruleId")
+                {location.search.includes("ruleId")
                   ? location.search.includes("type=cache")
-                    ? handleCreateAndSave
-                    : handleUpdateRule
-                  : handleOpenDialog
-              }
-            >
-              {location.search.includes("ruleId")
-                ? location.search.includes("type=cache")
-                  ? "Create & Save"
-                  : "Save"
-                : "Add Rule"}
-            </Button>
+                    ? "Create & Save"
+                    : "Save"
+                  : "Add Rule"}
+              </Button>
 
-            <Button
-              type="primary"
-              danger={project?._status ? true : false}
-              style={{
-                marginLeft: "50px",
-              }}
-              loading={loading}
-              icon={<PoweroffOutlined />}
-              onClick={() => handleChangeStatus(project, !project?._status)}
-            >
-              {project?._status ? "Stop" : "Start"}
-            </Button>
+              <Button
+                type="primary"
+                danger={project?._status ? true : false}
+                loading={loading}
+                disabled={!project}
+                icon={<PoweroffOutlined />}
+                onClick={() => handleChangeStatus(project, !project?._status)}
+              >
+                {project?._status ? "Stop" : "Start"}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -816,11 +1056,12 @@ const DetailInfo: React.FC<{
           ) : (
             <AllRule
               key={refreshNumber}
-              onCheckListChange={handleCheckListChange}
-              rules={rules}
+              onChangeCheckList={handleCheckListChange}
+              // onChangeCardStatus={handleCardStatusChange}
+              rules={ruleCard}
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
-              cacheData={cacheData}
+              cacheData={cacheCard}
               isSelectStatus={isSelectStatus}
             />
           )}

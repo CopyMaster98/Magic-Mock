@@ -8,6 +8,7 @@ import {
   Badge,
   Menu,
   Button,
+  Empty,
 } from "antd";
 import Meta from "antd/es/card/Meta";
 import { SettingOutlined } from "@ant-design/icons";
@@ -19,7 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import { methodColors } from "../../../constant";
+import { methodColors, resourceTypeColors } from "../../../constant";
 
 const CheckboxGroup = Checkbox.Group;
 
@@ -28,7 +29,7 @@ const AllRule: React.FC<{
   setCurrentTab: any;
   isSelectStatus: boolean;
   currentTab: string;
-  onCheckListChange: any;
+  onChangeCheckList: any;
   cacheData?: any[];
 }> = (props) => {
   const {
@@ -37,7 +38,7 @@ const AllRule: React.FC<{
     setCurrentTab,
     isSelectStatus,
     currentTab,
-    onCheckListChange,
+    onChangeCheckList,
   } = props;
 
   const [checkList, setCheckList] = useState<any>([]);
@@ -48,8 +49,8 @@ const AllRule: React.FC<{
   const [switchLoading, setSwitchLoading] = useState(false);
 
   useEffect(() => {
-    onCheckListChange?.(checkList);
-  }, [checkList, onCheckListChange]);
+    onChangeCheckList?.(checkList);
+  }, [checkList, onChangeCheckList]);
 
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
@@ -124,22 +125,36 @@ const AllRule: React.FC<{
 
   const handleAllSelected = useCallback(
     (item: any | null) => {
-      setCheckList(
-        item
-          ? cacheData?.filter(
-              (_item) =>
-                _item.content.params?.request.method ===
-                item.content.params?.request.method
-            )
-          : []
-      );
+      if (!item) {
+        setCheckList([]);
+        return;
+      }
+      const newCheckList = (cacheData || [])
+        ?.filter(
+          (_item) =>
+            _item.content.params?.request.method ===
+            item.content.params?.request.method
+        )
+        .filter(
+          (item) => !checkList.find((_item: any) => _item.id === item.id)
+        );
+
+      currentTab === "1"
+        ? setCheckList(rules)
+        : setCheckList([...checkList, ...newCheckList]);
     },
-    [cacheData, setCheckList]
+    [cacheData, checkList, currentTab, rules]
   );
 
   const findMethod = useCallback((method: any) => {
     return methodColors.find(
       (item) => item.name === method.content.params.request.method
+    );
+  }, []);
+
+  const findResource = useCallback((data: any) => {
+    return resourceTypeColors.find(
+      (item) => item.name === data.content.params?.resourceType
     );
   }, []);
 
@@ -150,7 +165,24 @@ const AllRule: React.FC<{
     [checkList]
   );
 
-  const getCards = useCallback(
+  const cacheDataCardsSwitch = useCallback(
+    (data: any) => {
+      return (
+        <Switch
+          key={data.id + data?.content?.cacheStatus}
+          checkedChildren="开启"
+          unCheckedChildren="关闭"
+          loading={switchLoading}
+          defaultValue={data?.content?.cacheStatus}
+          style={{ float: "right" }}
+          onClick={() => toggleCacheStatus(data)}
+        />
+      );
+    },
+    [switchLoading, toggleCacheStatus]
+  );
+
+  const getCacheDataCards = useCallback(
     (cacheData: any) => {
       return (cacheData || [])?.map((item: any, index: number) => {
         const matchedNum =
@@ -240,20 +272,19 @@ const AllRule: React.FC<{
                               <span>{findMethod(item)?.name ?? "null"}</span>
                             </Tag>
                             <Tag
+                              color={findResource(item)?.color ?? "default"}
+                              style={{ marginLeft: "10px" }}
+                            >
+                              <span>{findResource(item)?.name ?? "null"}</span>
+                            </Tag>
+                            <Tag
                               color="processing"
                               style={{ marginLeft: "10px" }}
                             >
                               <span>Cache</span>
                             </Tag>
                           </div>
-                          <Switch
-                            checkedChildren="开启"
-                            unCheckedChildren="关闭"
-                            loading={switchLoading}
-                            defaultValue={item?.content?.cacheStatus}
-                            style={{ float: "right" }}
-                            onClick={() => toggleCacheStatus(item)}
-                          />
+                          {cacheDataCardsSwitch(item)}
                         </div>
                       </>
                     }
@@ -277,14 +308,14 @@ const AllRule: React.FC<{
       });
     },
     [
-      findMethod,
-      handleAllSelected,
-      handleNavigate,
-      isSelectStatus,
-      isSelectedCard,
       matchedMap,
-      switchLoading,
-      toggleCacheStatus,
+      isSelectedCard,
+      isSelectStatus,
+      findMethod,
+      findResource,
+      cacheDataCardsSwitch,
+      handleNavigate,
+      handleAllSelected,
     ]
   );
 
@@ -313,12 +344,12 @@ const AllRule: React.FC<{
                   style={{
                     justifyContent: "space-around",
                   }}
-                  options={getCards(cacheData)}
+                  options={getCacheDataCards(cacheData)}
                   value={checkList}
                   onChange={setCheckList}
                 />
               ) : (
-                getCards(cacheData)
+                getCacheDataCards(cacheData)
               )}
             </div>
           );
@@ -333,8 +364,152 @@ const AllRule: React.FC<{
     });
 
     return methodTypes;
-  }, [cacheData, checkList, getCards, isSelectStatus, setCheckList]);
+  }, [cacheData, checkList, getCacheDataCards, isSelectStatus, setCheckList]);
 
+  const mockDataCardsSwitch = useCallback(
+    (data: any) => {
+      return (
+        <Switch
+          key={data.id + data?.content?.ruleStatus}
+          checkedChildren="开启"
+          unCheckedChildren="关闭"
+          loading={switchLoading}
+          defaultValue={data?.content?.ruleStatus}
+          style={{ float: "right" }}
+          onClick={() => toggleRuleStatus(data)}
+        />
+      );
+    },
+    [switchLoading, toggleRuleStatus]
+  );
+
+  const getMockDataCards = useCallback(
+    (mockData: any) => {
+      return (mockData || [])?.map((data: any, index: number) => {
+        const matchedNum =
+          matchedMap
+            ?.get(`${data.parent.name}&${data.parent.url}`)
+            ?.get(data.type ?? "mock")
+            ?.get(data.content.id) || 0;
+
+        const html = (
+          <div
+            key={data.id}
+            className={data?.content?.ruleStatus ? "rule-card" : ""}
+            style={{
+              padding: "5px",
+              margin: "5px 5px 30px 5px",
+              borderRadius: "8px",
+              backgroundColor: "transparent",
+            }}
+          >
+            <Badge count={matchedNum}>
+              <Card
+                className={
+                  isSelectedCard(data)
+                    ? "card-selected card-container"
+                    : isSelectStatus
+                    ? "card-container card-select"
+                    : "card-container"
+                }
+                style={{
+                  height: "100%",
+                  width: 360,
+                  marginLeft: 0,
+                }}
+                actions={[
+                  <SettingOutlined
+                    key="setting"
+                    onClick={() => handleNavigate(data)}
+                  />,
+                ]}
+                hoverable
+              >
+                {isSelectStatus ? (
+                  <RightClickMenu
+                    item={data}
+                    menuButtons={<Button type="primary">All Select</Button>}
+                    style={{
+                      zIndex: 999,
+                    }}
+                    handleClick={() => handleAllSelected(data)}
+                  />
+                ) : (
+                  <RightClickMenu item={data} handleClick={openConfirmDialog} />
+                )}
+                <Skeleton loading={false} avatar active>
+                  <Meta
+                    title={
+                      <>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              flex: 1,
+                              width: 0,
+                              marginRight: "20px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              {decodeURIComponent(data.name)}
+                            </span>
+                            <Tag color="success" style={{ marginLeft: "10px" }}>
+                              <span>Mock</span>
+                            </Tag>
+                          </div>
+                          {mockDataCardsSwitch(data)}
+                        </div>
+                      </>
+                    }
+                    // description="This is the description"
+                  />
+                </Skeleton>
+              </Card>
+            </Badge>
+          </div>
+        );
+
+        data[Symbol.toStringTag] = data.id;
+
+        if (isSelectStatus)
+          return {
+            label: html,
+            value: data,
+          };
+
+        return html;
+      });
+    },
+
+    [
+      handleAllSelected,
+      handleNavigate,
+      isSelectStatus,
+      isSelectedCard,
+      matchedMap,
+      mockDataCardsSwitch,
+      openConfirmDialog,
+    ]
+  );
+
+  const handleChangeTab = useCallback(
+    (e: any) => {
+      setCheckList([]);
+      setTimeout(() => setCurrentTab(e));
+    },
+    [setCurrentTab]
+  );
   const items = useMemo(() => {
     return [
       {
@@ -346,96 +521,22 @@ const AllRule: React.FC<{
               display: "flex",
             }}
           >
-            {rules.map((item) => {
-              const matchedNum =
-                matchedMap
-                  ?.get(`${item.parent.name}&${item.parent.url}`)
-                  ?.get(item.type ?? "mock")
-                  ?.get(item.content.id) || 0;
-              return (
-                <div
-                  key={item.id}
-                  className={item?.content?.ruleStatus ? "rule-card" : ""}
+            {rules.length > 0 ? (
+              isSelectStatus ? (
+                <CheckboxGroup
                   style={{
-                    padding: "5px",
-                    margin: "5px 5px 30px 5px",
-                    borderRadius: "8px",
-                    backgroundColor: "transparent",
+                    justifyContent: "space-around",
                   }}
-                >
-                  <Badge count={matchedNum}>
-                    <Card
-                      className="card-container"
-                      style={{
-                        height: "100%",
-                        width: 360,
-                        marginLeft: 0,
-                      }}
-                      actions={[
-                        <SettingOutlined
-                          key="setting"
-                          onClick={() => handleNavigate(item)}
-                        />,
-                      ]}
-                      hoverable
-                    >
-                      <RightClickMenu
-                        item={item}
-                        handleClick={openConfirmDialog}
-                      />
-                      <Skeleton loading={false} avatar active>
-                        <Meta
-                          title={
-                            <>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    flex: 1,
-                                    width: 0,
-                                    marginRight: "20px",
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      whiteSpace: "nowrap",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                    }}
-                                  >
-                                    {decodeURIComponent(item.name)}
-                                  </span>
-                                  <Tag
-                                    color="success"
-                                    style={{ marginLeft: "10px" }}
-                                  >
-                                    <span>Mock</span>
-                                  </Tag>
-                                </div>
-                                <Switch
-                                  checkedChildren="开启"
-                                  unCheckedChildren="关闭"
-                                  loading={switchLoading}
-                                  defaultValue={item?.content?.ruleStatus}
-                                  style={{ float: "right" }}
-                                  onClick={() => toggleRuleStatus(item)}
-                                />
-                              </div>
-                            </>
-                          }
-                          // description="This is the description"
-                        />
-                      </Skeleton>
-                    </Card>
-                  </Badge>
-                </div>
-              );
-            })}
+                  options={getMockDataCards(rules)}
+                  value={checkList}
+                  onChange={setCheckList}
+                />
+              ) : (
+                getMockDataCards(rules)
+              )
+            ) : (
+              <Empty />
+            )}
           </div>
         ),
       },
@@ -443,26 +544,31 @@ const AllRule: React.FC<{
         key: "2",
         label: "Cache",
         children: (
-          <Tabs
-            tabPosition={"left"}
-            style={{
-              flexWrap: "nowrap",
-            }}
-            onChange={() => handleAllSelected(null)}
-            items={methodTypeItems}
-          />
+          <>
+            {cacheData && cacheData?.length > 0 ? (
+              <Tabs
+                tabPosition={"left"}
+                style={{
+                  flexWrap: "nowrap",
+                }}
+                onChange={() => handleAllSelected(null)}
+                items={methodTypeItems}
+              />
+            ) : (
+              <Empty />
+            )}
+          </>
         ),
       },
     ];
   }, [
+    cacheData,
+    checkList,
+    getMockDataCards,
     handleAllSelected,
-    handleNavigate,
-    matchedMap,
+    isSelectStatus,
     methodTypeItems,
-    openConfirmDialog,
     rules,
-    switchLoading,
-    toggleRuleStatus,
   ]);
 
   return (
@@ -470,7 +576,7 @@ const AllRule: React.FC<{
       <Tabs
         defaultActiveKey={currentTab}
         items={items}
-        onChange={setCurrentTab}
+        onChange={handleChangeTab}
       />
     </>
   );

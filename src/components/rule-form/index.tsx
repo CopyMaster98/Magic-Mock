@@ -24,7 +24,7 @@ import {
 import JSONEditor from "jsoneditor";
 import "jsoneditor/dist/jsoneditor.min.css";
 import "./index.css";
-import { methodOptions } from "../../constant";
+import { methodOptions, resourceTypeOptions } from "../../constant";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data, isUpdate } = props;
@@ -52,6 +52,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: "",
         rulePattern: "",
         ruleMethod: [],
+        resourceType: [],
         payloadJSON: null,
         requestHeader: [],
         requestHeaderJSON: null,
@@ -90,7 +91,8 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     ruleName: "",
     rulePattern: "",
     ruleMethod: [],
-    responseStatusCode: null,
+    resourceType: ["XHR", "Fetch"],
+    responseStatusCode: 200,
   });
 
   const handleInitRequestHeaderEditor = useCallback(() => {
@@ -189,6 +191,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: form.getFieldValue("ruleName"),
         rulePattern: form.getFieldValue("rulePattern"),
         ruleMethod: form.getFieldValue("ruleMethod"),
+        resourceType: form.getFieldValue("resourceType"),
         responseStatusCode: form.getFieldValue("responseStatusCode"),
       };
 
@@ -228,6 +231,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: data.ruleName,
         rulePattern: data.rulePattern,
         ruleMethod: data.ruleMethod,
+        resourceType: data.resourceType,
         responseStatusCode: data.responseStatusCode,
       };
 
@@ -269,14 +273,20 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       isUpdate
     )
       return;
-    const { ruleName, rulePattern, ruleMethod, responseStatusCode } =
-      formBaseValueRef.current;
+    const {
+      ruleName,
+      rulePattern,
+      ruleMethod,
+      responseStatusCode,
+      resourceType,
+    } = formBaseValueRef.current;
 
     const baseFormItem = {
       ruleName,
       rulePattern,
       ruleMethod,
       responseStatusCode,
+      resourceType,
     };
 
     setTimeout(() => {
@@ -345,6 +355,16 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           />
         </Tooltip>
       </Form.Item>
+      <Form.Item label="Resource Type" name="resourceType">
+        <Select
+          mode="multiple"
+          allowClear
+          style={{ width: "100%" }}
+          placeholder="Please select"
+          options={resourceTypeOptions}
+          // defaultValue={["XHR", "Fetch"]}
+        />
+      </Form.Item>
       <Form.Item label="Rule Method" name="ruleMethod">
         <Select
           mode="multiple"
@@ -405,6 +425,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
               ruleName: form.getFieldValue("ruleName"),
               rulePattern: form.getFieldValue("rulePattern"),
               ruleMethod: form.getFieldValue("ruleMethod"),
+              resourceType: form.getFieldValue("resourceType"),
               responseStatusCode: form.getFieldValue("responseStatusCode"),
             };
 
@@ -529,7 +550,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           max={599}
           controls={false}
           style={{ width: "100%" }}
-          defaultValue={200}
+          // defaultValue={200}
           placeholder="Default value is the original status code"
         />
       </Form.Item>

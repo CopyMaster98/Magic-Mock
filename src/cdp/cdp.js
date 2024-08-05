@@ -57,6 +57,7 @@ const updateConfig = (configPath) => {
     rulePattern,
     ruleStatus,
     ruleMethod,
+    resourceType,
     payloadJSON,
     responseStatusCode,
     requestHeaderType,
@@ -72,6 +73,7 @@ const updateConfig = (configPath) => {
     rulePattern,
     ruleStatus,
     ruleMethod,
+    resourceType,
     payload: payloadJSON,
     responseStatusCode,
     requestHeader:
@@ -80,41 +82,71 @@ const updateConfig = (configPath) => {
     requestHeaderType,
     responseDataType,
     configPath,
-    patterns: [
-      {
-        urlPattern: rulePattern,
-        requestStage: "Request",
-        ruleMethod,
-        payload: payloadJSON,
-        responseStatusCode,
-        configPath,
-      },
-      {
-        urlPattern: rulePattern,
-        requestStage: "Response",
-        ruleMethod,
-        payload: payloadJSON,
-        responseStatusCode,
-        configPath,
-      },
-    ],
+    patterns:
+      resourceType && resourceType.length
+        ? resourceType
+            .map((item) => [
+              {
+                urlPattern: rulePattern,
+                requestStage: "Request",
+                ruleMethod,
+                payload: payloadJSON,
+                resourceType: item,
+                responseStatusCode,
+                configPath,
+              },
+              {
+                urlPattern: rulePattern,
+                requestStage: "Response",
+                ruleMethod,
+                payload: payloadJSON,
+                resourceType: item,
+                responseStatusCode,
+                configPath,
+              },
+            ])
+            .flat(Infinity)
+        : [
+            {
+              urlPattern: rulePattern,
+              requestStage: "Request",
+              ruleMethod,
+              payload: payloadJSON,
+              responseStatusCode,
+              configPath,
+            },
+            {
+              urlPattern: rulePattern,
+              requestStage: "Response",
+              ruleMethod,
+              payload: payloadJSON,
+              responseStatusCode,
+              configPath,
+            },
+          ],
   };
 };
 
-const updateFileOrFolder = (data, path) => {
+const updateFileOrFolder = (data, path, cacheDataUrlPatterns) => {
   if (!folderUtils.folderExists(path)) folderUtils.createFolder(path);
 
   const methodPath = path + "/" + data.params.request.method;
 
   if (!folderUtils.folderExists(methodPath))
     folderUtils.createFolder(methodPath);
-  const requestFile =
-    methodPath +
-    "/" +
-    hashUtils.getHash(
-      encodeURIComponent(data.params.request.url?.split("?")[0])
-    ) +
-    ".request.json";
+
+  const fileNameHash = hashUtils.getHash(
+    encodeURIComponent(data.params.request.url?.split("?")[0])
+  );
+
+  if (
+    cacheDataUrlPatterns.find(
+      (item) => item.ruleName === fileNameHash && item.cacheStatus
+    )
+  )
+    return;
+
+  const requestFile = methodPath + "/" + fileNameHash + ".request.json";
 
   if (folderUtils.folderExists(requestFile)) {
     fs.writeFileSync(
@@ -217,6 +249,7 @@ async function intercept(data, page) {
         ruleName,
         rulePattern,
         ruleMethod,
+        resourceType,
         ruleStatus,
         responseDataType,
         responseStatusCode,
@@ -236,6 +269,7 @@ async function intercept(data, page) {
         value: responseData,
         responseDataType,
         ruleMethod,
+        resourceType,
         responseStatusCode,
       });
 
@@ -243,6 +277,7 @@ async function intercept(data, page) {
         value: requestHeader,
         requestHeaderType,
         ruleMethod,
+        resourceType,
         ruleName,
         rulePattern,
         path: configPath,
@@ -250,14 +285,28 @@ async function intercept(data, page) {
       });
 
       urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
-      if (ruleStatus)
-        urlPatterns.push({
-          ruleName,
-          rulePattern,
-          path: configPath,
-          value: patterns,
-          ruleMethod: ruleMethod,
-        });
+      if (ruleStatus) {
+        const newPatterns =
+          resourceType.length > 0
+            ? resourceType.map((item) => ({
+                ruleName,
+                rulePattern,
+                path: configPath,
+                value: patterns,
+                ruleMethod,
+                resourceType: item,
+              }))
+            : [
+                {
+                  ruleName,
+                  rulePattern,
+                  path: configPath,
+                  value: patterns,
+                  ruleMethod,
+                },
+              ];
+        urlPatterns.push(...newPatterns);
+      }
 
       if (
         (urlPatterns.length > 0 &&
@@ -269,15 +318,15 @@ async function intercept(data, page) {
             {
               urlPattern: "*",
               requestStage: "Response",
-              resourceType: "XHR",
+              // resourceType: "XHR",
               init: true,
             },
-            {
-              urlPattern: "*",
-              requestStage: "Response",
-              resourceType: "Fetch",
-              init: true,
-            },
+            // {
+            //   urlPattern: "*",
+            //   requestStage: "Response",
+            //   resourceType: "Fetch",
+            //   init: true,
+            // },
           ],
         });
       }
@@ -354,7 +403,7 @@ async function intercept(data, page) {
         cacheDataConfig[method].forEach((item) => {
           const url = item.params.request.url;
           const findCachePattern = urlPattern.find(
-            (_item) => _item.rulePattern === `*${url}*`
+            (_item) => _item.rulePattern === url
           );
 
           if (findCachePattern) {
@@ -370,7 +419,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Request",
                     methodType: method,
                     patternType: "cache",
@@ -378,7 +427,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Response",
                     methodType: method,
                     patternType: "cache",
@@ -391,14 +440,14 @@ async function intercept(data, page) {
           } else {
             if (item.cacheStatus) {
               urlPattern.push({
-                rulePattern: `*${url}*`,
+                rulePattern: url,
                 ruleName: item.id,
                 cacheStatus: item.cacheStatus,
                 value: [
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Request",
                     methodType: method,
                     patternType: "cache",
@@ -406,7 +455,7 @@ async function intercept(data, page) {
                   {
                     ...item,
                     responseStatusCode: 200,
-                    urlPattern: `*${url}*`,
+                    urlPattern: url,
                     requestStage: "Response",
                     methodType: method,
                     patternType: "cache",
@@ -469,15 +518,15 @@ async function intercept(data, page) {
             {
               urlPattern: "*",
               requestStage: "Response",
-              resourceType: "XHR",
+              // resourceType: "XHR",
               init: true,
             },
-            {
-              urlPattern: "*",
-              requestStage: "Response",
-              resourceType: "Fetch",
-              init: true,
-            },
+            // {
+            //   urlPattern: "*",
+            //   requestStage: "Response",
+            //   resourceType: "Fetch",
+            //   init: true,
+            // },
           ],
         });
       }
@@ -499,21 +548,48 @@ async function intercept(data, page) {
       let matchedPatternStr = "";
 
       allUrlPatterns.forEach((pattern) => {
-        const regex = /^[*]?([^*]+)[*]?$/g;
+        const flag =
+          (!pattern.ruleMethod?.length ||
+            pattern.ruleMethod.includes(params.request.method)) &&
+          (!pattern.resourceType?.length ||
+            pattern.resourceType.includes(params.resourceType));
 
-        let match;
-        while ((match = regex.exec(pattern.urlPattern)) !== null) {
-          const res = params.request.url.includes(match[1]);
+        if (
+          pattern.urlPattern.length > 1 &&
+          pattern.urlPattern.endsWith("*") &&
+          params.request.url.startsWith(pattern.urlPattern.slice(0, -1))
+        ) {
+          if (
+            pattern.urlPattern.slice(0, -1).length > matchedPatternStr.length &&
+            flag
+          ) {
+            matchedPattern = pattern;
+            matchedPatternStr = pattern.urlPattern.slice(0, -1);
+          }
+        } else if (
+          pattern.urlPattern.length > 1 &&
+          pattern.urlPattern.startsWith("*") &&
+          params.request.url.endsWith(pattern.urlPattern.slice(1))
+        ) {
+          if (
+            pattern.urlPattern.slice(1).length > matchedPatternStr.length &&
+            flag
+          ) {
+            matchedPattern = pattern;
+            matchedPatternStr = pattern.urlPattern.slice(1);
+          }
+        } else {
+          const regex = /^[*]?([^*]+)[*]?$/g;
 
-          if (res) {
-            if (
-              !matchedPattern ||
-              (match[1].length > matchedPatternStr.length &&
-                (pattern.ruleMethod.includes(params.request.method) ||
-                  !pattern.ruleMethod.length))
-            ) {
-              matchedPattern = pattern;
-              matchedPatternStr = match[1];
+          let match;
+          while ((match = regex.exec(pattern.urlPattern)) !== null) {
+            const res = params.request.url.includes(match[1]);
+
+            if (res) {
+              if (match[1].length > matchedPatternStr.length && flag) {
+                matchedPattern = pattern;
+                matchedPatternStr = match[1];
+              }
             }
           }
         }
@@ -533,13 +609,16 @@ async function intercept(data, page) {
             while ((match = regex.exec(pattern.urlPattern)) !== null) {
               const res =
                 params.request.url.includes(match[1]) &&
-                params.request.method === pattern.methodType;
+                params.request.method === pattern.methodType &&
+                params.resourceType ===
+                  (pattern.resourceType ?? pattern.params.resourceType);
 
               if (res) {
                 if (
-                  !cacheMatchedPattern ||
-                  (match[1].length > cacheMatchedPatternStr.length &&
-                    pattern.methodType === params.request.method)
+                  match[1].length > cacheMatchedPatternStr.length &&
+                  pattern.methodType === params.request.method &&
+                  (pattern.resourceType ?? pattern.params.resourceType) ===
+                    params.resourceType
                 ) {
                   cacheMatchedPattern = pattern;
                   cacheMatchedPatternStr = match[1];
@@ -602,9 +681,11 @@ async function intercept(data, page) {
       let responseData = null;
 
       if (params.responseStatusCode) {
-        response = await Fetch.getResponseBody({
-          requestId: params.requestId,
-        });
+        try {
+          response = await Fetch.getResponseBody({
+            requestId: params.requestId,
+          });
+        } catch (error) {}
 
         try {
           responseData =
@@ -622,7 +703,8 @@ async function intercept(data, page) {
           ) {
             updateFileOrFolder(
               { params, cacheStatus: false },
-              localServerProjectPath
+              localServerProjectPath,
+              cacheDataUrlPatterns
             );
           } else {
             const serverPath = folderUtils.folderPath(
@@ -632,91 +714,86 @@ async function intercept(data, page) {
             folderUtils.createFolder(serverPath);
             updateFileOrFolder(
               { params, cacheStatus: false },
-              localServerProjectPath
+              localServerProjectPath,
+              cacheDataUrlPatterns
             );
           }
         }
       }
 
-      if (matchedPattern) {
-        if (
-          matchedPattern &&
-          payloadMatched &&
-          (!matchedPattern.ruleMethod?.length ||
-            matchedPattern.ruleMethod.includes(params.request.method))
-        ) {
+      if (matchedPattern && payloadMatched) {
+        console.log(
+          `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
+        );
+
+        // 根据需要执行相应的逻辑
+        if (params.responseStatusCode) {
+          // process.stdout.write(
+          //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
+          // );
+
           console.log(
-            `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
+            `matchedPath=${matchedPattern.configPath}δprojectName=${name}δurl=${url}δtype=Mock`
           );
 
-          // 根据需要执行相应的逻辑
-          if (params.responseStatusCode) {
-            // process.stdout.write(
-            //   `matchedPath=${matchedPattern.configPath}&projectName=${name}&url=${url}`
-            // );
+          // modify responseData
 
-            console.log(
-              `matchedPath=${matchedPattern.configPath}δprojectName=${name}δurl=${url}δtype=Mock`
-            );
+          const matchedResponseData = config.responseData?.find(
+            (item) => item.rulePattern === matchedPattern.urlPattern
+          );
 
-            // modify responseData
-
-            const matchedResponseData = config.responseData?.find(
-              (item) => item.rulePattern === matchedPattern.urlPattern
-            );
-
-            if (matchedResponseData && matchedResponseData.value)
-              if (matchedResponseData.responseDataType === "json")
-                responseData = matchedResponseData.value;
-              else
-                matchedResponseData.value.forEach((item) => {
-                  Object.keys(item).forEach((key) => {
-                    commonUtils.deepUpdateValue(responseData, key, item[key]);
-                  });
+          if (matchedResponseData && matchedResponseData.value)
+            if (matchedResponseData.responseDataType === "json")
+              responseData = matchedResponseData.value;
+            else
+              matchedResponseData.value.forEach((item) => {
+                Object.keys(item).forEach((key) => {
+                  commonUtils.deepUpdateValue(responseData, key, item[key]);
                 });
+              });
 
-            await Fetch.fulfillRequest({
-              requestId: params.requestId,
-              responseHeaders: params.responseHeaders,
-              responseCode:
-                matchedPattern.responseStatusCode ?? params.responseStatusCode,
-              body: Buffer.from(JSON.stringify(responseData)).toString(
-                "base64"
-              ),
-            });
-          } else if (params.request.method !== "OPTIONS") {
-            const data = commonUtils.isValidJSON(params.request.postData)
-              ? JSON.parse(params.request.postData)
-              : params.request.postData;
+          await Fetch.fulfillRequest({
+            requestId: params.requestId,
+            responseHeaders: params.responseHeaders,
+            responseCode:
+              matchedPattern.responseStatusCode ?? params.responseStatusCode,
+            body: Buffer.from(JSON.stringify(responseData)).toString("base64"),
+          });
+        } else if (params.request.method !== "OPTIONS") {
+          const data = commonUtils.isValidJSON(params.request.postData)
+            ? JSON.parse(params.request.postData)
+            : params.request.postData;
 
-            // modify requestData
-            const headersArray = Object.entries(params.request.headers).map(
-              ([name, value]) => ({ name, value: value?.toString() })
-            );
-            const matchedRequestHeader = config.requestHeader?.find(
-              (item) => item.rulePattern === matchedPattern.urlPattern
-            );
+          // modify requestData
+          const headersArray = Object.entries(params.request.headers).map(
+            ([name, value]) => ({ name, value: value?.toString() })
+          );
+          const matchedRequestHeader = config.requestHeader?.find(
+            (item) => item.rulePattern === matchedPattern.urlPattern
+          );
 
-            let newHeaders = headersArray;
+          let newHeaders = headersArray;
 
-            if (matchedRequestHeader) {
-              if (matchedRequestHeader?.requestHeaderType === "text") {
-                const formatMatchedRequestHeader =
-                  matchedRequestHeader.value.map((item) => {
-                    const [name, value] = Object.entries(item)[0];
+          if (matchedRequestHeader) {
+            if (matchedRequestHeader?.requestHeaderType === "text") {
+              const formatMatchedRequestHeader = matchedRequestHeader.value.map(
+                (item) => {
+                  const [name, value] = Object.entries(item)[0];
 
-                    return {
-                      name,
-                      value: value?.toString(),
-                    };
-                  });
-                newHeaders = [...headersArray, ...formatMatchedRequestHeader];
-              } else if (matchedRequestHeader.value)
-                newHeaders = Object.entries(matchedRequestHeader?.value).map(
-                  ([name, value]) => ({ name, value: value?.toString() })
-                );
-            }
+                  return {
+                    name,
+                    value: value?.toString(),
+                  };
+                }
+              );
+              newHeaders = [...headersArray, ...formatMatchedRequestHeader];
+            } else if (matchedRequestHeader.value)
+              newHeaders = Object.entries(matchedRequestHeader?.value).map(
+                ([name, value]) => ({ name, value: value?.toString() })
+              );
+          }
 
+          try {
             await Fetch.continueRequest({
               headers: newHeaders,
               requestId: params.requestId,
@@ -724,12 +801,15 @@ async function intercept(data, page) {
                 ? Buffer.from(JSON.stringify(data), "utf8").toString("base64")
                 : data,
             });
-          } else {
-            await Fetch.continueRequest({ requestId: params.requestId });
+          } catch (error) {
+            console.log(error);
           }
         } else {
-          // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-          await Fetch.continueRequest({ requestId: params.requestId });
+          try {
+            await Fetch.continueRequest({ requestId: params.requestId });
+          } catch (error) {
+            console.log(error);
+          }
         }
       } else if (cacheMatchedPattern) {
         console.log(
@@ -760,22 +840,34 @@ async function intercept(data, page) {
           const headersArray = Object.entries(params.request.headers).map(
             ([name, value]) => ({ name, value: value?.toString() })
           );
-          await Fetch.continueRequest({
-            headers: headersArray,
-            requestId: params.requestId,
-            postData: params.request.postData
-              ? Buffer.from(
-                  JSON.stringify(params.request.postData),
-                  "utf8"
-                ).toString("base64")
-              : params.request.postData,
-          });
+          try {
+            await Fetch.continueRequest({
+              headers: headersArray,
+              requestId: params.requestId,
+              postData: params.request.postData
+                ? Buffer.from(
+                    JSON.stringify(params.request.postData),
+                    "utf8"
+                  ).toString("base64")
+                : params.request.postData,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         } else {
-          await Fetch.continueRequest({ requestId: params.requestId });
+          try {
+            await Fetch.continueRequest({ requestId: params.requestId });
+          } catch (error) {
+            console.log(error);
+          }
         }
       } else {
         // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-        await Fetch.continueRequest({ requestId: params.requestId });
+        try {
+          await Fetch.continueRequest({ requestId: params.requestId });
+        } catch (error) {
+          console.log(error);
+        }
       }
     });
 
