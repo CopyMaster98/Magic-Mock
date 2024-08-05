@@ -1,47 +1,45 @@
 #  Magic Mock
 
-### 安装命令 
+### Install Command 
 
 **`npm install`**
 
-如果运行 **`npm install`** 失败 请运行 **`npm run install`**
+If use **`npm install`** fails, use **`npm run install`**.
 
-### 运行命令
+### Run Command
 > **Frontend**: **`npm run frontend`**
 **Backend**: **`npm run backend`**
 
-### 如何使用？
+### How to use it?
 
-##### 初始化：输入项目名称与启动地址创建项目
-   + **自动缓存状态码`2xx`与`3xx`的请求为`Cache`**
-   + **创建单个自定义匹配规则 `Rule` （右键卡片有删除按钮）** 
-   包含 **`Rule Name`** 、**`Rule Pattern`** 、**`Resource Type`** 、 **`Rule Method`** 、**`Request Payload`** 、**`Request Header`** 、 **`Response StatusCode`** 、**`Response Data`**。
-   <br />
+##### Init: Enter the project name and start address to create the project
+   1. **Automatically cache requests with status codes `2xx` and `3xx` as `Cache`**
 
-     > Rule Pattern
-     
-     完全匹配：需要请求url与`Rule Pattern`完全一致
-     模糊匹配：使用`*`代替任意字符（例如：`*.abc` / `abc.*` / `*abc*`）
-     匹配优先级根据匹配到的字符长度决定 匹配的长度越长优先级越高
-     tip: `Mock` 的优先级永远大于 `Cache`
-      <br />
-     > Request Payload
+   2. **Create a single custom matching rule `Rule` (right-click the card to delete the button)** 
+  **`Rule Name`** 、**`Rule Pattern`** 、**`Resource Type`** 、 **`Rule Method`** 、**`Request Payload`** 、**`Request Header`** 、 **`Response StatusCode`** 、**`Response Data`**。
 
-     需要与请求的`Request Payload` 键值完全匹配
-      <br />
-      > Request Header
+  > Rule Pattern
 
-      键值模式：自动添加或者递归替换所有同名键值
-      JSON模式：完全替换`Request Header`
-      <br />
-      > Response Data
+  + **Exact match**: The requested URL must be exactly the same as the `Rule Pattern`.
 
-      键值模式：自动添加或者递归替换所有同名键值
-      JSON模式：完全替换`Request Header`
-      <br />
+  + **Fuzzy matching**: Use `*` to replace any character (eg: `*.abc` / `abc.*` / `*abc*`)
+    The matching priority is determined by the length of the matched characters. The longer the matching length, the higher the priority.
+    **tip: `Mock` rules take precedence over `Cache` rules**.
 
-+ **创建多个自定义匹配规则**
-  点击 `Multiple Select` 进入多选模式 多选模式下右键卡片有全选按钮。 `Cache` 功能区额外有个 `Multiple Create & Save` 按钮 可以一键修改 `Rule Pattern Prefix` 同时允许双击单个 `Rule Pattern` 单独进行修改。
-  
+  > Request Payload
 
+  + Need to exactly match the `Request Payload` key value of the request.
 
+  > Request Header
+
+    + **Key-value mode**: automatically add or recursively replace all keys and their values ​​with the same name.
+    + **JSON mode**: Complete replacement for `Request Header`.
+
+  > Response Data
+
+    + **Key-value mode**: automatically add or recursively replace all keys and their values ​​with the same name.
+    + **JSON mode**: Complete replacement for `Response Data`.
+
+   3. **Creating multiple custom matching rules**
+
+  Click `Multi-select` to enter the multi-select mode. In multi-select mode, right-clicking a card will display the Select All button. There is an additional `Multi-select Create and Save` button in the `Cache` ribbon. You can modify the `Rule Pattern Prefix` with one click, or double-click a single `Rule Pattern` to modify it separately.
