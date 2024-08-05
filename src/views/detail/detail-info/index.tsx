@@ -67,8 +67,6 @@ const DetailInfo: React.FC<{
   const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
   const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
-  const [oldReplaceRulePattern, setOldReplaceRulePattern] = useState("");
-  const [newReplaceRulePattern, setNewReplaceRulePattern] = useState("");
   const [debouncedOldReplaceRulePattern, setDebouncedOldReplaceRulePattern] =
     useDebouncedState("");
   const [debouncedNewReplaceRulePattern, setDebouncedNewReplaceRulePattern] =
@@ -327,9 +325,8 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Match Prefix Rule Pattern </label>
           <Input
-            value={oldReplaceRulePattern}
+            // value={oldReplaceRulePattern}
             onChange={(e) => {
-              setOldReplaceRulePattern(e.target.value);
               setDebouncedOldReplaceRulePattern(e.target.value);
             }}
             style={{
@@ -340,9 +337,8 @@ const DetailInfo: React.FC<{
         <div>
           <label htmlFor="">Replace Prefix Rule Pattern</label>
           <Input
-            value={newReplaceRulePattern}
+            // value={newReplaceRulePattern}
             onChange={(e) => {
-              setNewReplaceRulePattern(e.target.value);
               setDebouncedNewReplaceRulePattern(e.target.value);
             }}
             style={{
@@ -352,12 +348,7 @@ const DetailInfo: React.FC<{
         </div>
       </>
     );
-  }, [
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
-    setDebouncedNewReplaceRulePattern,
-    setDebouncedOldReplaceRulePattern,
-  ]);
+  }, [setDebouncedNewReplaceRulePattern, setDebouncedOldReplaceRulePattern]);
 
   const handleConfirmMultiple = useCallback(async () => {
     await multipleCreateRule({
@@ -367,10 +358,12 @@ const DetailInfo: React.FC<{
         method: item.method,
         newRulePattern:
           editRulePatternInfoRef.current.get(item.id) ||
-          (item.content.params.request.url.startsWith(oldReplaceRulePattern)
-            ? newReplaceRulePattern +
+          (item.content.params.request.url.startsWith(
+            debouncedOldReplaceRulePattern
+          )
+            ? debouncedNewReplaceRulePattern +
               item.content.params.request.url.slice(
-                oldReplaceRulePattern.length
+                debouncedOldReplaceRulePattern.length
               )
             : ""),
       })),
@@ -379,16 +372,18 @@ const DetailInfo: React.FC<{
     setRefreshNumber((oldValue) => oldValue + 1);
     setIsSelectStatus(false);
     setCheckList([]);
-    setNewReplaceRulePattern("");
-    setOldReplaceRulePattern("");
+    setDebouncedNewReplaceRulePattern("");
+    setDebouncedOldReplaceRulePattern("");
     editRulePatternInfoRef.current.clear();
     setIsReplaceRulePattern(0);
   }, [
     checkList,
     closeDialog,
-    newReplaceRulePattern,
-    oldReplaceRulePattern,
+    debouncedNewReplaceRulePattern,
+    debouncedOldReplaceRulePattern,
     project,
+    setDebouncedNewReplaceRulePattern,
+    setDebouncedOldReplaceRulePattern,
   ]);
 
   const dialogInfo = useMemo(() => {
@@ -534,8 +529,8 @@ const DetailInfo: React.FC<{
               <Radio.Group
                 onChange={(e) => {
                   setIsReplaceRulePattern(e.target.value);
-                  setOldReplaceRulePattern("");
-                  setNewReplaceRulePattern("");
+                  setDebouncedOldReplaceRulePattern("");
+                  setDebouncedNewReplaceRulePattern("");
                 }}
                 value={isReplaceRulePattern}
               >
@@ -550,8 +545,8 @@ const DetailInfo: React.FC<{
         handleConfirm: handleConfirmMultiple,
         handleClose: () => {
           setIsReplaceRulePattern(0);
-          setOldReplaceRulePattern("");
-          setNewReplaceRulePattern("");
+          setDebouncedOldReplaceRulePattern("");
+          setDebouncedNewReplaceRulePattern("");
           editRulePatternInfoRef.current.clear();
         },
       };
@@ -566,6 +561,8 @@ const DetailInfo: React.FC<{
     debouncedOldReplaceRulePattern,
     debouncedNewReplaceRulePattern,
     handleBlur,
+    setDebouncedOldReplaceRulePattern,
+    setDebouncedNewReplaceRulePattern,
   ]);
 
   const handleMultipleCreateSave = useCallback(async () => {
@@ -607,12 +604,25 @@ const DetailInfo: React.FC<{
             },
           });
         })
-      ).then((res) => {
-        setIsSelectStatus(false);
-        setCheckList([]);
-        setRefreshNumber((oldValue) => oldValue + 1);
-      });
+      );
+    } else if (currentTab === "2") {
+      await Promise.allSettled(
+        checkList.map(async (rule: any) => {
+          await updateCacheInfo({
+            ruleId: rule.id,
+            projectId: rule.parent.id,
+            cacheInfo: {
+              cacheStatus: !rule?.content?.cacheStatus,
+              cacheMethodType: rule?.content?.params?.request?.method,
+            },
+          });
+        })
+      );
     }
+
+    setIsSelectStatus(false);
+    setCheckList([]);
+    setRefreshNumber((oldValue) => oldValue + 1);
   }, [checkList, currentTab]);
 
   const cardStatusSelectOptions = useMemo(
@@ -861,181 +871,170 @@ const DetailInfo: React.FC<{
             )}
           </span>
 
-          {pathname.length <= 1 && (
-            <>
-              <div
-                className="filter"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  htmlFor="status"
-                  style={{
-                    marginRight: "10px",
-                  }}
-                >
-                  Search
-                </label>
-                <Search
-                  style={{
-                    maxWidth: "300px",
-                  }}
-                  placeholder="Search url pattern"
-                  onSearch={handleSearch}
-                  onChange={(e) => {
-                    if (!e.target.value.length && searchValue.length)
-                      handleSearch("");
-                  }}
-                  enterButton
-                />
-              </div>
-              <div className="filter">
-                <label
-                  htmlFor="status"
-                  style={{
-                    marginRight: "10px",
-                  }}
-                >
-                  Status
-                </label>
-                <Select
-                  id="status"
-                  style={{
-                    width: "150px",
-                  }}
-                  // disabled={!!checkList.length}
-                  // showSearch
-                  value={ruleStatus}
-                  placeholder="Select Status"
-                  optionFilterProp="label"
-                  onChange={setRuleStatus}
-                  options={cardStatusSelectOptions}
-                />
-              </div>
-              <div className="filter">
-                <label
-                  htmlFor="resourceType"
-                  style={{
-                    marginRight: "10px",
-                  }}
-                >
-                  Resource Type
-                </label>
-                <Select
-                  id="resourceType"
-                  style={{
-                    width: "150px",
-                  }}
-                  // disabled={!!checkList.length}
-                  // showSearch
-                  value={ruleResourceType}
-                  placeholder="Select Status"
-                  optionFilterProp="label"
-                  onChange={setRuleResourceType}
-                  options={resourceTypeSelectOptions}
-                />
-              </div>
-            </>
-          )}
-
-          <div className="buttons">
-            {location.search.includes("ruleId") && (
-              <Button
-                type="primary"
-                onClick={handleBack}
-                style={{
-                  marginRight: "50px",
-                }}
-              >
-                Back
-              </Button>
-            )}
+          <div className="filter-container">
             {pathname.length <= 1 && (
-              <>
-                <Button
-                  type="primary"
-                  danger
-                  style={{
-                    display: isSelectStatus ? "" : "none",
-                    marginLeft: "30px",
-                    marginRight: "30px",
-                  }}
-                  onClick={() => {
-                    setIsSelectStatus(false);
-                    setCheckList([]);
-                    setRefreshNumber((oldValue) => oldValue + 1);
-                  }}
-                >
-                  Cancel
+              <div className="filters">
+                <div className="filter">
+                  <label
+                    htmlFor="status"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Search
+                  </label>
+                  <Search
+                    style={{
+                      maxWidth: "300px",
+                      minWidth: "150px",
+                    }}
+                    placeholder="Search url pattern"
+                    onSearch={handleSearch}
+                    onChange={(e) => {
+                      if (!e.target.value.length && searchValue.length)
+                        handleSearch("");
+                    }}
+                    enterButton
+                  />
+                </div>
+                <div className="filter">
+                  <label
+                    htmlFor="status"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Status
+                  </label>
+                  <Select
+                    id="status"
+                    style={{
+                      width: "150px",
+                    }}
+                    // disabled={!!checkList.length}
+                    // showSearch
+                    value={ruleStatus}
+                    placeholder="Select Status"
+                    optionFilterProp="label"
+                    onChange={setRuleStatus}
+                    options={cardStatusSelectOptions}
+                  />
+                </div>
+                <div className="filter">
+                  <label
+                    htmlFor="resourceType"
+                    style={{
+                      marginRight: "10px",
+                    }}
+                  >
+                    Resource Type
+                  </label>
+                  <Select
+                    id="resourceType"
+                    style={{
+                      width: "150px",
+                    }}
+                    // disabled={!!checkList.length}
+                    // showSearch
+                    value={ruleResourceType}
+                    placeholder="Select Status"
+                    optionFilterProp="label"
+                    onChange={setRuleResourceType}
+                    options={resourceTypeSelectOptions}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div
+              className="buttons"
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "15px 30px",
+              }}
+            >
+              {location.search.includes("ruleId") && (
+                <Button type="primary" onClick={handleBack}>
+                  Back
                 </Button>
-                {isSelectStatus && (
+              )}
+              {pathname.length <= 1 && (
+                <>
+                  <Button
+                    type="primary"
+                    danger
+                    style={{
+                      display: isSelectStatus ? "" : "none",
+                    }}
+                    onClick={() => {
+                      setIsSelectStatus(false);
+                      setCheckList([]);
+                      setRefreshNumber((oldValue) => oldValue + 1);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  {isSelectStatus && (
+                    <Button
+                      type="primary"
+                      disabled={isSelectStatus && checkList.length === 0}
+                      onClick={handleMultipleChange}
+                    >
+                      Multiple Change
+                    </Button>
+                  )}
                   <Button
                     type="primary"
                     style={{
-                      marginRight: currentTab === "1" ? "50px" : 0,
-                    }}
-                    disabled={isSelectStatus && checkList.length === 0}
-                    onClick={handleMultipleChange}
-                  >
-                    Multiple Change
-                  </Button>
-                )}
-                <Button
-                  type="primary"
-                  style={{
-                    display:
-                      currentTab === "1" && isSelectStatus
-                        ? "none"
-                        : "inline-block",
-                    marginLeft: "30px",
-                    marginRight: "50px",
-                    backgroundColor: checkList.length > 0 ? "#52c41a" : "",
-                  }}
-                  disabled={
-                    (isSelectStatus && checkList.length === 0) || !project
-                  }
-                  onClick={handleMultipleCreateSave}
-                >
-                  {isSelectStatus
-                    ? "Multiple Create & Save"
-                    : "Multiple Select"}
-                </Button>
-              </>
-            )}
-            <Button
-              type="primary"
-              loading={saveLoading}
-              disabled={isSelectStatus || !project}
-              onClick={
-                location.search.includes("ruleId")
-                  ? location.search.includes("type=cache")
-                    ? handleCreateAndSave
-                    : handleUpdateRule
-                  : handleOpenDialog
-              }
-            >
-              {location.search.includes("ruleId")
-                ? location.search.includes("type=cache")
-                  ? "Create & Save"
-                  : "Save"
-                : "Add Rule"}
-            </Button>
+                      display:
+                        currentTab === "1" && isSelectStatus
+                          ? "none"
+                          : "inline-block",
 
-            <Button
-              type="primary"
-              danger={project?._status ? true : false}
-              style={{
-                marginLeft: "50px",
-              }}
-              loading={loading}
-              disabled={!project}
-              icon={<PoweroffOutlined />}
-              onClick={() => handleChangeStatus(project, !project?._status)}
-            >
-              {project?._status ? "Stop" : "Start"}
-            </Button>
+                      backgroundColor: checkList.length > 0 ? "#52c41a" : "",
+                    }}
+                    disabled={
+                      (isSelectStatus && checkList.length === 0) || !project
+                    }
+                    onClick={handleMultipleCreateSave}
+                  >
+                    {isSelectStatus
+                      ? "Multiple Create & Save"
+                      : "Multiple Select"}
+                  </Button>
+                </>
+              )}
+              <Button
+                type="primary"
+                loading={saveLoading}
+                disabled={isSelectStatus || !project}
+                onClick={
+                  location.search.includes("ruleId")
+                    ? location.search.includes("type=cache")
+                      ? handleCreateAndSave
+                      : handleUpdateRule
+                    : handleOpenDialog
+                }
+              >
+                {location.search.includes("ruleId")
+                  ? location.search.includes("type=cache")
+                    ? "Create & Save"
+                    : "Save"
+                  : "Add Rule"}
+              </Button>
+
+              <Button
+                type="primary"
+                danger={project?._status ? true : false}
+                loading={loading}
+                disabled={!project}
+                icon={<PoweroffOutlined />}
+                onClick={() => handleChangeStatus(project, !project?._status)}
+              >
+                {project?._status ? "Stop" : "Start"}
+              </Button>
+            </div>
           </div>
         </div>
 

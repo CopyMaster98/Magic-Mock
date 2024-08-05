@@ -165,6 +165,23 @@ const AllRule: React.FC<{
     [checkList]
   );
 
+  const cacheDataCardsSwitch = useCallback(
+    (data: any) => {
+      return (
+        <Switch
+          key={data.id + data?.content?.cacheStatus}
+          checkedChildren="开启"
+          unCheckedChildren="关闭"
+          loading={switchLoading}
+          defaultValue={data?.content?.cacheStatus}
+          style={{ float: "right" }}
+          onClick={() => toggleCacheStatus(data)}
+        />
+      );
+    },
+    [switchLoading, toggleCacheStatus]
+  );
+
   const getCacheDataCards = useCallback(
     (cacheData: any) => {
       return (cacheData || [])?.map((item: any, index: number) => {
@@ -267,14 +284,7 @@ const AllRule: React.FC<{
                               <span>Cache</span>
                             </Tag>
                           </div>
-                          <Switch
-                            checkedChildren="开启"
-                            unCheckedChildren="关闭"
-                            loading={switchLoading}
-                            defaultValue={item?.content?.cacheStatus}
-                            style={{ float: "right" }}
-                            onClick={() => toggleCacheStatus(item)}
-                          />
+                          {cacheDataCardsSwitch(item)}
                         </div>
                       </>
                     }
@@ -298,15 +308,14 @@ const AllRule: React.FC<{
       });
     },
     [
-      findResource,
-      findMethod,
-      handleAllSelected,
-      handleNavigate,
-      isSelectStatus,
-      isSelectedCard,
       matchedMap,
-      switchLoading,
-      toggleCacheStatus,
+      isSelectedCard,
+      isSelectStatus,
+      findMethod,
+      findResource,
+      cacheDataCardsSwitch,
+      handleNavigate,
+      handleAllSelected,
     ]
   );
 

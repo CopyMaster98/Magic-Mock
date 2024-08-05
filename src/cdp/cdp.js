@@ -610,13 +610,15 @@ async function intercept(data, page) {
               const res =
                 params.request.url.includes(match[1]) &&
                 params.request.method === pattern.methodType &&
-                params.resourceType === pattern.resourceType;
+                params.resourceType ===
+                  (pattern.resourceType ?? pattern.params.resourceType);
 
               if (res) {
                 if (
                   match[1].length > cacheMatchedPatternStr.length &&
                   pattern.methodType === params.request.method &&
-                  pattern.resourceType === params.resourceType
+                  (pattern.resourceType ?? pattern.params.resourceType) ===
+                    params.resourceType
                 ) {
                   cacheMatchedPattern = pattern;
                   cacheMatchedPatternStr = match[1];
