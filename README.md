@@ -7,8 +7,8 @@
 If use **`npm install`** fails, use **`npm run install`**.
 
 ### Run Command
-> **Frontend**: **`npm run frontend`**
-**Backend**: **`npm run backend`**
++ **Frontend**: **`npm run frontend`**
++ **Backend**: **`npm run backend`**
 
 ### How to use it?
 
