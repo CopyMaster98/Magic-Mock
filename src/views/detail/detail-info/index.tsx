@@ -951,6 +951,8 @@ const DetailInfo: React.FC<{
               style={{
                 display: "flex",
                 flexWrap: "wrap",
+                flex: 1,
+                justifyContent: "flex-end",
                 gap: "15px 30px",
               }}
             >

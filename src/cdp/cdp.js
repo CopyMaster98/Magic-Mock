@@ -793,15 +793,23 @@ async function intercept(data, page) {
               );
           }
 
-          await Fetch.continueRequest({
-            headers: newHeaders,
-            requestId: params.requestId,
-            postData: data
-              ? Buffer.from(JSON.stringify(data), "utf8").toString("base64")
-              : data,
-          });
+          try {
+            await Fetch.continueRequest({
+              headers: newHeaders,
+              requestId: params.requestId,
+              postData: data
+                ? Buffer.from(JSON.stringify(data), "utf8").toString("base64")
+                : data,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         } else {
-          await Fetch.continueRequest({ requestId: params.requestId });
+          try {
+            await Fetch.continueRequest({ requestId: params.requestId });
+          } catch (error) {
+            console.log(error);
+          }
         }
       } else if (cacheMatchedPattern) {
         console.log(
@@ -832,22 +840,34 @@ async function intercept(data, page) {
           const headersArray = Object.entries(params.request.headers).map(
             ([name, value]) => ({ name, value: value?.toString() })
           );
-          await Fetch.continueRequest({
-            headers: headersArray,
-            requestId: params.requestId,
-            postData: params.request.postData
-              ? Buffer.from(
-                  JSON.stringify(params.request.postData),
-                  "utf8"
-                ).toString("base64")
-              : params.request.postData,
-          });
+          try {
+            await Fetch.continueRequest({
+              headers: headersArray,
+              requestId: params.requestId,
+              postData: params.request.postData
+                ? Buffer.from(
+                    JSON.stringify(params.request.postData),
+                    "utf8"
+                  ).toString("base64")
+                : params.request.postData,
+            });
+          } catch (error) {
+            console.log(error);
+          }
         } else {
-          await Fetch.continueRequest({ requestId: params.requestId });
+          try {
+            await Fetch.continueRequest({ requestId: params.requestId });
+          } catch (error) {
+            console.log(error);
+          }
         }
       } else {
         // console.log(`请求 ${requestUrl} 不匹配任何模式`);
-        await Fetch.continueRequest({ requestId: params.requestId });
+        try {
+          await Fetch.continueRequest({ requestId: params.requestId });
+        } catch (error) {
+          console.log(error);
+        }
       }
     });
 
