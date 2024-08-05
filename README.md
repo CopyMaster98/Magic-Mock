@@ -2,9 +2,9 @@
 
 ### Install Command 
 
-**`npm install`**
++ **`npm install`**
++ **`npm run install`** (If use **`npm install`** fails, use **`npm run install`**.)
 
-If use **`npm install`** fails, use **`npm run install`**.
 
 ### Run Command
 + **Frontend**: **`npm run frontend`**
