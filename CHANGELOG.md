@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.0...v1.4.1) (2024-08-19)
+
+
+### Bug Fixes
+
+* page has error when the field resoureType doesn't exist ([7b27be8](https://github.com/CopyMaster98/Magic-Mock/commit/7b27be8cca91027aed25f2e073b044b4de359802))
+
 ## [1.4.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.3.0...v1.4.0) (2024-08-05)
 
 
