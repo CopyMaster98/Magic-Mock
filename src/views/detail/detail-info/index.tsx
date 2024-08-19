@@ -648,7 +648,7 @@ const DetailInfo: React.FC<{
         data?.find((item) =>
           (
             item.content.resourceType ?? item.content.params?.resourceType
-          ).includes(option.value)
+          )?.includes(option.value)
         )
       ),
     ];
@@ -662,7 +662,7 @@ const DetailInfo: React.FC<{
         (item) =>
           (
             item.content.rulePattern ?? item.content.params.request.url
-          ).includes(searchValue) || item.name.includes(searchValue)
+          )?.includes(searchValue) || item.name.includes(searchValue)
       );
       switch (value) {
         case "All":

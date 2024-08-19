@@ -287,7 +287,7 @@ async function intercept(data, page) {
       urlPatterns = urlPatterns.filter((item) => item.ruleName !== ruleName);
       if (ruleStatus) {
         const newPatterns =
-          resourceType.length > 0
+          resourceType && resourceType.length > 0
             ? resourceType.map((item) => ({
                 ruleName,
                 rulePattern,
