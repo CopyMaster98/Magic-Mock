@@ -21,20 +21,23 @@ import {
 import { PoweroffOutlined } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import { useData } from "../../../context";
-import { FolderAPI, ProjectAPI, RuleAPI } from "../../../api";
 import "./index.css";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import RuleForm from "../../../components/rule-form";
 import DetailRule from "./detail-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
-import { scroll } from "../../../hooks";
-import { multipleCreateRule, updateRuleInfo } from "../../../api/rule";
+import {
+  createRule,
+  multipleCreateRule,
+  updateRuleInfo,
+} from "../../../api/rule";
 import RightClickMenu from "../../../components/right-click-menu";
 import { useDebouncedState } from "../../../hooks/debounce";
 import { resourceTypeOptions, statusOptions } from "../../../constant";
 import Search from "antd/es/input/Search";
 import { updateCacheInfo } from "../../../api/cache";
+import { startProject, stopProject } from "../../../api/project";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -120,10 +123,10 @@ const DetailInfo: React.FC<{
                   ? formValue.payloadJSON
                   : null;
 
-              await RuleAPI.createRule({
+              await createRule({
                 projectId: project.id,
                 ruleName: formValue.ruleName,
-                rulePattern: formValue.rulePattern,
+                rulePattern: formValue.rulePattern.trim(),
                 ruleMethod: formValue.ruleMethod,
                 resourceType: formValue.resourceType,
                 requestHeader: {
@@ -231,12 +234,12 @@ const DetailInfo: React.FC<{
 
           setSaveLoading(true);
 
-          await RuleAPI.updateRuleInfo({
+          await updateRuleInfo({
             projectId: project.id,
             ruleId: location.search.slice(1).split("&")[1].split("=")[1],
             ruleInfo: {
               ruleName: formValue.ruleName,
-              rulePattern: formValue.rulePattern,
+              rulePattern: formValue.rulePattern.trim(),
               ruleMethod: formValue.ruleMethod,
               resourceType: formValue.resourceType,
               requestHeader: {
@@ -275,7 +278,7 @@ const DetailInfo: React.FC<{
     async (project: any, status: boolean) => {
       setLoading(status);
 
-      const fn = status ? ProjectAPI.startProject : ProjectAPI.stopProject;
+      const fn = status ? startProject : stopProject;
 
       fn({
         name: project?._name,
@@ -327,7 +330,7 @@ const DetailInfo: React.FC<{
           <Input
             // value={oldReplaceRulePattern}
             onChange={(e) => {
-              setDebouncedOldReplaceRulePattern(e.target.value);
+              setDebouncedOldReplaceRulePattern(e.target.value.trim());
             }}
             style={{
               marginBottom: "20px",
@@ -339,7 +342,7 @@ const DetailInfo: React.FC<{
           <Input
             // value={newReplaceRulePattern}
             onChange={(e) => {
-              setDebouncedNewReplaceRulePattern(e.target.value);
+              setDebouncedNewReplaceRulePattern(e.target.value.trim());
             }}
             style={{
               marginBottom: "20px",
@@ -773,10 +776,10 @@ const DetailInfo: React.FC<{
 
         setSaveLoading(true);
 
-        await RuleAPI.createRule({
+        await createRule({
           projectId: project.id,
           ruleName: formValue.ruleName,
-          rulePattern: formValue.rulePattern,
+          rulePattern: formValue.rulePattern.trim(),
           ruleMethod: formValue.ruleMethod,
           resourceType: formValue.resourceType,
           requestHeader: {
