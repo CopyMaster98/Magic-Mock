@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.1...v1.4.2) (2024-08-19)
+
+
+### Bug Fixes
+
+* there is no filtered space before and after the rule pattern ([8741b40](https://github.com/CopyMaster98/Magic-Mock/commit/8741b407282677fc7e95fb1392351e0cbb7ba34b))
+
 ## [1.4.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.0...v1.4.1) (2024-08-19)
 
 
