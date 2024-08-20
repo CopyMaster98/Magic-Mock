@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.2...v1.4.3) (2024-08-20)
+
+
+### Bug Fixes
+
+* when create mock from cache the same file name will appear ([f0d4003](https://github.com/CopyMaster98/Magic-Mock/commit/f0d400344f9f2c72fe62a6f5733f6535a0ae8217))
+
 ## [1.4.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.1...v1.4.2) (2024-08-19)
 
 
