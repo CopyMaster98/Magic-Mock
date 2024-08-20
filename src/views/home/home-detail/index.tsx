@@ -1,6 +1,6 @@
-import { Button, Card, Dropdown, Menu, Tag, theme } from "antd";
+import { Button, Card, Tag, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   PoweroffOutlined,
   EditOutlined,
@@ -8,8 +8,7 @@ import {
   ChromeOutlined,
 } from "@ant-design/icons";
 import { useData } from "../../../context";
-import { get, post } from "../../../utils/fetch";
-import { FolderAPI, ProjectAPI, RuleAPI } from "../../../api";
+import { FolderAPI, ProjectAPI } from "../../../api";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import AddProjectForm from "../../../components/project-form";
 import { useNavigate } from "../../../hooks/navigate";
@@ -137,9 +136,7 @@ const HomeDetail: React.FC = () => {
       const info: IDialogInfo<IFormRefProps | undefined> = {
         title: "确认删除",
         handleConfirm: async () => {
-          await FolderAPI.deleteFolder({
-            projectId: item.id,
-          });
+          await FolderAPI.deleteFolder(item.id);
 
           setRefresh();
           closeDialog?.();

@@ -29,6 +29,7 @@ router.post("/create", async (ctx) => {
         statusCode: 0,
       };
     } else {
+      ctx.response.status = 500;
       ctx.response.body = {
         message: "项目名字已存在",
         statusCode: -1,
@@ -179,16 +180,21 @@ router.delete("/project/:projectId", async (ctx) => {
   const { projectId } = ctx.params;
   const folderName = folderUtils.findFile(projectId);
   const _folderPath = folderPath(`${folderName}`);
+  const cacheFolderPath = folderPath(`${folderName}`, LOCAL_SERVER);
 
   try {
-    folderUtils.deleteFolderRecursive(_folderPath);
+    await Promise.allSettled([
+      folderUtils.deleteFolderRecursive(_folderPath),
+      folderUtils.deleteFolderRecursive(cacheFolderPath),
+    ]);
     ctx.response.body = {
       message: "删除成功",
       statusCode: 0,
     };
   } catch (error) {
+    ctx.response.status = 500;
     ctx.response.body = {
-      message: "删除成功",
+      message: "删除失败",
       statusCode: -1,
     };
   }

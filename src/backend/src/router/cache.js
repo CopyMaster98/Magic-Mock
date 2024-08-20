@@ -22,12 +22,14 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
       statusCode: 0,
       data: res ?? {},
     };
-  } else
+  } else {
+    ctx.response.status = 500;
     ctx.response.body = {
       message: "规则信息获取失败",
       statusCode: -1,
       data: null,
     };
+  }
   ctx.set("notification", true);
 });
 
@@ -50,6 +52,7 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
       statusCode: 0,
     };
   } catch (error) {
+    ctx.response.status = 500;
     ctx.response.body = {
       message: "保存失败",
       statusCode: -1,

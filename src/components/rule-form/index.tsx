@@ -329,7 +329,13 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       <Form.Item
         label="Rule Name"
         name="ruleName"
-        rules={[{ required: true, message: "Please input your rule name!" }]}
+        rules={[
+          { required: true, message: "Please input your rule name!" },
+          {
+            pattern: /^[^*]*$/,
+            message: 'Rule Name cannot contain "*"',
+          },
+        ]}
       >
         <Input />
       </Form.Item>
