@@ -23,7 +23,7 @@ function App() {
     return setSpinning(spinning);
   }, []);
 
-  const handleUpdateProjectInfo = useCallback((data: any) => {
+  const handleUpdateProjectInfo = useCallback((data: string) => {
     if (data) {
       const [matchedIdStr, projectNameStr, urlStr, portStr, typeStr] =
         data.split("δ");

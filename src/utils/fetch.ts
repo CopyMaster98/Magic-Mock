@@ -1,7 +1,4 @@
-import qs from "qs";
 import { message } from "antd";
-import { useData } from "../context";
-const { stringify, parse } = qs;
 
 const checkStatus = async (res: Response, callback?: any) => {
   // callback && callback(false)
@@ -35,7 +32,7 @@ const judgeOkState = async (res: Response) => {
 
   //TODO:可以在这里管控全局请求
   if (!!cloneRes.code && cloneRes.code !== 200) {
-    message.error(`11${cloneRes.msg}${cloneRes.code}`);
+    message.error(`${cloneRes.msg}${cloneRes.code}`);
   }
   return res;
 };
@@ -104,7 +101,13 @@ class http {
    * @param url
    * @returns {Promise<unknown>}
    */
-  post(url: string, params = {}, option: any = {}) {
+  post(
+    url: string,
+    params = {},
+    option: RequestInit & {
+      type?: string;
+    } = {}
+  ) {
     const options = Object.assign({ method: "POST" }, option);
     //一般我们常用场景用的是json，所以需要在headers加Content-Type类型
     options.body = JSON.stringify(params);
@@ -112,8 +115,10 @@ class http {
     //可以是上传键值对形式，也可以是文件，使用append创造键值对数据
     if (options.type === "FormData" && options.body !== "undefined") {
       let params = new FormData();
-      for (let key of Object.keys(options.body)) {
-        params.append(key, options.body[key]);
+
+      let currentBody = JSON.parse(options.body);
+      for (let key of Object.keys(currentBody)) {
+        params.append(key, currentBody[key]);
       }
       options.body = params;
     }
@@ -126,7 +131,7 @@ class http {
    * @param url
    * @returns {Promise<unknown>}
    */
-  put(url: string, params = {}, option: any = {}) {
+  put(url: string, params = {}, option: RequestInit = {}) {
     const options = Object.assign({ method: "PUT" }, option);
     options.body = JSON.stringify(params);
     return http.staticFetch(url, options); //类的静态方法只能通过类本身调用
@@ -137,7 +142,7 @@ class http {
    * @param url
    * @returns {Promise<unknown>}
    */
-  _delete(url: string, option: any = {}) {
+  _delete(url: string, option: RequestInit = {}) {
     const options = Object.assign({ method: "DELETE" }, option);
     return http.staticFetch(url, options);
   }
@@ -147,7 +152,7 @@ class http {
    * @param url
    * @param option
    */
-  get(url: string, option = {}, callback?: any) {
+  get(url: string, option: RequestInit = {}, callback?: any) {
     const options = Object.assign({ method: "GET" }, option);
     return http.staticFetch(url, options, callback);
   }

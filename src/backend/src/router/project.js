@@ -41,12 +41,11 @@ router.post("/start", async (ctx, next) => {
     })
     .catch((err) => {
       console.log(err.toString("utf8"));
+      ctx.response.status = 500;
       ctx.response.body = {
         message: "启动失败",
         statusCode: -1,
       };
-
-      ctx.response.status = 500;
     });
 });
 

@@ -1,6 +1,12 @@
 import { _delete, get, post, put } from "../utils/fetch";
 
-const createFolder = (data: any, config = {}) => {
+const createFolder = (
+  data: {
+    url: string;
+    name: string;
+  },
+  config = {}
+) => {
   return post("/folder/create", data, config);
 };
 
@@ -12,7 +18,7 @@ const getFolderDetail = (projectId: string, config = {}, callback: any) => {
   return get(`/folder/project/${projectId}`, config, callback);
 };
 
-const deleteFolder = ({ projectId }: any, config = {}) => {
+const deleteFolder = (projectId: string, config = {}) => {
   return _delete(`/folder/project/${projectId}`, config);
 };
 

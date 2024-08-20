@@ -21,6 +21,7 @@ import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import { methodColors, resourceTypeColors } from "../../../constant";
+import { updateRuleInfo } from "../../../api/rule";
 
 const CheckboxGroup = Checkbox.Group;
 
@@ -68,7 +69,7 @@ const AllRule: React.FC<{
     async (rule: any) => {
       setSwitchLoading(true);
 
-      await RuleAPI.updateRuleInfo({
+      await updateRuleInfo({
         ruleId: rule.id,
         projectId: rule.parent.id,
         ruleInfo: {
@@ -462,7 +463,7 @@ const AllRule: React.FC<{
                                 textOverflow: "ellipsis",
                               }}
                             >
-                              {decodeURIComponent(data.name)}
+                              {decodeURIComponent(data.name).split("ηhash")[0]}
                             </span>
                             <Tag color="success" style={{ marginLeft: "10px" }}>
                               <span>Mock</span>

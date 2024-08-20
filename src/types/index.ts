@@ -1,5 +1,7 @@
-import * as DialogType  from './dialog'
+import * as DialogType from "./dialog";
+import * as CacheType from "./cache";
+import { methods } from "../constant";
 
-export {
-  DialogType
-}
+export type IMethod = (typeof methods)[number];
+
+export { DialogType, CacheType };

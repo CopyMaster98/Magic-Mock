@@ -2,13 +2,10 @@ const Router = require("koa-router");
 const fs = require("fs");
 const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
-const { resolve } = require("path");
-const { info } = require("console");
-const { renameFile, folderInfo, findFile } = require("../utils/folder");
+const { renameFile, findFile } = require("../utils/folder");
 const { LOCAL_SERVER } = require("../constants");
 const { formatRule } = require("../utils/rule");
-const { folderPath, folderExists, createFolder, createFile, folderContent } =
-  folderUtils;
+const { folderPath, folderExists, createFile, folderContent } = folderUtils;
 
 router.post("/create", async (ctx) => {
   const {
@@ -29,17 +26,21 @@ router.post("/create", async (ctx) => {
   );
 
   if (!isExistParentFolder) {
+    ctx.response.status = 500;
     ctx.response.body = {
       message: "项目不存在",
       statusCode: -1,
     };
   } else {
-    const path = folderPath(
-      `${isExistParentFolder}/${encodeURIComponent(ruleName)}.config.json`
-    );
+    const fileName =
+      encodeURIComponent(ruleName.slice(-50)) +
+      "ηhash=" +
+      hashUtils.getHash(ruleName);
+    const path = folderPath(`${isExistParentFolder}/${fileName}.config.json`);
     const isExist = folderExists(path);
 
     if (isExist) {
+      ctx.response.status = 500;
       ctx.response.body = {
         message: "规则已存在",
         statusCode: -1,
@@ -71,9 +72,7 @@ router.post("/create", async (ctx) => {
         if (responseStatusCode) info.responseStatusCode = responseStatusCode;
 
         createFile(
-          `${folderPath(`${isExistParentFolder}`)}/${encodeURIComponent(
-            ruleName.replaceAll("*", "")
-          )}.config.json`,
+          `${folderPath(`${isExistParentFolder}`)}/${fileName}.config.json`,
           JSON.stringify(
             {
               id: hashUtils.getHash(JSON.stringify(+new Date())),
@@ -101,7 +100,7 @@ router.post("/create", async (ctx) => {
           statusCode: 0,
         };
       } catch (err) {
-        console.log(err);
+        ctx.response.status = 500;
         ctx.response.body = {
           message: "规则创建失败",
           statusCode: -1,
@@ -127,6 +126,7 @@ router.post("/multipleCreate", async (ctx) => {
         rulesInfo.find((rule) => rule.id === hashUtils.getHash(item))
       );
 
+    const errorData = [];
     cacheData.forEach((item) => {
       let content = folderContent(`${cachePath}/${item}`);
 
@@ -144,33 +144,55 @@ router.post("/multipleCreate", async (ctx) => {
         ruleContent: content,
       });
 
+      const filePath = folderPath(
+        `${projectName}/${
+          encodeURIComponent(content.ruleName).slice(-50) +
+          "ηhash=" +
+          hashUtils.getHash(content.ruleName)
+        }.config.json`
+      );
+      if (folderExists(filePath)) {
+        errorData.push({
+          data: item,
+          message: "规则已存在",
+        });
+        return;
+      }
+
       content.ruleStatus = true;
 
       try {
-        createFile(
-          folderPath(
-            `${projectName}/${encodeURIComponent(
-              content.ruleName.slice(0, 50).replaceAll("*", "")
-            )}.config.json`
-          ),
-          JSON.stringify(content, null, 2)
-        );
-        ctx.response.body = {
-          message: "创建成功",
-          statusCode: 0,
-        };
+        createFile(filePath, JSON.stringify(content, null, 2));
       } catch (error) {
-        ctx.response.body = {
-          message: "创建失败",
-          statusCode: -1,
-        };
+        error.push({
+          data: item,
+          message: error,
+        });
       }
     });
-  } else
+
+    if (errorData.length < cacheData.length)
+      ctx.response.body = {
+        message: `创建成功: ${cacheData.length - errorData.length}
+                  创建失败: ${errorData.length}`,
+        statusCode: 0,
+        info: errorData,
+      };
+    else {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        message: "全部创建失败",
+        statusCode: -1,
+        info: errorData,
+      };
+    }
+  } else {
+    ctx.response.status = 500;
     ctx.response.body = {
-      message: "创建失败",
+      message: "全部创建失败",
       statusCode: -1,
     };
+  }
   ctx.set("notification", true);
 });
 
@@ -188,6 +210,7 @@ router.get("/info/:projectId/:ruleId", async (ctx) => {
       data: content ? JSON.parse(content) : {},
     };
   } else {
+    ctx.response.status = 500;
     ctx.response.body = {
       message: "规则信息获取失败",
       statusCode: -1,
@@ -204,7 +227,9 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
   const oldRuleName = findFile(ruleId, folderName);
   const oldRulePath = folderPath(`${folderName}/${oldRuleName}`);
   const ruleInfoName = ruleInfo.ruleName
-    ? encodeURIComponent(ruleInfo.ruleName)
+    ? encodeURIComponent(ruleInfo.ruleName.slice(-50)) +
+      "ηhash=" +
+      hashUtils.getHash(ruleInfo.ruleName)
     : oldRuleName?.split(".config.json")[0];
 
   if (!ruleInfoName) {
@@ -252,7 +277,9 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
         if (ruleInfo[key]?.type === "json" || key === "payload") {
           currentRuleData[key + "JSON"] = ruleData;
           delete currentRuleData[key];
-        } else currentRuleData[key] = ruleData;
+        } else {
+          currentRuleData[key] = ruleData;
+        }
       }
     }
   }
@@ -267,6 +294,7 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
     if (ruleInfoName && newRuleName !== oldRuleName)
       renameFile(oldRulePath, newRulePath);
   } catch (error) {
+    ctx.response.status = 500;
     ctx.response.body = {
       message: "保存失败",
       statusCode: -1,
@@ -289,8 +317,9 @@ router.delete("/info/:projectId/:ruleId", async (ctx) => {
       statusCode: 0,
     };
   } catch (error) {
+    ctx.response.status = 500;
     ctx.response.body = {
-      message: "删除成功",
+      message: "删除失败",
       statusCode: -1,
     };
   }

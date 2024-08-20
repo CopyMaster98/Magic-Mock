@@ -1,10 +1,11 @@
+import { CacheType, IMethod } from "../types";
 import { get, put } from "../utils/fetch";
 
 const getCacheInfo = (
   data: {
     projectId: string;
     cacheId: string;
-    methodType: any;
+    methodType: IMethod;
   },
   config = {}
 ) => {
@@ -20,7 +21,7 @@ const updateCacheInfo = (
   data: {
     projectId: string;
     ruleId: string;
-    cacheInfo: any;
+    cacheInfo: CacheType.ICacheInfoRequest["cacheInfo"];
   },
   config = {}
 ) => {
