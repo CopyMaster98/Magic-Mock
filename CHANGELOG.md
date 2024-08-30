@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.4](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.3...v1.4.4) (2024-08-30)
+
+
+### Bug Fixes
+
+* when not opening the form for the first time, the form default value will lost ([e0f7575](https://github.com/CopyMaster98/Magic-Mock/commit/e0f7575504b65e5767eec8c669b3f15b08010832))
+
 ## [1.4.3](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.2...v1.4.3) (2024-08-20)
 
 
