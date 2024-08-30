@@ -41,9 +41,6 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     console.log("Failed:", errorInfo);
   };
 
-  useEffect(() => {
-    form.resetFields();
-  });
   useImperativeHandle(ref, () => ({
     onValidate: form.validateFields,
     onJSONEditorValidate: responseDataEditor?.validate(),
@@ -52,14 +49,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         ruleName: "",
         rulePattern: "",
         ruleMethod: [],
-        resourceType: [],
         payloadJSON: null,
         requestHeader: [],
         requestHeaderJSON: null,
         responseData: [],
         responseDataJSON: null,
+        resourceType: ["XHR", "Fetch"],
+        responseStatusCode: 200,
       });
-
       setPayloadEditor(null);
       setRequestHeaderEditor(null);
       setResponseDataEditor(null);

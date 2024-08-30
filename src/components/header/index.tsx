@@ -27,13 +27,13 @@ const Header: React.FC<{
   }, [pathname]);
 
   const formRef = useRef<IFormRefProps>();
-  const handleOpenDialog = useCallback(() => {
-    const info: IDialogInfo<IFormRefProps | undefined> = {
+  const openDialogInfo = useMemo(
+    () => ({
       title: "Add Project",
       content: <AddProjectForm ref={formRef} />,
       ref: formRef,
       handleConfirm: () => {
-        info.ref?.current
+        openDialogInfo.ref?.current
           ?.onValidate()
           .then(
             async (formValue: { projectName: string; projectUrl: string }) => {
@@ -42,19 +42,20 @@ const Header: React.FC<{
                 url: formValue.projectUrl ?? "",
               });
               setRefresh();
-              info.ref?.current?.onReset();
+              openDialogInfo.ref?.current?.onReset();
               closeDialog?.();
             }
           )
           .catch((err: any) => console.log(err));
       },
-      handleClose: () => {
-        info.ref?.current?.onReset();
-      },
-    };
-    updateDialogInfo?.(info);
+      handleClose: () => openDialogInfo.ref?.current?.onReset(),
+    }),
+    [closeDialog, setRefresh]
+  );
+  const handleOpenDialog = useCallback(() => {
+    updateDialogInfo?.(openDialogInfo);
     openDialog?.();
-  }, [closeDialog, openDialog, setRefresh, updateDialogInfo]);
+  }, [openDialog, openDialogInfo, updateDialogInfo]);
 
   return (
     <>

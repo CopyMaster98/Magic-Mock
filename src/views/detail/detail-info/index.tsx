@@ -84,13 +84,13 @@ const DetailInfo: React.FC<{
   const [ruleResourceType, setRuleResourceType] = useState("XHR");
   const [searchValue, setSearchValue] = useState("");
 
-  const handleOpenDialog = useCallback(() => {
-    const info: IDialogInfo<IFormRefProps | undefined> = {
+  const openDialogConfig = useMemo(
+    () => ({
       title: "Add Rule",
       content: <RuleForm width ref={formRef} />,
       ref: formRef,
       handleConfirm: () => {
-        info.ref?.current
+        openDialogConfig?.ref?.current
           ?.onValidate()
           .then(
             async (formValue: {
@@ -131,13 +131,13 @@ const DetailInfo: React.FC<{
                 resourceType: formValue.resourceType,
                 requestHeader: {
                   data: requestHeader,
-                  type: info.ref?.current?.requestHeaderInputType
+                  type: openDialogConfig?.ref?.current?.requestHeaderInputType
                     ? "text"
                     : "json",
                 },
                 responseData: {
                   data: responseData,
-                  type: info.ref?.current?.responseDataInputType
+                  type: openDialogConfig?.ref?.current?.responseDataInputType
                     ? "text"
                     : "json",
                 },
@@ -146,17 +146,18 @@ const DetailInfo: React.FC<{
                 ruleStatus: true,
               });
               setRefresh();
-              info.ref?.current?.onReset();
+              openDialogConfig?.ref?.current?.onReset();
               closeDialog?.();
             }
           )
           .catch((err: any) => console.log(err));
       },
-      handleClose: () => {
-        info.ref?.current?.onReset();
-      },
-    };
-    updateDialogInfo?.(info);
+      handleClose: () => openDialogConfig?.ref?.current?.onReset(),
+    }),
+    [closeDialog, project, setRefresh]
+  );
+  const handleOpenDialog = useCallback(() => {
+    updateDialogInfo?.(openDialogConfig);
     updateModalConfig?.({
       width: "45vw",
       style: {
@@ -164,14 +165,7 @@ const DetailInfo: React.FC<{
       },
     });
     openDialog?.();
-  }, [
-    closeDialog,
-    openDialog,
-    project,
-    setRefresh,
-    updateDialogInfo,
-    updateModalConfig,
-  ]);
+  }, [openDialogConfig, openDialog, updateDialogInfo, updateModalConfig]);
 
   const itemRender: BreadcrumbProps["itemRender"] = (
     currentRoute,
