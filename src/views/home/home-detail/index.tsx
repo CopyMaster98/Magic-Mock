@@ -1,6 +1,6 @@
 import { Button, Card, Tag, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   PoweroffOutlined,
   EditOutlined,
@@ -52,6 +52,67 @@ const HomeDetail: React.FC = () => {
     [setRefresh]
   );
 
+  const handleEditDialogConfirm = useCallback(
+    (
+      data: {
+        name: string;
+        url: string;
+        id: string;
+      },
+      info: IDialogInfo<IFormRefProps | undefined>
+    ) =>
+      info.ref?.current
+        ?.onValidate()
+        .then(
+          async (formValue: { projectName: string; projectUrl: string }) => {
+            if (
+              formValue.projectName !== data.name ||
+              formValue.projectUrl !== data.url
+            ) {
+              await FolderAPI.updateFolder({
+                pathname: data.name,
+                name: formValue.projectName,
+                url: formValue.projectUrl,
+                id: data.id,
+              });
+              setRefresh();
+            }
+            info.ref?.current?.onReset();
+            closeDialog?.();
+          }
+        )
+        .catch((err: any) => console.log(err)),
+    [closeDialog, setRefresh]
+  );
+
+  const handleEditDialogClose = useCallback(
+    (info: IDialogInfo<IFormRefProps | undefined>) =>
+      info.ref?.current?.onReset(),
+    []
+  );
+
+  const editDialogContent = useCallback(
+    (data: { name: string; url: string; id: string }) => (
+      <AddProjectForm
+        data={{
+          projectName: data.name,
+          projectUrl: data.url,
+          id: data.id,
+        }}
+        ref={formRef}
+      />
+    ),
+    []
+  );
+
+  const editDialogConfig = useMemo<IDialogInfo<IFormRefProps | undefined>>(
+    () => ({
+      title: "Edit Project",
+      ref: formRef,
+    }),
+    []
+  );
+
   const handleEditDialog = useCallback(
     (
       data = {
@@ -60,53 +121,21 @@ const HomeDetail: React.FC = () => {
         id: "",
       }
     ) => {
-      const info: IDialogInfo<IFormRefProps | undefined> = {
-        title: "Edit Project",
-        content: (
-          <AddProjectForm
-            data={{
-              projectName: data.name,
-              projectUrl: data.url,
-              id: data.id,
-            }}
-            ref={formRef}
-          />
-        ),
-        ref: formRef,
-        handleConfirm: () => {
-          info.ref?.current
-            ?.onValidate()
-            .then(
-              async (formValue: {
-                projectName: string;
-                projectUrl: string;
-              }) => {
-                if (
-                  formValue.projectName !== data.name ||
-                  formValue.projectUrl !== data.url
-                ) {
-                  await FolderAPI.updateFolder({
-                    pathname: data.name,
-                    name: formValue.projectName,
-                    url: formValue.projectUrl,
-                    id: data.id,
-                  });
-                  setRefresh();
-                }
-                info.ref?.current?.onReset();
-                closeDialog?.();
-              }
-            )
-            .catch((err: any) => console.log(err));
-        },
-        handleClose: () => {
-          info.ref?.current?.onReset();
-        },
-      };
+      const info: IDialogInfo<IFormRefProps | undefined> = editDialogConfig;
+      info.content = editDialogContent(data);
+      info.handleConfirm = handleEditDialogConfirm(data, info);
+      info.handleClose = handleEditDialogClose(info);
       updateDialogInfo?.(info);
       openDialog?.();
     },
-    [closeDialog, openDialog, setRefresh, updateDialogInfo, projectData]
+    [
+      editDialogConfig,
+      editDialogContent,
+      handleEditDialogConfirm,
+      handleEditDialogClose,
+      updateDialogInfo,
+      openDialog,
+    ]
   );
 
   useEffect(() => {
