@@ -123,8 +123,8 @@ const HomeDetail: React.FC = () => {
     ) => {
       const info: IDialogInfo<IFormRefProps | undefined> = editDialogConfig;
       info.content = editDialogContent(data);
-      info.handleConfirm = handleEditDialogConfirm(data, info);
-      info.handleClose = handleEditDialogClose(info);
+      info.handleConfirm = () => handleEditDialogConfirm(data, info);
+      info.handleClose = () => handleEditDialogClose(info);
       updateDialogInfo?.(info);
       openDialog?.();
     },
