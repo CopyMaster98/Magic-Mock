@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.5](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.4...v1.4.5) (2024-09-02)
+
+
+### Bug Fixes
+
+* the dialog of project info has error when edit the info ([88f633f](https://github.com/CopyMaster98/Magic-Mock/commit/88f633fb3e806223d3172d931503a7d9f6b77f2e))
+
 ## [1.4.4](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.3...v1.4.4) (2024-08-30)
 
 
