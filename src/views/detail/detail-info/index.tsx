@@ -646,7 +646,7 @@ const DetailInfo: React.FC<{
           (item) =>
             (
               item.content.resourceType ?? item.content.params?.resourceType
-            )?.includes(option.value) || !item.content.resourceType.length
+            )?.includes(option.value) || !item.content.resourceType?.length
         )
       ),
     ];
