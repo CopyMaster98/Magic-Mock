@@ -642,10 +642,11 @@ const DetailInfo: React.FC<{
         value: "All",
       },
       ...resourceTypeOptions.filter((option) =>
-        data?.find((item) =>
-          (
-            item.content.resourceType ?? item.content.params?.resourceType
-          )?.includes(option.value)
+        data?.find(
+          (item) =>
+            (
+              item.content.resourceType ?? item.content.params?.resourceType
+            )?.includes(option.value) || !item.content.resourceType?.length
         )
       ),
     ];
