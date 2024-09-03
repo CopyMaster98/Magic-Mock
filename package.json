@@ -1,6 +1,6 @@
 {
   "name": "magic-mock",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "private": true,
   "dependencies": {
     "@koa/cors": "^5.0.0",

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.6](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.5...v1.4.6) (2024-09-03)
+
+
+### Bug Fixes
+
+* change the default display mode of a rule when the resourcetype's value is empty ([23b9947](https://github.com/CopyMaster98/Magic-Mock/commit/23b99477c991adbbf3661a01a6de13b2ae8d856b))
+* change the default display mode of a rule when the resourcetype's value is empty ([e284800](https://github.com/CopyMaster98/Magic-Mock/commit/e284800e3a42273300a5be8d2b7f8f83e571d5aa))
+
 ## [1.4.5](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.4...v1.4.5) (2024-09-02)
 
 
