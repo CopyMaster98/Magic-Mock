@@ -1,9 +1,10 @@
 import { Button, Modal, ModalProps } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { DialogType } from "../../types";
 import { useData } from "../../context";
+import "./index.css";
 
 const Dialog: React.FC<{
   open: boolean;
@@ -20,6 +21,7 @@ const Dialog: React.FC<{
     bottom: 0,
     right: 0,
   });
+
   const draggleRef = useRef<HTMLDivElement>(null);
   const handleOk = async () => {
     if (dialogConfig?.handleConfirm) dialogConfig.handleConfirm();
@@ -70,6 +72,25 @@ const Dialog: React.FC<{
 
   //   return () => window.removeEventListener("keydown", handleKeyDown);
   // });
+
+  const [dialogTip, setDialogTip] = useState(false);
+
+  const timer = useRef<any>();
+
+  useEffect(() => {
+    if (!(dialogConfig?.title === "Add Rule")) {
+      if (dialogTip) setDialogTip(false);
+      return;
+    }
+
+    timer.current = setInterval(() => {
+      const isFetch = sessionStorage.getItem("isFetch") === "1";
+      if (isFetch !== dialogTip) setDialogTip(isFetch);
+    }, 500);
+
+    return () => clearInterval(timer.current);
+  }, [dialogConfig, dialogTip]);
+
   return (
     <Modal
       styles={{
@@ -81,25 +102,70 @@ const Dialog: React.FC<{
         },
       }}
       title={
-        <div
-          style={{
-            width: "100%",
-            cursor: "move",
-          }}
-          onMouseOver={() => {
-            if (disabled) {
-              setDisabled(false);
-            }
-          }}
-          onMouseOut={() => {
-            setDisabled(true);
-          }}
-          onFocus={() => {}}
-          onBlur={() => {}}
-          // end
-        >
-          {dialogConfig?.title ?? "Draggable Modal"}
-        </div>
+        <>
+          <div
+            style={{
+              width: "100%",
+              cursor: "move",
+            }}
+            onMouseOver={() => {
+              if (disabled) {
+                setDisabled(false);
+              }
+            }}
+            onMouseOut={() => {
+              setDisabled(true);
+            }}
+            onFocus={() => {}}
+            onBlur={() => {}}
+          >
+            {dialogConfig?.title ?? "Draggable Modal"}
+            {dialogTip && (
+              <span
+                className="dialog-tip recognizable-tip"
+                onClick={() => {
+                  dialogConfig?.handleUpdateForm?.({
+                    id: "5cc8ef047bc7edb4",
+                    ruleName: "1",
+                    rulePattern: "212",
+                    ruleMethod: [],
+                    resourceType: ["XHR", "Fetch"],
+                    ruleStatus: true,
+                    requestHeaderType: "text",
+                    responseDataType: "json",
+                    requestHeader: [
+                      {
+                        key: "asd",
+                        value: "123",
+                      },
+                    ],
+                    responseStatusCode: 200,
+                    responseDataJSON: {
+                      a: "ccc",
+                    },
+                    payloadJSON: {
+                      b: 123,
+                    },
+                  });
+                }}
+              >
+                Discovering recognizable content
+              </span>
+            )}
+          </div>
+          {dialogConfig?.title === "Create & Save" && (
+            <span
+              style={{
+                position: "absolute",
+                bottom: "32px",
+                transform: "translateY(50%)",
+                cursor: "default",
+              }}
+            >
+              Count: {dialogConfig?.count ?? 0}
+            </span>
+          )}
+        </>
       }
       open={open}
       onOk={handleOk}

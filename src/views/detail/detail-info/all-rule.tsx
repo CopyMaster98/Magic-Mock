@@ -31,6 +31,7 @@ const AllRule: React.FC<{
   isSelectStatus: boolean;
   currentTab: string;
   onChangeCheckList: any;
+  handleUpdateSelectStatus: any;
   cacheData?: any[];
 }> = (props) => {
   const {
@@ -40,6 +41,7 @@ const AllRule: React.FC<{
     isSelectStatus,
     currentTab,
     onChangeCheckList,
+    handleUpdateSelectStatus,
   } = props;
 
   const [checkList, setCheckList] = useState<any>([]);
@@ -160,9 +162,7 @@ const AllRule: React.FC<{
   }, []);
 
   const isSelectedCard = useCallback(
-    (cardInfo: any) => {
-      return checkList.find((item: any) => item.id === cardInfo.id);
-    },
+    (cardInfo: any) => checkList.find((item: any) => item.id === cardInfo.id),
     [checkList]
   );
 
@@ -224,14 +224,44 @@ const AllRule: React.FC<{
                 ]}
                 hoverable
               >
-                {isSelectStatus && (
+                {isSelectStatus ? (
                   <RightClickMenu
                     item={item}
-                    menuButtons={<Button type="primary">All Select</Button>}
+                    menuButtons={
+                      <Button
+                        type="primary"
+                        onClick={() => handleAllSelected(item)}
+                      >
+                        All Select
+                      </Button>
+                    }
                     style={{
                       zIndex: 999,
                     }}
-                    handleClick={() => handleAllSelected(item)}
+                    // handleClick={() => handleAllSelected(item)}
+                  />
+                ) : (
+                  <RightClickMenu
+                    item={item}
+                    menuButtons={
+                      <>
+                        <Button
+                          type="primary"
+                          onClick={() => {
+                            if (!isSelectStatus) handleUpdateSelectStatus(true);
+
+                            setCheckList((oldValue: any) => [
+                              ...oldValue.filter(
+                                (_item: any) => _item.id !== item.id
+                              ),
+                              item,
+                            ]);
+                          }}
+                        >
+                          Select
+                        </Button>
+                      </>
+                    }
                   />
                 )}
 
@@ -317,6 +347,7 @@ const AllRule: React.FC<{
       cacheDataCardsSwitch,
       handleNavigate,
       handleAllSelected,
+      handleUpdateSelectStatus,
     ]
   );
 
@@ -429,14 +460,32 @@ const AllRule: React.FC<{
                 {isSelectStatus ? (
                   <RightClickMenu
                     item={data}
-                    menuButtons={<Button type="primary">All Select</Button>}
+                    menuButtons={
+                      <Button
+                        type="primary"
+                        onClick={() => handleAllSelected(data)}
+                      >
+                        All Select
+                      </Button>
+                    }
                     style={{
                       zIndex: 999,
                     }}
-                    handleClick={() => handleAllSelected(data)}
+                    // handleClick={}
                   />
                 ) : (
-                  <RightClickMenu item={data} handleClick={openConfirmDialog} />
+                  <RightClickMenu
+                    item={data}
+                    menuButtons={
+                      <Button
+                        danger={true}
+                        type="primary"
+                        onClick={openConfirmDialog}
+                      >
+                        Delete
+                      </Button>
+                    }
+                  />
                 )}
                 <Skeleton loading={false} avatar active>
                   <Meta

@@ -22,22 +22,7 @@ const RightClickMenu: React.FC<{
           padding: 0,
         }}
       >
-        {menuButtons ? (
-          menuButtons
-        ) : (
-          <Button
-            danger={true}
-            type="primary"
-            // icon={<PoweroffOutlined />}
-            // loading={loadings[item.name]}
-            // onClick={(e) => {
-            //   e.stopPropagation();
-            //   handleChangeStatus(item, !item.status);
-            // }}
-          >
-            Delete
-          </Button>
-        )}
+        {menuButtons}
       </Menu.Item>
     </Menu>
   );

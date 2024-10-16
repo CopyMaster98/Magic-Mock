@@ -4,6 +4,7 @@ const chokidar = require("chokidar");
 const _ = require("lodash");
 const CONSTANT = require("../constants/index");
 const hashUtils = require("./hash");
+const WebSocket = require("ws");
 
 const folderExists = (path) => {
   return fs.existsSync(path);
@@ -50,10 +51,9 @@ const watchFolder = (folderPath, clients) => {
     ignored: /(^|[/\\])\../, // 忽略隐藏文件
     persistent: true, // 持续监听
   });
-  const sendClientUpdate = _.debounce(
-    (reactClient) => reactClient.send("update"),
-    300
-  );
+  const sendClientUpdate = _.debounce((reactClient) => {
+    if (reactClient?.readyState === WebSocket.OPEN) reactClient.send("update");
+  }, 300);
 
   watcher.on("all", (event, path) => {
     const reactClient = clients.get("React");

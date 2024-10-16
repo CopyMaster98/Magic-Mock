@@ -28,7 +28,7 @@ import { methodOptions, resourceTypeOptions } from "../../constant";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data, isUpdate } = props;
-
+  console.log(data);
   const [form] = Form.useForm();
   const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
   const [responseDataInputType, setResponseDataInputType] = useState(true);
@@ -42,6 +42,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   };
 
   useImperativeHandle(ref, () => ({
+    handleInitForm: handleInitForm,
     onValidate: form.validateFields,
     onJSONEditorValidate: responseDataEditor?.validate(),
     onReset: () => {
@@ -57,6 +58,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
         resourceType: ["XHR", "Fetch"],
         responseStatusCode: 200,
       });
+      if (isRecognizable) isInitialRenderRef.current = null;
       setPayloadEditor(null);
       setRequestHeaderEditor(null);
       setResponseDataEditor(null);
@@ -66,6 +68,14 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       setPayloadStatus(false);
       setRequestHeaderInputType(true);
       setResponseDataInputType(true);
+      setIsRecognizable(false);
+      formBaseValueRef.current = {
+        ruleName: "",
+        rulePattern: "",
+        ruleMethod: [],
+        resourceType: ["XHR", "Fetch"],
+        responseStatusCode: 200,
+      };
     },
     onInit: form.resetFields,
     requestHeaderInputType,
@@ -84,6 +94,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const payloadEditorValueRef = useRef(null);
   const requestHeaderInputValueRef = useRef(null);
   const responseDataInputValueRef = useRef(null);
+  const [isRecognizable, setIsRecognizable] = useState(false);
   const formBaseValueRef = useRef({
     ruleName: "",
     rulePattern: "",
@@ -109,9 +120,11 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   }, [requestHeaderEditor, requestHeaderInputType]);
 
   const handleInitPayloadEditor = useCallback(() => {
-    setPayloadStatus(
-      data?.payloadJSON && Object.keys(data.payloadJSON).length > 0
-    );
+    console.log("handleInitPayloadEditor");
+    if (!isRecognizable)
+      setPayloadStatus(
+        data?.payloadJSON && Object.keys(data.payloadJSON).length > 0
+      );
     if (payloadEditor && payloadEditorValueRef.current) {
       payloadEditor.setTextSelection(payloadEditorValueRef.current);
       return;
@@ -124,14 +137,10 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
             payloadEditorValueRef.current
           )
         );
-  }, [payloadEditor]);
+  }, [payloadEditor, isRecognizable]);
 
   const handleInitResponseDataEditor = useCallback(() => {
-    /**
-     * 第二个参数可以添加各种配置
-     * 比如mode： text | tree | view
-     * 文本模式 树模式 预览模式
-     */
+    console.log("handleInitResponseDataEditor");
     if (responseDataEditor && responseDataEditorValueRef.current) {
       responseDataEditor.setTextSelection(responseDataEditorValueRef.current);
       return;
@@ -215,52 +224,68 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     handleUpdateForm("response");
   }, [handleUpdateForm]);
 
-  useEffect(() => {
-    if (data && isInitialRenderRef.current !== data?.id) {
-      setRequestHeaderInputType(data?.requestHeaderType === "text");
-      setResponseDataInputType(data?.responseDataType === "text");
-      requestHeaderEditorValueRef.current = data.requestHeaderJSON;
-      responseDataEditorValueRef.current = data.responseDataJSON;
-      requestHeaderInputValueRef.current = data.requestHeader;
-      responseDataInputValueRef.current = data.responseData;
-      payloadEditorValueRef.current = data.payloadJSON;
-      formBaseValueRef.current = {
-        ruleName: data.ruleName,
-        rulePattern: data.rulePattern,
-        ruleMethod: data.ruleMethod,
-        resourceType: data.resourceType,
-        responseStatusCode: data.responseStatusCode,
-      };
+  const handleInitForm = useCallback(
+    (_data = data) => {
+      console.log("handleInitForm", _data, isInitialRenderRef, _data);
+      if (_data && isInitialRenderRef.current !== _data?.id) {
+        setRequestHeaderInputType(_data?.requestHeaderType === "text");
+        setResponseDataInputType(_data?.responseDataType === "text");
+        requestHeaderEditorValueRef.current = _data.requestHeaderJSON;
+        responseDataEditorValueRef.current = _data.responseDataJSON;
+        requestHeaderInputValueRef.current = _data.requestHeader;
+        responseDataInputValueRef.current = _data.responseData;
+        payloadEditorValueRef.current = _data.payloadJSON;
+        formBaseValueRef.current = {
+          ruleName: _data.ruleName,
+          rulePattern: _data.rulePattern,
+          ruleMethod: _data.ruleMethod,
+          resourceType: _data.resourceType,
+          responseStatusCode: _data.responseStatusCode,
+        };
 
-      setTimeout(() => {
-        Object.keys(formBaseValueRef.current).forEach((key) => {
-          form.setFieldValue(
-            key,
-            formBaseValueRef.current[
-              key as keyof typeof formBaseValueRef.current
-            ]
-          );
+        setTimeout(() => {
+          Object.keys(formBaseValueRef.current).forEach((key) => {
+            form.setFieldValue(
+              key,
+              formBaseValueRef.current[
+                key as keyof typeof formBaseValueRef.current
+              ]
+            );
+          });
+
+          if (_data.requestHeaderType === "text") {
+            form.setFieldValue("requestHeader", _data.requestHeader ?? []);
+          } else {
+            form.setFieldValue("requestHeaderJSON", _data.requestHeaderJSON);
+            // handleInitRequestHeaderEditor()
+          }
+
+          if (_data?.responseDataType === "text") {
+            form.setFieldValue("responseData", _data.responseData ?? []);
+          } else {
+            form.setFieldValue("responseDataJSON", _data.responseDataJSON);
+            // handleInitResponseDataEditor()
+          }
+
+          form.setFieldValue("payloadJSON", _data.payloadJSON);
+
+          if (
+            _data !== data &&
+            _data.payloadJSON &&
+            Object.keys(_data.payloadJSON).length
+          ) {
+            setIsRecognizable(true);
+            setPayloadStatus(true);
+          }
         });
-
-        if (data.requestHeaderType === "text") {
-          form.setFieldValue("requestHeader", data.requestHeader ?? []);
-        } else {
-          form.setFieldValue("requestHeaderJSON", data.requestHeaderJSON);
-          // handleInitRequestHeaderEditor()
-        }
-
-        if (data?.responseDataType === "text") {
-          form.setFieldValue("responseData", data.responseData ?? []);
-        } else {
-          form.setFieldValue("responseDataJSON", data.responseDataJSON);
-          // handleInitResponseDataEditor()
-        }
-
-        form.setFieldValue("payloadJSON", data.payloadJSON);
-      });
-    }
-    if (data?.id !== isInitialRenderRef.current)
-      isInitialRenderRef.current = data?.id;
+      }
+      if (_data?.id !== isInitialRenderRef.current)
+        isInitialRenderRef.current = _data?.id;
+    },
+    [data, form]
+  );
+  useEffect(() => {
+    handleInitForm();
   }, [data, form]);
 
   useEffect(() => {
