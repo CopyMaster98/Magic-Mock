@@ -162,7 +162,10 @@ const AllRule: React.FC<{
   }, []);
 
   const isSelectedCard = useCallback(
-    (cardInfo: any) => checkList.find((item: any) => item.id === cardInfo.id),
+    (cardInfo: any) =>
+      checkList.find(
+        (item: any) => item.id + item.method === cardInfo.id + cardInfo.method
+      ),
     [checkList]
   );
 
@@ -193,7 +196,7 @@ const AllRule: React.FC<{
             ?.get(item.content.id) || 0;
         let html = (
           <div
-            key={item.id}
+            key={item.id + item.method}
             className={item?.content?.cacheStatus ? "rule-card" : ""}
             style={{
               padding: "5px",
@@ -352,7 +355,34 @@ const AllRule: React.FC<{
   );
 
   const methodTypeItems = useMemo(() => {
-    const methodTypes: any = [];
+    const methodTypes: any = [
+      {
+        key: 0,
+        label: "All",
+        children: (function (cacheData: any) {
+          return (
+            <div
+              style={{
+                display: "flex",
+              }}
+            >
+              {isSelectStatus ? (
+                <CheckboxGroup
+                  style={{
+                    justifyContent: "space-around",
+                  }}
+                  options={getCacheDataCards(cacheData)}
+                  value={checkList}
+                  onChange={setCheckList}
+                />
+              ) : (
+                getCacheDataCards(cacheData)
+              )}
+            </div>
+          );
+        })(cacheData),
+      },
+    ];
     cacheData?.forEach((item) => {
       if (
         methodTypes.find(
@@ -395,6 +425,7 @@ const AllRule: React.FC<{
       });
     });
 
+    console.log(methodTypes);
     return methodTypes;
   }, [cacheData, checkList, getCacheDataCards, isSelectStatus, setCheckList]);
 

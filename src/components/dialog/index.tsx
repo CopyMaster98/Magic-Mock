@@ -174,7 +174,7 @@ const Dialog: React.FC<{
               </span>
             )}
           </div>
-          {dialogConfig?.title === "Create & Save" && (
+          {dialogConfig?.title === "Multiple Create & Save" && (
             <span
               style={{
                 position: "absolute",

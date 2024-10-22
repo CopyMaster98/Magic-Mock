@@ -519,7 +519,7 @@ const DetailInfo: React.FC<{
         .flat(Infinity) as any;
 
       return {
-        title: "Create & Save",
+        title: "Multiple Create & Save",
         content: (
           <>
             <div
