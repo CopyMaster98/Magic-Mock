@@ -18,8 +18,9 @@
   padding: 10px 20px;
   outline: none;
   border: 0;
-  text-transform: uppercase;
   box-sizing: border-box;
+
+  animation: flicker 2.5s infinite reverse;
 }
 
 .recognizable-tip::before,
@@ -58,4 +59,18 @@
   border-bottom-color: #52c41a;
   border-left-color: #52c41a;
   transition: border-color 0s ease-out 0.6s, width 0.3s ease-out 0.6s, height 0.3s ease-out 1s;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
 }

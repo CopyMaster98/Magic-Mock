@@ -28,7 +28,7 @@ export const useGetClipboardValue = (isCancel = false) => {
       } catch (error) {
         // sessionStorage.setItem("isFetch", "0");
       }
-    }, 1000);
+    }, 300);
     return () => clearTimeout(timer.current);
   }, [isCancel]);
 };

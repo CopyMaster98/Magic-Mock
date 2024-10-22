@@ -32,6 +32,7 @@ const Dialog: React.FC<{
     handleClose();
     updateDialogInfo?.();
     updateModalConfig?.();
+    sessionStorage.setItem("isFetch", "0");
   };
 
   const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
@@ -123,33 +124,53 @@ const Dialog: React.FC<{
             {dialogTip && (
               <span
                 className="dialog-tip recognizable-tip"
-                onClick={() => {
-                  dialogConfig?.handleUpdateForm?.({
-                    id: "5cc8ef047bc7edb4",
-                    ruleName: "1",
-                    rulePattern: "212",
-                    ruleMethod: [],
-                    resourceType: ["XHR", "Fetch"],
-                    ruleStatus: true,
-                    requestHeaderType: "text",
-                    responseDataType: "json",
-                    requestHeader: [
-                      {
-                        key: "asd",
-                        value: "123",
-                      },
-                    ],
-                    responseStatusCode: 200,
-                    responseDataJSON: {
-                      a: "ccc",
-                    },
-                    payloadJSON: {
-                      b: 123,
-                    },
-                  });
+                onClick={async () => {
+                  let url = "",
+                    config: Partial<Request> = {},
+                    clipboardValue = "";
+
+                  try {
+                    clipboardValue = await navigator.clipboard.readText();
+                  } catch (error) {}
+
+                  const fetchRegex =
+                    /fetch\(\s*['"]([^'"]+)['"]\s*,\s*({[\s\S]*})\s*\)/;
+
+                  if (!clipboardValue.match(fetchRegex)) return;
+
+                  url = clipboardValue.match(fetchRegex)?.[1] ?? "";
+                  config = eval(
+                    `(${clipboardValue.match(fetchRegex)?.[2] ?? "{}"})`
+                  );
+
+                  let ruleConfig: any = {
+                    ruleName: url,
+                    rulePattern: url,
+                  };
+
+                  if (Object.keys(config)) {
+                    ruleConfig = {
+                      ...ruleConfig,
+                      ruleMethod: [config.method],
+                      responseStatusCode: 200,
+                      requestHeaderType: "json",
+                      requestHeaderJSON: config.headers ?? {},
+                      resourceType: ["XHR", "Fetch"],
+                    };
+                  }
+                  if (config.body) {
+                    let payload = JSON.parse(config.body as unknown as string);
+
+                    if (Object.keys(payload).length) {
+                      ruleConfig.payloadJSON = payload;
+                    }
+                  }
+                  console.log(ruleConfig);
+
+                  dialogConfig?.handleUpdateForm?.(ruleConfig);
                 }}
               >
-                Discovering recognizable content
+                DISCOVERING RECOGNIZABLE CONTENT
               </span>
             )}
           </div>
