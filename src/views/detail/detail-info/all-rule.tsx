@@ -90,7 +90,7 @@ const AllRule: React.FC<{
       setSwitchLoading(true);
 
       await CacheAPI.updateCacheInfo({
-        projectId: item.parent.id,
+        projectId: item.parent?.id,
         ruleId: item.id,
         cacheInfo: {
           cacheStatus: !item?.content?.cacheStatus,
@@ -112,7 +112,7 @@ const AllRule: React.FC<{
         handleConfirm: async () => {
           await RuleAPI.deleteRule({
             ruleId: item.id,
-            projectId: item.parent.id,
+            projectId: item.parent?.id,
           });
 
           closeDialog?.();
@@ -511,7 +511,7 @@ const AllRule: React.FC<{
                       <Button
                         danger={true}
                         type="primary"
-                        onClick={openConfirmDialog}
+                        onClick={() => openConfirmDialog(data)}
                       >
                         Delete
                       </Button>
