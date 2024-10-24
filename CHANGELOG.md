@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.5.0...v1.5.1) (2024-10-24)
+
+
+### Bug Fixes
+
+* params error ([f5f7e13](https://github.com/CopyMaster98/Magic-Mock/commit/f5f7e13bf7705d034e34c665113c37c4aed7362c))
+
 ## [1.5.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.6...v1.5.0) (2024-10-24)
 
 
