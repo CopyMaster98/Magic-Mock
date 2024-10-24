@@ -38,6 +38,7 @@ import { resourceTypeOptions, statusOptions } from "../../../constant";
 import Search from "antd/es/input/Search";
 import { updateCacheInfo } from "../../../api/cache";
 import { startProject, stopProject } from "../../../api/project";
+import { clipboard } from "../../../hooks";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -65,7 +66,7 @@ const DetailInfo: React.FC<{
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState("1");
-  const [checkList, setCheckList] = useState([]);
+  const [checkList, setCheckList] = useState<any>([]);
   const [isSelectStatus, setIsSelectStatus] = useState(false);
   const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
@@ -83,6 +84,9 @@ const DetailInfo: React.FC<{
   const [ruleStatus, setRuleStatus] = useState("All");
   const [ruleResourceType, setRuleResourceType] = useState("XHR");
   const [searchValue, setSearchValue] = useState("");
+  const [isGetClipboard, setIsGetClipboard] = useState(false);
+
+  clipboard.useGetClipboardValue(!isGetClipboard);
 
   const openDialogConfig = useMemo(
     () => ({
@@ -152,7 +156,14 @@ const DetailInfo: React.FC<{
           )
           .catch((err: any) => console.log(err));
       },
-      handleClose: () => openDialogConfig?.ref?.current?.onReset(),
+      handleUpdateForm: (data: any) => {
+        console.log(formRef?.current?.handleInitForm);
+        formRef?.current?.handleInitForm(data);
+      },
+      handleClose: () => {
+        openDialogConfig?.ref?.current?.onReset();
+        setIsGetClipboard(false);
+      },
     }),
     [closeDialog, project, setRefresh]
   );
@@ -165,6 +176,7 @@ const DetailInfo: React.FC<{
       },
     });
     openDialog?.();
+    setIsGetClipboard(true);
   }, [openDialogConfig, openDialog, updateDialogInfo, updateModalConfig]);
 
   const itemRender: BreadcrumbProps["itemRender"] = (
@@ -507,7 +519,7 @@ const DetailInfo: React.FC<{
         .flat(Infinity) as any;
 
       return {
-        title: "Crete & Save",
+        title: "Multiple Create & Save",
         content: (
           <>
             <div
@@ -539,6 +551,7 @@ const DetailInfo: React.FC<{
             <Descriptions column={2} title="" bordered items={items} />
           </>
         ),
+        count: checkList.length,
         handleConfirm: handleConfirmMultiple,
         handleClose: () => {
           setIsReplaceRulePattern(0);
@@ -817,7 +830,7 @@ const DetailInfo: React.FC<{
 
     const newFormRef = JSON.parse(JSON.stringify(ruleFormRef));
     const info: IDialogInfo<IFormRefProps | undefined> = {
-      title: "Crete & Save",
+      title: "Create & Save",
       content: <div>Cache Data will create file and save as mock data.</div>,
       handleConfirm: () => handleSaveCache(form, newFormRef),
     };
@@ -1061,6 +1074,7 @@ const DetailInfo: React.FC<{
               setCurrentTab={setCurrentTab}
               cacheData={cacheCard}
               isSelectStatus={isSelectStatus}
+              handleUpdateSelectStatus={setIsSelectStatus}
             />
           )}
         </div>

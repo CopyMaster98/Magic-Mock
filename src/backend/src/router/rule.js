@@ -164,7 +164,7 @@ router.post("/multipleCreate", async (ctx) => {
       try {
         createFile(filePath, JSON.stringify(content, null, 2));
       } catch (error) {
-        error.push({
+        errorData.push({
           data: item,
           message: error,
         });

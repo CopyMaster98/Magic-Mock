@@ -401,7 +401,7 @@ async function intercept(data, page) {
       const urlPattern = [];
       Object.keys(cacheDataConfig).forEach((method) => {
         cacheDataConfig[method].forEach((item) => {
-          const url = item.params.request.url;
+          const url = item.params?.request.url;
           const findCachePattern = urlPattern.find(
             (_item) => _item.rulePattern === url
           );
@@ -548,11 +548,51 @@ async function intercept(data, page) {
       let matchedPatternStr = "";
 
       allUrlPatterns.forEach((pattern) => {
-        const flag =
+        let flag =
           (!pattern.ruleMethod?.length ||
             pattern.ruleMethod.includes(params.request.method)) &&
           (!pattern.resourceType?.length ||
             pattern.resourceType.includes(params.resourceType));
+
+        if (flag && pattern.payload) {
+          if (matchedPattern && matchedPattern.payload) {
+            const payload = matchedPattern.payload;
+            const payloadKeysLength = Object.keys(payload).length;
+
+            if (params.request.method.toLowerCase() === "get") {
+              const searchParamsKeyValue = new URL(params.request.url)
+                .searchParams;
+              const searchParamsKeysLength =
+                Object.keys(searchParamsKeyValue)?.length;
+
+              if (
+                !searchParamsKeysLength ||
+                searchParamsKeysLength !== payloadKeysLength
+              )
+                flag = false;
+              else {
+                flag = Object.keys(payload).every(
+                  (key) => payload[key] === searchParamsKeyValue[key]
+                );
+              }
+            } else {
+              const requestData = commonUtils.isValidJSON(
+                params.request.postData
+              )
+                ? JSON.parse(params.request.postData)
+                : {};
+
+              const requestDataLength = Object.keys(requestData)?.length;
+
+              if (!requestDataLength || requestDataLength !== payloadKeysLength)
+                flag = false;
+              else
+                flag = Object.keys(payload).every(
+                  (key) => payload[key] === requestData[key]
+                );
+            }
+          }
+        }
 
         if (
           pattern.urlPattern.length > 1 &&
@@ -628,42 +668,42 @@ async function intercept(data, page) {
           });
       }
 
-      let payloadMatched = true;
+      // let payloadMatched = true;
 
-      if (matchedPattern && matchedPattern.payload) {
-        const payload = matchedPattern.payload;
-        const payloadKeysLength = Object.keys(payload).length;
+      // if (matchedPattern && matchedPattern.payload) {
+      //   const payload = matchedPattern.payload;
+      //   const payloadKeysLength = Object.keys(payload).length;
 
-        if (params.request.method.toLowerCase() === "get") {
-          const searchParamsKeyValue = new URL(params.request.url).searchParams;
-          const searchParamsKeysLength =
-            Object.keys(searchParamsKeyValue)?.length;
+      //   if (params.request.method.toLowerCase() === "get") {
+      //     const searchParamsKeyValue = new URL(params.request.url).searchParams;
+      //     const searchParamsKeysLength =
+      //       Object.keys(searchParamsKeyValue)?.length;
 
-          if (
-            !searchParamsKeysLength ||
-            searchParamsKeysLength !== payloadKeysLength
-          )
-            payloadMatched = false;
-          else {
-            payloadMatched = Object.keys(payload).every(
-              (key) => payload[key] === searchParamsKeyValue[key]
-            );
-          }
-        } else {
-          const requestData = commonUtils.isValidJSON(params.request.postData)
-            ? JSON.parse(params.request.postData)
-            : {};
+      //     if (
+      //       !searchParamsKeysLength ||
+      //       searchParamsKeysLength !== payloadKeysLength
+      //     )
+      //       payloadMatched = false;
+      //     else {
+      //       payloadMatched = Object.keys(payload).every(
+      //         (key) => payload[key] === searchParamsKeyValue[key]
+      //       );
+      //     }
+      //   } else {
+      //     const requestData = commonUtils.isValidJSON(params.request.postData)
+      //       ? JSON.parse(params.request.postData)
+      //       : {};
 
-          const requestDataLength = Object.keys(requestData)?.length;
+      //     const requestDataLength = Object.keys(requestData)?.length;
 
-          if (!requestDataLength || requestDataLength !== payloadKeysLength)
-            payloadMatched = false;
-          else
-            payloadMatched = Object.keys(payload).every(
-              (key) => payload[key] === requestData[key]
-            );
-        }
-      }
+      //     if (!requestDataLength || requestDataLength !== payloadKeysLength)
+      //       payloadMatched = false;
+      //     else
+      //       payloadMatched = Object.keys(payload).every(
+      //         (key) => payload[key] === requestData[key]
+      //       );
+      //   }
+      // }
 
       const isExistLocalServer = folderUtils.folderExists(
         CONSTANT.LOCAL_SERVER
@@ -721,7 +761,7 @@ async function intercept(data, page) {
         }
       }
 
-      if (matchedPattern && payloadMatched) {
+      if (matchedPattern) {
         console.log(
           `请求 ${requestUrl} 符合Mock模式 ${matchedPattern.urlPattern}`
         );

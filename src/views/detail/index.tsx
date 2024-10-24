@@ -10,6 +10,8 @@ import { FolderAPI } from "../../api";
 import { useData } from "../../context";
 import DetailInfo from "./detail-info";
 import { url } from "../../hooks";
+import "./index.css";
+
 const { Content, Sider } = Layout;
 
 const Detail: React.FC = () => {

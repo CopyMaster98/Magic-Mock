@@ -1,0 +1,76 @@
+.ant-modal-title>div {
+  box-sizing: border-box;
+  display: flex;
+  padding-right: 20px;
+}
+
+.dialog-tip {
+  display: inline-block;
+  margin: auto;
+}
+
+.recognizable-tip {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -10px);
+  color: #52c41a;
+  cursor: pointer;
+  padding: 10px 20px;
+  outline: none;
+  border: 0;
+  box-sizing: border-box;
+
+  animation: flicker 2.5s infinite reverse;
+}
+
+.recognizable-tip::before,
+.recognizable-tip::after {
+  box-sizing: inherit;
+  position: absolute;
+  content: '';
+  border: 2px solid transparent;
+  width: 0;
+  height: 0;
+}
+
+.recognizable-tip::after {
+  bottom: 0;
+  right: 0;
+}
+
+.recognizable-tip::before {
+  top: 0;
+  left: 0;
+}
+
+.recognizable-tip:hover::before,
+.recognizable-tip:hover::after {
+  width: 100%;
+  height: 100%;
+}
+
+.recognizable-tip:hover::before {
+  border-top-color: #52c41a;
+  border-right-color: #52c41a;
+  transition: width 0.3s ease-out, height 0.3s ease-out 0.3s;
+}
+
+.recognizable-tip:hover::after {
+  border-bottom-color: #52c41a;
+  border-left-color: #52c41a;
+  transition: border-color 0s ease-out 0.6s, width 0.3s ease-out 0.6s, height 0.3s ease-out 1s;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.5;
+  }
+}

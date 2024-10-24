@@ -231,7 +231,18 @@ const HomeDetail: React.FC = () => {
               </>
             }
           >
-            <RightClickMenu item={item} handleClick={openConfirmDialog} />
+            <RightClickMenu
+              item={item}
+              menuButtons={
+                <Button
+                  danger={true}
+                  type="primary"
+                  onClick={openConfirmDialog}
+                >
+                  Delete
+                </Button>
+              }
+            />
             <div style={{ marginBottom: "10px" }}>
               <ChromeOutlined style={{ marginRight: "10px" }} />
               <span>{item.url}</span>

@@ -1,9 +1,10 @@
 import { Button, Modal, ModalProps } from "antd";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import Draggable from "react-draggable";
 import { DialogType } from "../../types";
 import { useData } from "../../context";
+import "./index.css";
 
 const Dialog: React.FC<{
   open: boolean;
@@ -20,6 +21,7 @@ const Dialog: React.FC<{
     bottom: 0,
     right: 0,
   });
+
   const draggleRef = useRef<HTMLDivElement>(null);
   const handleOk = async () => {
     if (dialogConfig?.handleConfirm) dialogConfig.handleConfirm();
@@ -30,6 +32,7 @@ const Dialog: React.FC<{
     handleClose();
     updateDialogInfo?.();
     updateModalConfig?.();
+    sessionStorage.setItem("isFetch", "0");
   };
 
   const onStart = (_event: DraggableEvent, uiData: DraggableData) => {
@@ -70,6 +73,25 @@ const Dialog: React.FC<{
 
   //   return () => window.removeEventListener("keydown", handleKeyDown);
   // });
+
+  const [dialogTip, setDialogTip] = useState(false);
+
+  const timer = useRef<any>();
+
+  useEffect(() => {
+    if (!(dialogConfig?.title === "Add Rule")) {
+      if (dialogTip) setDialogTip(false);
+      return;
+    }
+
+    timer.current = setInterval(() => {
+      const isFetch = sessionStorage.getItem("isFetch") === "1";
+      if (isFetch !== dialogTip) setDialogTip(isFetch);
+    }, 500);
+
+    return () => clearInterval(timer.current);
+  }, [dialogConfig, dialogTip]);
+
   return (
     <Modal
       styles={{
@@ -81,25 +103,90 @@ const Dialog: React.FC<{
         },
       }}
       title={
-        <div
-          style={{
-            width: "100%",
-            cursor: "move",
-          }}
-          onMouseOver={() => {
-            if (disabled) {
-              setDisabled(false);
-            }
-          }}
-          onMouseOut={() => {
-            setDisabled(true);
-          }}
-          onFocus={() => {}}
-          onBlur={() => {}}
-          // end
-        >
-          {dialogConfig?.title ?? "Draggable Modal"}
-        </div>
+        <>
+          <div
+            style={{
+              width: "100%",
+              cursor: "move",
+            }}
+            onMouseOver={() => {
+              if (disabled) {
+                setDisabled(false);
+              }
+            }}
+            onMouseOut={() => {
+              setDisabled(true);
+            }}
+            onFocus={() => {}}
+            onBlur={() => {}}
+          >
+            {dialogConfig?.title ?? "Draggable Modal"}
+            {dialogTip && (
+              <span
+                className="dialog-tip recognizable-tip"
+                onClick={async () => {
+                  let url = "",
+                    config: Partial<Request> = {},
+                    clipboardValue = "";
+
+                  try {
+                    clipboardValue = await navigator.clipboard.readText();
+                  } catch (error) {}
+
+                  const fetchRegex =
+                    /fetch\(\s*['"]([^'"]+)['"]\s*,\s*({[\s\S]*})\s*\)/;
+
+                  if (!clipboardValue.match(fetchRegex)) return;
+
+                  url = clipboardValue.match(fetchRegex)?.[1] ?? "";
+                  config = eval(
+                    `(${clipboardValue.match(fetchRegex)?.[2] ?? "{}"})`
+                  );
+
+                  let ruleConfig: any = {
+                    ruleName: url,
+                    rulePattern: url,
+                  };
+
+                  if (Object.keys(config)) {
+                    ruleConfig = {
+                      ...ruleConfig,
+                      ruleMethod: [config.method],
+                      responseStatusCode: 200,
+                      requestHeaderType: "json",
+                      requestHeaderJSON: config.headers ?? {},
+                      resourceType: ["XHR", "Fetch"],
+                    };
+                  }
+                  if (config.body) {
+                    let payload = JSON.parse(config.body as unknown as string);
+
+                    if (Object.keys(payload).length) {
+                      ruleConfig.payloadJSON = payload;
+                    }
+                  }
+                  console.log(ruleConfig);
+
+                  dialogConfig?.handleUpdateForm?.(ruleConfig);
+                }}
+              >
+                DISCOVERING RECOGNIZABLE CONTENT
+              </span>
+            )}
+          </div>
+          {dialogConfig?.title === "Multiple Create & Save" && (
+            <span
+              style={{
+                position: "absolute",
+                bottom: "32px",
+                transform: "translateY(50%)",
+                cursor: "default",
+              }}
+            >
+              Count: {dialogConfig?.count ?? 0}
+            </span>
+          )}
+        </>
       }
       open={open}
       onOk={handleOk}
