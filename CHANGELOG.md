@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.5.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.6...v1.5.0) (2024-10-24)
+
+
+### Features
+
+* add all label in cache page ([7ff0581](https://github.com/CopyMaster98/Magic-Mock/commit/7ff05816e430ff6092528e19d625ca1e8eec7e29))
+* add auto analyze fetch api ([970728f](https://github.com/CopyMaster98/Magic-Mock/commit/970728fbade918bfd3546f5a931c06419d792ec8))
+* add recognizable function ([ea46169](https://github.com/CopyMaster98/Magic-Mock/commit/ea46169829e082e475a04fd5c9afab107f5d2bc7))
+
 ## [1.4.6](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.5...v1.4.6) (2024-09-03)
 
 
