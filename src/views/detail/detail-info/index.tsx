@@ -39,6 +39,7 @@ import Search from "antd/es/input/Search";
 import { updateCacheInfo } from "../../../api/cache";
 import { startProject, stopProject } from "../../../api/project";
 import { clipboard } from "../../../hooks";
+import { RuleAPI } from "../../../api";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -602,6 +603,32 @@ const DetailInfo: React.FC<{
     updateModalConfig,
   ]);
 
+  const openConfirmDialog = useCallback(
+    (item: any) => {
+      const info: IDialogInfo<IFormRefProps | undefined> = {
+        title: "确认删除",
+        handleConfirm: async () => {
+          await Promise.allSettled(
+            item.map((_item: any) =>
+              RuleAPI.deleteRule({
+                ruleId: _item.id,
+                projectId: _item.parent?.id,
+              })
+            )
+          );
+
+          closeDialog?.();
+          setCheckList([]);
+          setRefresh();
+        },
+      };
+
+      updateDialogInfo?.(info);
+      openDialog?.();
+    },
+    [closeDialog, openDialog, setRefresh, updateDialogInfo]
+  );
+
   const handleMultipleChange = useCallback(async () => {
     if (currentTab === "1") {
       await Promise.allSettled(
@@ -817,6 +844,14 @@ const DetailInfo: React.FC<{
     [closeDialog, location, navigate, project]
   );
 
+  const [defaultSearchValue, setDefaultSearchValue] = useState("");
+
+  useEffect(() => {
+    if (searchValue === defaultSearchValue) return;
+
+    setDefaultSearchValue(searchValue);
+  }, [defaultSearchValue, searchValue]);
+
   const handleSearch = useCallback((e: any) => {
     setSearchValue(e);
   }, []);
@@ -900,10 +935,13 @@ const DetailInfo: React.FC<{
                       minWidth: "150px",
                     }}
                     placeholder="Search url pattern"
+                    defaultValue={defaultSearchValue}
                     onSearch={handleSearch}
                     onChange={(e) => {
-                      if (!e.target.value.length && searchValue.length)
+                      if (!e.target.value.length && searchValue.length) {
+                        setDefaultSearchValue("");
                         handleSearch("");
+                      }
                     }}
                     enterButton
                   />
@@ -977,39 +1015,19 @@ const DetailInfo: React.FC<{
                   <Button
                     type="primary"
                     danger
-                    style={{
-                      display: isSelectStatus ? "" : "none",
-                    }}
-                    onClick={() => {
-                      setIsSelectStatus(false);
-                      setCheckList([]);
-                      setRefreshNumber((oldValue) => oldValue + 1);
-                    }}
+                    disabled={checkList.length === 0}
+                    onClick={() => openConfirmDialog(checkList)}
                   >
-                    Cancel
+                    Delete
                   </Button>
-                  {isSelectStatus && (
-                    <Button
-                      type="primary"
-                      disabled={isSelectStatus && checkList.length === 0}
-                      onClick={handleMultipleChange}
-                    >
-                      Multiple Change
-                    </Button>
-                  )}
                   <Button
                     type="primary"
                     style={{
-                      display:
-                        currentTab === "1" && isSelectStatus
-                          ? "none"
-                          : "inline-block",
+                      display: currentTab === "1" ? "inline-block" : "none",
 
                       backgroundColor: checkList.length > 0 ? "#52c41a" : "",
                     }}
-                    disabled={
-                      (isSelectStatus && checkList.length === 0) || !project
-                    }
+                    disabled={checkList.length === 0 || !project}
                     onClick={handleMultipleCreateSave}
                   >
                     {isSelectStatus
@@ -1021,7 +1039,7 @@ const DetailInfo: React.FC<{
               <Button
                 type="primary"
                 loading={saveLoading}
-                disabled={isSelectStatus || !project}
+                disabled={!project}
                 onClick={
                   location.search.includes("ruleId")
                     ? location.search.includes("type=cache")
@@ -1037,16 +1055,18 @@ const DetailInfo: React.FC<{
                   : "Add Rule"}
               </Button>
 
-              <Button
-                type="primary"
-                danger={project?._status ? true : false}
-                loading={loading}
-                disabled={!project}
-                icon={<PoweroffOutlined />}
-                onClick={() => handleChangeStatus(project, !project?._status)}
-              >
-                {project?._status ? "Stop" : "Start"}
-              </Button>
+              {!location.search.includes("ruleId") && (
+                <Button
+                  type="primary"
+                  danger={project?._status ? true : false}
+                  loading={loading}
+                  disabled={!project}
+                  icon={<PoweroffOutlined />}
+                  onClick={() => handleChangeStatus(project, !project?._status)}
+                >
+                  {project?._status ? "Stop" : "Start"}
+                </Button>
+              )}
             </div>
           </div>
         </div>

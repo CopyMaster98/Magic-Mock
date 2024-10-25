@@ -1,6 +1,7 @@
 import * as header from "./header";
 
 const methods = [
+  "ALL",
   "GET",
   "POST",
   "PUT",
@@ -13,23 +14,17 @@ const methods = [
 const status = ["Start", "Stop"];
 
 const resourceType = [
+  "All",
   "Document",
   "Stylesheet",
   "Image",
   "Media",
   "Font",
   "Script",
-  "TextTrack",
   "XHR",
   "Fetch",
-  "Prefetch",
-  "EventSource",
-  "WebSocket",
-  "Manifest",
-  "SignedExchange",
   "Ping",
   "CSPViolationReport",
-  "Preflight",
   "Other",
 ] as const;
 

@@ -9,9 +9,16 @@ import {
   Menu,
   Button,
   Empty,
+  Table,
 } from "antd";
 import Meta from "antd/es/card/Meta";
-import { SettingOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  FrownOutlined,
+  PoweroffOutlined,
+  SettingOutlined,
+  SmileOutlined,
+} from "@ant-design/icons";
 import RightClickMenu from "../../../components/right-click-menu";
 import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
@@ -44,6 +51,7 @@ const AllRule: React.FC<{
     handleUpdateSelectStatus,
   } = props;
 
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [checkList, setCheckList] = useState<any>([]);
   const navigate = useNavigate();
   const { pathname, search } = url.usePathname();
@@ -52,8 +60,14 @@ const AllRule: React.FC<{
   const [switchLoading, setSwitchLoading] = useState(false);
 
   useEffect(() => {
-    onChangeCheckList?.(checkList);
-  }, [checkList, onChangeCheckList]);
+    const res: any[] = [];
+
+    selectedRowKeys.forEach((rowKey) => {
+      const data = rules.find((rule) => rule.key === rowKey);
+      if (data) res.push(data);
+    });
+    onChangeCheckList?.(res);
+  }, [selectedRowKeys, onChangeCheckList, rules]);
 
   const handleNavigate = useCallback(
     (item: any, type: "mock" | "cache" = "mock") => {
@@ -149,17 +163,37 @@ const AllRule: React.FC<{
     [cacheData, checkList, currentTab, rules]
   );
 
-  const findMethod = useCallback((method: any) => {
-    return methodColors.find(
-      (item) => item.name === method.content.params.request.method
-    );
-  }, []);
+  const findMethod = useCallback(
+    (data: any, type: "mock" | "cache" = "mock") => {
+      if (type === "cache")
+        return methodColors.find(
+          (item) => item.name === data?.content?.params?.request?.method
+        );
 
-  const findResource = useCallback((data: any) => {
-    return resourceTypeColors.find(
-      (item) => item.name === data.content.params?.resourceType
-    );
-  }, []);
+      return data?.length > 0 && data?.length < 7
+        ? (data || []).map((item: any) =>
+            methodColors.find((_item) => _item.name === item)
+          )
+        : [methodColors.find((_item) => _item.name === "ALL")];
+    },
+    []
+  );
+
+  const findResource = useCallback(
+    (data: any, type: "mock" | "cache" = "mock") => {
+      if (type === "cache")
+        return resourceTypeColors.find(
+          (item) => item.name === data?.content?.params?.resourceType
+        );
+
+      return data?.length > 0 && data?.length < 11
+        ? (data || []).map((item: any) =>
+            resourceTypeColors.find((_item) => _item.name === item)
+          )
+        : [resourceTypeColors.find((_item) => _item.name === "All")];
+    },
+    []
+  );
 
   const isSelectedCard = useCallback(
     (cardInfo: any) =>
@@ -186,248 +220,79 @@ const AllRule: React.FC<{
     [switchLoading, toggleCacheStatus]
   );
 
-  const getCacheDataCards = useCallback(
-    (cacheData: any) => {
-      return (cacheData || [])?.map((item: any, index: number) => {
-        const matchedNum =
-          matchedMap
-            ?.get(`${item.parent.name}&${item.parent.url}`)
-            ?.get(item.type)
-            ?.get(item.content.id) || 0;
-        let html = (
-          <div
-            key={item.id + item.method}
-            className={item?.content?.cacheStatus ? "rule-card" : ""}
-            style={{
-              padding: "5px",
-              margin: "5px 5px 30px 5px",
-              borderRadius: "8px",
-              backgroundColor: "transparent",
-            }}
-          >
-            <Badge count={matchedNum}>
-              <Card
-                className={
-                  isSelectedCard(item)
-                    ? "card-selected card-container"
-                    : isSelectStatus
-                    ? "card-container card-select"
-                    : "card-container"
-                }
-                style={{
-                  height: "100%",
-                  width: 460,
-                  marginLeft: 0,
-                }}
-                actions={[
-                  <SettingOutlined
-                    key="setting"
-                    onClick={() => handleNavigate(item, "cache")}
-                  />,
-                ]}
-                hoverable
-              >
-                {isSelectStatus ? (
-                  <RightClickMenu
-                    item={item}
-                    menuButtons={
-                      <Button
-                        type="primary"
-                        onClick={() => handleAllSelected(item)}
-                      >
-                        All Select
-                      </Button>
-                    }
-                    style={{
-                      zIndex: 999,
-                    }}
-                    // handleClick={() => handleAllSelected(item)}
-                  />
-                ) : (
-                  <RightClickMenu
-                    item={item}
-                    menuButtons={
-                      <>
-                        <Button
-                          type="primary"
-                          onClick={() => {
-                            if (!isSelectStatus) handleUpdateSelectStatus(true);
+  // const methodTypeItems = useMemo(() => {
+  //   const methodTypes: any = [
+  //     {
+  //       key: 0,
+  //       label: "All",
+  //       children: (function (cacheData: any) {
+  //         return (
+  //           <div
+  //             style={{
+  //               display: "flex",
+  //             }}
+  //           >
+  //             {isSelectStatus ? (
+  //               <CheckboxGroup
+  //                 style={{
+  //                   justifyContent: "space-around",
+  //                 }}
+  //                 options={getCacheDataCards(cacheData)}
+  //                 value={checkList}
+  //                 onChange={setCheckList}
+  //               />
+  //             ) : (
+  //               getCacheDataCards(cacheData)
+  //             )}
+  //           </div>
+  //         );
+  //       })(cacheData),
+  //     },
+  //   ];
+  //   cacheData?.forEach((item) => {
+  //     if (
+  //       methodTypes.find(
+  //         (method: any) => method.label === item.content.params?.request.method
+  //       )
+  //     )
+  //       return;
 
-                            setCheckList((oldValue: any) => [
-                              ...oldValue.filter(
-                                (_item: any) => _item.id !== item.id
-                              ),
-                              item,
-                            ]);
-                          }}
-                        >
-                          Select
-                        </Button>
-                      </>
-                    }
-                  />
-                )}
+  //     methodTypes.push({
+  //       key: methodTypes.length,
+  //       label: item.content.params?.request.method,
+  //       children: (function (cacheData: any) {
+  //         return (
+  //           <div
+  //             style={{
+  //               display: "flex",
+  //             }}
+  //           >
+  //             {isSelectStatus ? (
+  //               <CheckboxGroup
+  //                 style={{
+  //                   justifyContent: "space-around",
+  //                 }}
+  //                 options={getCacheDataCards(cacheData)}
+  //                 value={checkList}
+  //                 onChange={setCheckList}
+  //               />
+  //             ) : (
+  //               getCacheDataCards(cacheData)
+  //             )}
+  //           </div>
+  //         );
+  //       })(
+  //         cacheData.filter(
+  //           (_item) =>
+  //             _item.content.params?.request.method ===
+  //             item.content.params?.request.method
+  //         )
+  //       ),
+  //     });
+  //   });
 
-                <Skeleton loading={false} avatar active>
-                  <Meta
-                    title={
-                      <>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flex: 1,
-                              width: 0,
-                              marginRight: "20px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {new URL(item.content.params.request.url)
-                                .pathname === "/"
-                                ? item.content.params.request.url
-                                : new URL(item.content.params.request.url)
-                                    .pathname}
-                            </span>
-                            <Tag
-                              color={findMethod(item)?.color ?? "default"}
-                              style={{ marginLeft: "10px" }}
-                            >
-                              <span>{findMethod(item)?.name ?? "null"}</span>
-                            </Tag>
-                            <Tag
-                              color={findResource(item)?.color ?? "default"}
-                              style={{ marginLeft: "10px" }}
-                            >
-                              <span>{findResource(item)?.name ?? "null"}</span>
-                            </Tag>
-                            <Tag
-                              color="processing"
-                              style={{ marginLeft: "10px" }}
-                            >
-                              <span>Cache</span>
-                            </Tag>
-                          </div>
-                          {cacheDataCardsSwitch(item)}
-                        </div>
-                      </>
-                    }
-                    // description="This is the description"
-                  />
-                </Skeleton>
-              </Card>
-            </Badge>
-          </div>
-        );
-
-        item[Symbol.toStringTag] = item.id;
-
-        if (isSelectStatus)
-          return {
-            label: html,
-            value: item,
-          };
-
-        return html;
-      });
-    },
-    [
-      matchedMap,
-      isSelectedCard,
-      isSelectStatus,
-      findMethod,
-      findResource,
-      cacheDataCardsSwitch,
-      handleNavigate,
-      handleAllSelected,
-      handleUpdateSelectStatus,
-    ]
-  );
-
-  const methodTypeItems = useMemo(() => {
-    const methodTypes: any = [
-      {
-        key: 0,
-        label: "All",
-        children: (function (cacheData: any) {
-          return (
-            <div
-              style={{
-                display: "flex",
-              }}
-            >
-              {isSelectStatus ? (
-                <CheckboxGroup
-                  style={{
-                    justifyContent: "space-around",
-                  }}
-                  options={getCacheDataCards(cacheData)}
-                  value={checkList}
-                  onChange={setCheckList}
-                />
-              ) : (
-                getCacheDataCards(cacheData)
-              )}
-            </div>
-          );
-        })(cacheData),
-      },
-    ];
-    cacheData?.forEach((item) => {
-      if (
-        methodTypes.find(
-          (method: any) => method.label === item.content.params?.request.method
-        )
-      )
-        return;
-
-      methodTypes.push({
-        key: methodTypes.length,
-        label: item.content.params?.request.method,
-        children: (function (cacheData: any) {
-          return (
-            <div
-              style={{
-                display: "flex",
-              }}
-            >
-              {isSelectStatus ? (
-                <CheckboxGroup
-                  style={{
-                    justifyContent: "space-around",
-                  }}
-                  options={getCacheDataCards(cacheData)}
-                  value={checkList}
-                  onChange={setCheckList}
-                />
-              ) : (
-                getCacheDataCards(cacheData)
-              )}
-            </div>
-          );
-        })(
-          cacheData.filter(
-            (_item) =>
-              _item.content.params?.request.method ===
-              item.content.params?.request.method
-          )
-        ),
-      });
-    });
-
-    console.log(methodTypes);
-    return methodTypes;
-  }, [cacheData, checkList, getCacheDataCards, isSelectStatus, setCheckList]);
+  //   return methodTypes;
+  // }, [cacheData, checkList, getCacheDataCards, isSelectStatus, setCheckList]);
 
   const mockDataCardsSwitch = useCallback(
     (data: any) => {
@@ -446,142 +311,290 @@ const AllRule: React.FC<{
     [switchLoading, toggleRuleStatus]
   );
 
-  const getMockDataCards = useCallback(
-    (mockData: any) => {
-      return (mockData || [])?.map((data: any, index: number) => {
+  const [dotStatus, setDotStatus] = useState<any>({});
+
+  const onSelectChange = (newSelectedRowKeys: React.Key[]) => {
+    console.log("selectedRowKeys changed: ", newSelectedRowKeys);
+    setSelectedRowKeys(newSelectedRowKeys);
+  };
+
+  const columns: any = useMemo(
+    () => [
+      {
+        title: "Rule Name",
+        dataIndex: "name",
+        key: "name",
+        className: "break-word width-400",
+      },
+      {
+        title: "Rule Pattern",
+        dataIndex: "pattern",
+        key: "pattern",
+        className: "break-word width-800",
+      },
+      {
+        title: "Status",
+        align: "center",
+        key: "status",
+        render: (item: any) => (
+          <Tag
+            color={item.status ? "success" : "default"}
+            style={{ marginLeft: "10px" }}
+          >
+            <span>{item.status ? "Running" : "Stop"}</span>
+          </Tag>
+        ),
+      },
+
+      {
+        title: "Method Type",
+        align: "center",
+        dataIndex: "methodType",
+        key: "methodType",
+        render: (item: any) => {
+          const methods = findMethod(item);
+
+          return (
+            <>
+              {methods?.map((method: any, index: number) => (
+                <Tag
+                  key={index}
+                  color={method?.color ?? "default"}
+                  style={{ marginLeft: "10px" }}
+                >
+                  <span>{method?.name ?? "null"}</span>
+                </Tag>
+              ))}
+            </>
+          );
+        },
+      },
+
+      {
+        title: "Resource Type",
+        align: "center",
+        dataIndex: "resourceType",
+        key: "resourceType",
+        width: 600,
+        render: (item: any) => {
+          const resource = findResource(item);
+
+          return (
+            <>
+              {resource?.map((resource: any, index: number) => (
+                <Tag
+                  key={index}
+                  color={resource?.color ?? "default"}
+                  style={{ margin: "5px" }}
+                >
+                  <span>{resource?.name ?? "null"}</span>
+                </Tag>
+              ))}
+            </>
+          );
+        },
+      },
+      {
+        title: "Matched Count",
+        align: "center",
+        key: "matchedCount",
+        width: 100,
+        fixed: "right",
+        defaultSortOrder: "ascend",
+        sorter: (a: any, b: any) => {
+          const [aNum, bNum] = [a, b].map(
+            (item) =>
+              matchedMap
+                ?.get(`${item.parent.name}&${item.parent.url}`)
+                ?.get("mock")
+                ?.get(item.content.id) || 0
+          );
+
+          return bNum - aNum;
+        },
+        render: (item: any) => {
+          const matchedNum =
+            matchedMap
+              ?.get(`${item.parent.name}&${item.parent.url}`)
+              ?.get("mock")
+              ?.get(item.content.id) || 0;
+
+          if (matchedNum !== dotStatus[item.content.id]?.num)
+            setDotStatus({
+              ...dotStatus,
+              [item.content.id]: {
+                isRead: false,
+                num: matchedNum,
+              },
+            });
+
+          return matchedNum > 0 ? (
+            <Badge dot={!dotStatus[item.content.id]?.isRead}>
+              <Tag
+                className="matched-item"
+                icon={item.status ? <SmileOutlined /> : <FrownOutlined />}
+                color={item.status ? "success" : "warning"}
+                style={{
+                  margin: 0,
+                  cursor: "pointer",
+                }}
+                onMouseEnter={() =>
+                  setDotStatus({
+                    ...dotStatus,
+                    [item.content.id]: {
+                      ...dotStatus[item.content.id],
+                      isRead: true,
+                    },
+                  })
+                }
+              >
+                <span>{matchedNum}</span>
+              </Tag>
+            </Badge>
+          ) : (
+            <span style={{ color: "rgba(0, 0, 0, 0.5)" }}>No Matched</span>
+          );
+        },
+      },
+      {
+        title: "Action",
+        align: "center",
+        key: "action",
+        fixed: "right",
+        width: 300,
+        render: (item: any) => {
+          let itemStatus =
+            item.type === "cache" ? item?.content?.cacheStatus : item.status;
+          return (
+            <div style={{ display: "flex", justifyContent: "space-around" }}>
+              <Button
+                danger={itemStatus ? true : false}
+                type="primary"
+                icon={<PoweroffOutlined />}
+                loading={switchLoading}
+                onClick={(e) => {
+                  console.log(item);
+                  e.stopPropagation();
+                  if (item.type === "cache") toggleCacheStatus(item);
+                  else toggleRuleStatus(item);
+                }}
+              >
+                {itemStatus ? "Stop" : "Start"}
+              </Button>
+              <Button
+                color="default"
+                icon={<SettingOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNavigate(item);
+                }}
+              >
+                Setting
+              </Button>
+
+              {item.type !== "cache" && (
+                <Button
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openConfirmDialog(item);
+                  }}
+                ></Button>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [
+      dotStatus,
+      findMethod,
+      findResource,
+      handleNavigate,
+      matchedMap,
+      openConfirmDialog,
+      switchLoading,
+      toggleCacheStatus,
+      toggleRuleStatus,
+    ]
+  );
+
+  const getCacheDataCards = useCallback(
+    (cacheData: any) => {
+      const data = (cacheData || []).map((item: any, index: number) => ({
+        name: item.content?.ruleName,
+        pattern: item.content?.params?.request?.url,
+        methodType: item.content?.ruleMethod,
+        resourceType: item.content?.resourceType,
+        status: item.content?.ruleStatus,
+        ...item,
+      }));
+
+      const rowClassName = (record: any) => {
         const matchedNum =
           matchedMap
-            ?.get(`${data.parent.name}&${data.parent.url}`)
-            ?.get(data.type ?? "mock")
-            ?.get(data.content.id) || 0;
+            ?.get(`${record.parent.name}&${record.parent.url}`)
+            ?.get("mock")
+            ?.get(record.content.id) || 0;
 
-        const html = (
-          <div
-            key={data.id}
-            className={data?.content?.ruleStatus ? "rule-card" : ""}
-            style={{
-              padding: "5px",
-              margin: "5px 5px 30px 5px",
-              borderRadius: "8px",
-              backgroundColor: "transparent",
-            }}
-          >
-            <Badge count={matchedNum}>
-              <Card
-                className={
-                  isSelectedCard(data)
-                    ? "card-selected card-container"
-                    : isSelectStatus
-                    ? "card-container card-select"
-                    : "card-container"
-                }
-                style={{
-                  height: "100%",
-                  width: 360,
-                  marginLeft: 0,
-                }}
-                actions={[
-                  <SettingOutlined
-                    key="setting"
-                    onClick={() => handleNavigate(data)}
-                  />,
-                ]}
-                hoverable
-              >
-                {isSelectStatus ? (
-                  <RightClickMenu
-                    item={data}
-                    menuButtons={
-                      <Button
-                        type="primary"
-                        onClick={() => handleAllSelected(data)}
-                      >
-                        All Select
-                      </Button>
-                    }
-                    style={{
-                      zIndex: 999,
-                    }}
-                    // handleClick={}
-                  />
-                ) : (
-                  <RightClickMenu
-                    item={data}
-                    menuButtons={
-                      <Button
-                        danger={true}
-                        type="primary"
-                        onClick={() => openConfirmDialog(data)}
-                      >
-                        Delete
-                      </Button>
-                    }
-                  />
-                )}
-                <Skeleton loading={false} avatar active>
-                  <Meta
-                    title={
-                      <>
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flex: 1,
-                              width: 0,
-                              marginRight: "20px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                whiteSpace: "nowrap",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {decodeURIComponent(data.name).split("ηhash")[0]}
-                            </span>
-                            <Tag color="success" style={{ marginLeft: "10px" }}>
-                              <span>Mock</span>
-                            </Tag>
-                          </div>
-                          {mockDataCardsSwitch(data)}
-                        </div>
-                      </>
-                    }
-                    // description="This is the description"
-                  />
-                </Skeleton>
-              </Card>
-            </Badge>
-          </div>
-        );
+        return matchedNum > 0 ? "success-border" : "";
+      };
 
-        data[Symbol.toStringTag] = data.id;
-
-        if (isSelectStatus)
-          return {
-            label: html,
-            value: data,
-          };
-
-        return html;
-      });
+      return (
+        <Table
+          scroll={{ x: "max-content" }}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: onSelectChange,
+          }}
+          sticky
+          columns={columns}
+          dataSource={data}
+          pagination={false}
+          rowClassName={rowClassName}
+        />
+      );
     },
+    [selectedRowKeys, columns, matchedMap]
+  );
 
-    [
-      handleAllSelected,
-      handleNavigate,
-      isSelectStatus,
-      isSelectedCard,
-      matchedMap,
-      mockDataCardsSwitch,
-      openConfirmDialog,
-    ]
+  const getMockDataCards = useCallback(
+    (mockData: any) => {
+      const data = (mockData || []).map((item: any, index: number) => ({
+        name: item.content?.ruleName,
+        pattern: item.content?.rulePattern,
+        methodType: item.content?.ruleMethod,
+        resourceType: item.content?.resourceType,
+        status: item.content?.ruleStatus,
+        ...item,
+      }));
+
+      const rowClassName = (record: any) => {
+        const matchedNum =
+          matchedMap
+            ?.get(`${record.parent.name}&${record.parent.url}`)
+            ?.get("mock")
+            ?.get(record.content.id) || 0;
+
+        return matchedNum > 0 ? "success-border" : "";
+      };
+
+      return (
+        <Table
+          scroll={{ x: "max-content" }}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: onSelectChange,
+          }}
+          sticky
+          columns={columns}
+          dataSource={data}
+          pagination={false}
+          rowClassName={rowClassName}
+        />
+      );
+    },
+    [columns, matchedMap, selectedRowKeys]
   );
 
   const handleChangeTab = useCallback(
@@ -597,60 +610,20 @@ const AllRule: React.FC<{
         key: "1",
         label: "Mock",
         children: (
-          <div
-            style={{
-              display: "flex",
-            }}
-          >
-            {rules.length > 0 ? (
-              isSelectStatus ? (
-                <CheckboxGroup
-                  style={{
-                    justifyContent: "space-around",
-                  }}
-                  options={getMockDataCards(rules)}
-                  value={checkList}
-                  onChange={setCheckList}
-                />
-              ) : (
-                getMockDataCards(rules)
-              )
-            ) : (
-              <Empty />
-            )}
-          </div>
+          <div>{rules.length > 0 ? getMockDataCards(rules) : <Empty />}</div>
         ),
       },
       {
         key: "2",
         label: "Cache",
         children: (
-          <>
-            {cacheData && cacheData?.length > 0 ? (
-              <Tabs
-                tabPosition={"left"}
-                style={{
-                  flexWrap: "nowrap",
-                }}
-                onChange={() => handleAllSelected(null)}
-                items={methodTypeItems}
-              />
-            ) : (
-              <Empty />
-            )}
-          </>
+          <div>
+            {rules.length > 0 ? getCacheDataCards(cacheData) : <Empty />}
+          </div>
         ),
       },
     ];
-  }, [
-    cacheData,
-    checkList,
-    getMockDataCards,
-    handleAllSelected,
-    isSelectStatus,
-    methodTypeItems,
-    rules,
-  ]);
+  }, [cacheData, getCacheDataCards, getMockDataCards, rules]);
 
   return (
     <>
