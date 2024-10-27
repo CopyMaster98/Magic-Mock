@@ -14,7 +14,6 @@ const methods = [
 const status = ["Start", "Stop"];
 
 const resourceType = [
-  "All",
   "Document",
   "Stylesheet",
   "Image",
@@ -44,7 +43,6 @@ const statusOptions = status.map((item) => ({
 }));
 
 const color = [
-  "magenta",
   "purple",
   "burlywood",
   "bisque",
@@ -63,6 +61,7 @@ const color = [
   "darkred",
   "lightseagreen",
   "lightsalmon",
+  "magenta",
 ];
 
 const methodColors = methodOptions.map((item, index) => ({
@@ -83,4 +82,5 @@ export {
   resourceTypeOptions,
   statusOptions,
   resourceTypeColors,
+  color,
 };

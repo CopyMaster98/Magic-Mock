@@ -27,29 +27,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CacheAPI, RuleAPI } from "../../../api";
 import { useData } from "../../../context";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
-import { methodColors, resourceTypeColors } from "../../../constant";
+import { color, methodColors, resourceTypeColors } from "../../../constant";
 import { updateRuleInfo } from "../../../api/rule";
-
-const CheckboxGroup = Checkbox.Group;
 
 const AllRule: React.FC<{
   rules: any[];
   setCurrentTab: any;
-  isSelectStatus: boolean;
   currentTab: string;
   onChangeCheckList: any;
-  handleUpdateSelectStatus: any;
   cacheData?: any[];
 }> = (props) => {
-  const {
-    rules,
-    cacheData,
-    setCurrentTab,
-    isSelectStatus,
-    currentTab,
-    onChangeCheckList,
-    handleUpdateSelectStatus,
-  } = props;
+  const { rules, cacheData, setCurrentTab, currentTab, onChangeCheckList } =
+    props;
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [checkList, setCheckList] = useState<any>([]);
@@ -61,16 +50,18 @@ const AllRule: React.FC<{
 
   useEffect(() => {
     const res: any[] = [];
-
+    const originData = currentTab === "1" ? rules : cacheData ?? [];
     selectedRowKeys.forEach((rowKey) => {
-      const data = rules.find((rule) => rule.key === rowKey);
+      const data = originData.find((rule) => rule.key === rowKey);
       if (data) res.push(data);
     });
+
     onChangeCheckList?.(res);
-  }, [selectedRowKeys, onChangeCheckList, rules]);
+  }, [selectedRowKeys, onChangeCheckList]);
 
   const handleNavigate = useCallback(
-    (item: any, type: "mock" | "cache" = "mock") => {
+    (item: any) => {
+      const type = item.type ?? "mock";
       let url = `/${pathname.join("/")}/${item.key}${search}&ruleId=${
         item.id
       }&type=${type}`;
@@ -163,37 +154,36 @@ const AllRule: React.FC<{
     [cacheData, checkList, currentTab, rules]
   );
 
-  const findMethod = useCallback(
-    (data: any, type: "mock" | "cache" = "mock") => {
-      if (type === "cache")
-        return methodColors.find(
-          (item) => item.name === data?.content?.params?.request?.method
-        );
+  const findMethod = useCallback((data: any) => {
+    if (data?.type === "cache")
+      return methodColors.find(
+        (item) => item.name === data?.content?.params?.request?.method
+      );
 
-      return data?.length > 0 && data?.length < 7
-        ? (data || []).map((item: any) =>
-            methodColors.find((_item) => _item.name === item)
-          )
-        : [methodColors.find((_item) => _item.name === "ALL")];
-    },
-    []
-  );
+    return data?.length > 0 && data?.length < 7
+      ? (data || []).map((item: any) =>
+          methodColors.find((_item) => _item.name === item)
+        )
+      : [methodColors.find((_item) => _item.name === "ALL")];
+  }, []);
 
-  const findResource = useCallback(
-    (data: any, type: "mock" | "cache" = "mock") => {
-      if (type === "cache")
-        return resourceTypeColors.find(
-          (item) => item.name === data?.content?.params?.resourceType
-        );
+  const findResource = useCallback((data: any) => {
+    if (data?.type === "cache")
+      return resourceTypeColors.find(
+        (item) => item.name === data?.content?.params?.resourceType
+      );
 
-      return data?.length > 0 && data?.length < 11
-        ? (data || []).map((item: any) =>
-            resourceTypeColors.find((_item) => _item.name === item)
-          )
-        : [resourceTypeColors.find((_item) => _item.name === "All")];
-    },
-    []
-  );
+    return data?.length > 0 && data?.length < 11
+      ? (data || []).map((item: any) =>
+          resourceTypeColors.find((_item) => _item.name === item)
+        )
+      : [
+          {
+            name: "All",
+            color: color[color.length - 1],
+          },
+        ];
+  }, []);
 
   const isSelectedCard = useCallback(
     (cardInfo: any) =>
@@ -324,13 +314,13 @@ const AllRule: React.FC<{
         title: "Rule Name",
         dataIndex: "name",
         key: "name",
-        className: "break-word width-400",
+        className: "break-word max-width-400",
       },
       {
         title: "Rule Pattern",
         dataIndex: "pattern",
         key: "pattern",
-        className: "break-word width-800",
+        className: "break-word max-width-800 min-width-400",
       },
       {
         title: "Status",
@@ -351,6 +341,7 @@ const AllRule: React.FC<{
         align: "center",
         dataIndex: "methodType",
         key: "methodType",
+        className: "min-width-200 max-width-400",
         render: (item: any) => {
           const methods = findMethod(item);
 
@@ -375,7 +366,7 @@ const AllRule: React.FC<{
         align: "center",
         dataIndex: "resourceType",
         key: "resourceType",
-        width: 600,
+        className: "min-width-200 max-width-600",
         render: (item: any) => {
           const resource = findResource(item);
 
@@ -398,7 +389,7 @@ const AllRule: React.FC<{
         title: "Matched Count",
         align: "center",
         key: "matchedCount",
-        width: 100,
+        width: 180,
         fixed: "right",
         defaultSortOrder: "ascend",
         sorter: (a: any, b: any) => {
@@ -406,7 +397,7 @@ const AllRule: React.FC<{
             (item) =>
               matchedMap
                 ?.get(`${item.parent.name}&${item.parent.url}`)
-                ?.get("mock")
+                ?.get(currentTab === "1" ? "mock" : "cache")
                 ?.get(item.content.id) || 0
           );
 
@@ -416,10 +407,13 @@ const AllRule: React.FC<{
           const matchedNum =
             matchedMap
               ?.get(`${item.parent.name}&${item.parent.url}`)
-              ?.get("mock")
+              ?.get(currentTab === "1" ? "mock" : "cache")
               ?.get(item.content.id) || 0;
 
-          if (matchedNum !== dotStatus[item.content.id]?.num)
+          if (
+            dotStatus[item.content.id]?.num >= 0 &&
+            matchedNum !== dotStatus[item.content.id]?.num
+          )
             setDotStatus({
               ...dotStatus,
               [item.content.id]: {
@@ -473,7 +467,6 @@ const AllRule: React.FC<{
                 icon={<PoweroffOutlined />}
                 loading={switchLoading}
                 onClick={(e) => {
-                  console.log(item);
                   e.stopPropagation();
                   if (item.type === "cache") toggleCacheStatus(item);
                   else toggleRuleStatus(item);
@@ -524,9 +517,9 @@ const AllRule: React.FC<{
       const data = (cacheData || []).map((item: any, index: number) => ({
         name: item.content?.ruleName,
         pattern: item.content?.params?.request?.url,
-        methodType: item.content?.ruleMethod,
-        resourceType: item.content?.resourceType,
-        status: item.content?.ruleStatus,
+        methodType: [item.method],
+        resourceType: [item.content?.params?.resourceType],
+        status: item.content?.cacheStatus,
         ...item,
       }));
 
@@ -599,7 +592,8 @@ const AllRule: React.FC<{
 
   const handleChangeTab = useCallback(
     (e: any) => {
-      setCheckList([]);
+      onChangeCheckList([]);
+      setSelectedRowKeys([]);
       setTimeout(() => setCurrentTab(e));
     },
     [setCurrentTab]
@@ -618,7 +612,11 @@ const AllRule: React.FC<{
         label: "Cache",
         children: (
           <div>
-            {rules.length > 0 ? getCacheDataCards(cacheData) : <Empty />}
+            {cacheData && cacheData?.length > 0 ? (
+              getCacheDataCards(cacheData)
+            ) : (
+              <Empty />
+            )}
           </div>
         ),
       },

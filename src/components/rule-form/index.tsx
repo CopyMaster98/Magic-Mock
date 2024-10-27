@@ -28,7 +28,6 @@ import { methodOptions, resourceTypeOptions } from "../../constant";
 
 const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const { data, isUpdate } = props;
-  console.log(data);
   const [form] = Form.useForm();
   const [requestHeaderInputType, setRequestHeaderInputType] = useState(true);
   const [responseDataInputType, setResponseDataInputType] = useState(true);
@@ -95,6 +94,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
   const requestHeaderInputValueRef = useRef(null);
   const responseDataInputValueRef = useRef(null);
   const [isRecognizable, setIsRecognizable] = useState(false);
+  const [currentRuleMethod, setCurrentRuleMethod] = useState("");
   const formBaseValueRef = useRef({
     ruleName: "",
     rulePattern: "",
@@ -395,14 +395,27 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
       </Form.Item>
       <Form.Item label="Rule Method" name="ruleMethod">
         <Select
-          mode="multiple"
+          onChange={(e) => {
+            setCurrentRuleMethod(e);
+            if (e === "GET") {
+              form.setFieldValue("payloadJSON", null);
+              payloadEditorValueRef.current = null;
+            }
+          }}
           allowClear
           style={{ width: "100%" }}
           placeholder="Please select"
           options={methodOptions}
         />
       </Form.Item>
-      <Form.Item label="Request Payload">
+
+      <Form.Item
+        label="Request Payload"
+        style={{
+          display:
+            currentRuleMethod && currentRuleMethod !== "GET" ? "block" : "none",
+        }}
+      >
         <Form.Item
           name="payloadJSON"
           style={{
@@ -464,6 +477,7 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
           + Add Request Payload
         </Button>
       </Form.Item>
+
       {requestHeaderInputType ? (
         <Form.Item label="Request Header">
           <Form.List name={["requestHeader"]}>

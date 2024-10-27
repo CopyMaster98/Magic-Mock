@@ -68,7 +68,6 @@ const DetailInfo: React.FC<{
   const [saveLoading, setSaveLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState("1");
   const [checkList, setCheckList] = useState<any>([]);
-  const [isSelectStatus, setIsSelectStatus] = useState(false);
   const [doubleClickEditId, setDoubleClickEditId] = useState(null);
   const containerRef = useRef(null);
   const [isReplaceRulePattern, setIsReplaceRulePattern] = useState(0);
@@ -101,7 +100,7 @@ const DetailInfo: React.FC<{
             async (formValue: {
               ruleName: string;
               rulePattern: string;
-              ruleMethod: string[];
+              ruleMethod: string;
               resourceType: string[];
               requestHeader?: any[];
               responseData?: any[];
@@ -132,7 +131,11 @@ const DetailInfo: React.FC<{
                 projectId: project.id,
                 ruleName: formValue.ruleName,
                 rulePattern: formValue.rulePattern.trim(),
-                ruleMethod: formValue.ruleMethod,
+                ruleMethod: Array.isArray(formValue.ruleMethod)
+                  ? formValue.ruleMethod
+                  : formValue.ruleMethod === "ALL"
+                  ? []
+                  : [formValue.ruleMethod],
                 resourceType: formValue.resourceType,
                 requestHeader: {
                   data: requestHeader,
@@ -247,7 +250,11 @@ const DetailInfo: React.FC<{
             ruleInfo: {
               ruleName: formValue.ruleName,
               rulePattern: formValue.rulePattern.trim(),
-              ruleMethod: formValue.ruleMethod,
+              ruleMethod: Array.isArray(formValue.ruleMethod)
+                ? formValue.ruleMethod
+                : formValue.ruleMethod === "ALL"
+                ? []
+                : [formValue.ruleMethod],
               resourceType: formValue.resourceType,
               requestHeader: {
                 data: requestHeader,
@@ -380,7 +387,6 @@ const DetailInfo: React.FC<{
     });
     closeDialog?.();
     setRefreshNumber((oldValue) => oldValue + 1);
-    setIsSelectStatus(false);
     setCheckList([]);
     setDebouncedNewReplaceRulePattern("");
     setDebouncedOldReplaceRulePattern("");
@@ -422,12 +428,12 @@ const DetailInfo: React.FC<{
                     ref={editRulePatternPrefixRef}
                     defaultValue={
                       editRulePatternInfoRef.current.get(item.id) ??
-                      item.content.params.request.url
+                      item.content.params?.request.url
                     }
                     onBlur={() =>
                       handleBlur({
                         id: item.id,
-                        rulePattern: item.content.params.request.url,
+                        rulePattern: item.content.params?.request.url,
                       })
                     }
                   />
@@ -459,7 +465,7 @@ const DetailInfo: React.FC<{
                           style={{
                             textDecoration:
                               debouncedOldReplaceRulePattern.length > 0 &&
-                              item.content.params.request.url.startsWith(
+                              item.content.params?.request.url.startsWith(
                                 debouncedOldReplaceRulePattern
                               )
                                 ? "line-through"
@@ -467,11 +473,11 @@ const DetailInfo: React.FC<{
                           }}
                         >
                           {debouncedOldReplaceRulePattern.length > 0 &&
-                          item.content.params.request.url.startsWith(
+                          item.content.params?.request.url.startsWith(
                             debouncedOldReplaceRulePattern
                           )
                             ? debouncedOldReplaceRulePattern
-                            : item.content.params.request.url}
+                            : item.content.params?.request.url}
                         </span>
 
                         <div>
@@ -480,7 +486,7 @@ const DetailInfo: React.FC<{
                               display:
                                 debouncedNewReplaceRulePattern.length > 0 &&
                                 debouncedOldReplaceRulePattern.length > 0 &&
-                                item.content.params.request.url.startsWith(
+                                item.content.params?.request.url.startsWith(
                                   debouncedOldReplaceRulePattern
                                 )
                                   ? "inline-block"
@@ -496,14 +502,14 @@ const DetailInfo: React.FC<{
                             style={{
                               display:
                                 debouncedOldReplaceRulePattern.length > 0 &&
-                                item.content.params.request.url.startsWith(
+                                item.content.params?.request.url.startsWith(
                                   debouncedOldReplaceRulePattern
                                 )
                                   ? "inline-block"
                                   : "none",
                             }}
                           >
-                            {item.content.params.request.url.slice(
+                            {item.content.params?.request.url.slice(
                               debouncedOldReplaceRulePattern.length
                             )}
                           </span>
@@ -577,31 +583,23 @@ const DetailInfo: React.FC<{
   ]);
 
   const handleMultipleCreateSave = useCallback(async () => {
-    if (isSelectStatus) {
-      updateDialogInfo?.(dialogInfo);
-      updateModalConfig?.({
-        width: "45vw",
-        style: {
-          minWidth: "650px",
+    updateDialogInfo?.(dialogInfo);
+    updateModalConfig?.({
+      width: "45vw",
+      style: {
+        minWidth: "650px",
+      },
+      className: "multiple-create-dialog",
+      styles: {
+        body: {
+          overflowY: "hidden",
+          padding: "20px 30px",
+          scrollbarWidth: "none",
         },
-        className: "multiple-create-dialog",
-        styles: {
-          body: {
-            overflowY: "hidden",
-            padding: "20px 30px",
-            scrollbarWidth: "none",
-          },
-        },
-      });
-      openDialog?.();
-    } else setIsSelectStatus((oldValue) => !oldValue);
-  }, [
-    dialogInfo,
-    isSelectStatus,
-    openDialog,
-    updateDialogInfo,
-    updateModalConfig,
-  ]);
+      },
+    });
+    openDialog?.();
+  }, [dialogInfo, openDialog, updateDialogInfo, updateModalConfig]);
 
   const openConfirmDialog = useCallback(
     (item: any) => {
@@ -657,7 +655,6 @@ const DetailInfo: React.FC<{
       );
     }
 
-    setIsSelectStatus(false);
     setCheckList([]);
     setRefreshNumber((oldValue) => oldValue + 1);
   }, [checkList, currentTab]);
@@ -699,7 +696,7 @@ const DetailInfo: React.FC<{
       ).filter(
         (item) =>
           (
-            item.content.rulePattern ?? item.content.params.request.url
+            item.content.rulePattern ?? item.content.params?.request.url
           )?.includes(searchValue) || item.name.includes(searchValue)
       );
       switch (value) {
@@ -733,7 +730,8 @@ const DetailInfo: React.FC<{
 
             return (
               (Array.isArray(resourceType) && resourceType.length === 0) ||
-              resourceType?.includes(value)
+              resourceType?.includes(value) ||
+              resourceType?.includes("All")
             );
           });
       }
@@ -772,8 +770,8 @@ const DetailInfo: React.FC<{
   );
 
   useEffect(() => {
-    isSelectStatus && updateDialogInfo?.(dialogInfo);
-  }, [dialogInfo, isSelectStatus, updateDialogInfo]);
+    updateDialogInfo?.(dialogInfo);
+  }, [dialogInfo, updateDialogInfo]);
 
   const handleSaveCache = useCallback(
     async (
@@ -815,7 +813,11 @@ const DetailInfo: React.FC<{
           projectId: project.id,
           ruleName: formValue.ruleName,
           rulePattern: formValue.rulePattern.trim(),
-          ruleMethod: formValue.ruleMethod,
+          ruleMethod: Array.isArray(formValue.ruleMethod)
+            ? formValue.ruleMethod
+            : formValue.ruleMethod === "ALL"
+            ? []
+            : [formValue.ruleMethod],
           resourceType: formValue.resourceType,
           requestHeader: {
             data: requestHeader,
@@ -1015,7 +1017,12 @@ const DetailInfo: React.FC<{
                   <Button
                     type="primary"
                     danger
-                    disabled={checkList.length === 0}
+                    style={{
+                      display:
+                        currentTab === "1" && checkList.length !== 0
+                          ? "inline-block"
+                          : "none",
+                    }}
                     onClick={() => openConfirmDialog(checkList)}
                   >
                     Delete
@@ -1023,16 +1030,16 @@ const DetailInfo: React.FC<{
                   <Button
                     type="primary"
                     style={{
-                      display: currentTab === "1" ? "inline-block" : "none",
+                      display:
+                        currentTab === "2" && project && checkList.length !== 0
+                          ? "inline-block"
+                          : "none",
 
                       backgroundColor: checkList.length > 0 ? "#52c41a" : "",
                     }}
-                    disabled={checkList.length === 0 || !project}
                     onClick={handleMultipleCreateSave}
                   >
-                    {isSelectStatus
-                      ? "Multiple Create & Save"
-                      : "Multiple Select"}
+                    Multiple Select
                   </Button>
                 </>
               )}
@@ -1093,8 +1100,6 @@ const DetailInfo: React.FC<{
               currentTab={currentTab}
               setCurrentTab={setCurrentTab}
               cacheData={cacheCard}
-              isSelectStatus={isSelectStatus}
-              handleUpdateSelectStatus={setIsSelectStatus}
             />
           )}
         </div>

@@ -160,14 +160,25 @@
   white-space: normal;
 }
 
-.width-800 {
-  width: 800px;
+.min-width-200 {
+  min-width: 200px;
 }
 
-.width-400 {
-  width: 400px;
+.min-width-400 {
+  min-width: 400px;
 }
 
+.max-width-400 {
+  max-width: 400px;
+}
+
+.max-width-600 {
+  max-width: 600px;
+}
+
+.max-width-800 {
+  max-width: 800px;
+}
 
 .matched-item:hover {
   background-color: rgba(0, 0, 0, .04);

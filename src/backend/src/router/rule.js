@@ -75,7 +75,6 @@ router.post("/create", async (ctx) => {
           `${folderPath(`${isExistParentFolder}`)}/${fileName}.config.json`,
           JSON.stringify(
             {
-              id: hashUtils.getHash(JSON.stringify(+new Date())),
               ruleName,
               rulePattern,
               ruleMethod: ruleMethod
@@ -90,6 +89,7 @@ router.post("/create", async (ctx) => {
                 : resourceType,
               ruleStatus,
               ...info,
+              id: hashUtils.getHash(JSON.stringify(+new Date())),
             },
             null,
             2

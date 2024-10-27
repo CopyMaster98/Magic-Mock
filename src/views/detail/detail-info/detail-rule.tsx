@@ -43,6 +43,8 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
         .flat(Infinity);
     }
 
+    if (!formValue.ruleMethod.length) formValue.ruleMethod = ["ALL"];
+
     setRuleForm(formValue);
   }, []);
 

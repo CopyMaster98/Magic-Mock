@@ -54,7 +54,12 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
     if (content) {
       content = JSON.parse(content);
       const { id, params, cacheStatus } = content;
-      const ruleName = new URL(params.request.url).pathname;
+
+      let ruleName = params.request.url?.replaceAll("*", "");
+
+      try {
+        ruleName = new URL(params.request.url).pathname;
+      } catch (error) {}
 
       const payload = params?.request?.postData;
       let newPayLoadJSON = null;
