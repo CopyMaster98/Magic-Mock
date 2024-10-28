@@ -360,7 +360,6 @@ const AllRule: React.FC<{
           );
         },
       },
-
       {
         title: "Resource Type",
         align: "center",

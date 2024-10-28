@@ -7,9 +7,8 @@ const args = process.argv.slice(2);
 const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
 const { folderUtils, commonUtils, hashUtils } = require("../backend/src/utils");
-const { request } = require("http");
 const { isValidJSON } = require("../backend/src/utils/common");
-
+const { JSDOM } = require("jsdom");
 (async () => {
   const chromePath = findChrome();
   // 如果找到了 Chrome，启动 Puppeteer 并指定 Chrome 可执行文件的路径
@@ -19,7 +18,7 @@ const { isValidJSON } = require("../backend/src/utils/common");
     return;
   }
 
-  const { name, url, port } = process.env.projectInfo
+  const { name, url, port, isEntiretyCache } = process.env.projectInfo
     ? JSON.parse(process.env.projectInfo)
     : {};
   const browser = await puppeteer.launch({
@@ -44,6 +43,7 @@ const { isValidJSON } = require("../backend/src/utils/common");
       name,
       url,
       port,
+      isEntiretyCache,
     },
     page
   );
@@ -184,7 +184,7 @@ async function intercept(data, page) {
   let config = {};
   let urlPatterns = [];
   const cacheDataConfig = {};
-  const { name, url, port } = data;
+  const { name, url, port, isEntiretyCache } = data;
   const projectName = folderUtils.folderPath(
     `${name}@@${encodeURIComponent(url)}`
   );
@@ -717,46 +717,94 @@ async function intercept(data, page) {
         localServerPath,
         CONSTANT.LOCAL_SERVER
       );
-      let response = null;
-      let responseData = null;
+      let responseData = "";
 
       if (params.responseStatusCode) {
+        const isEntiretyCacheFlag =
+          isEntiretyCache ||
+          (!isEntiretyCache && ["Fetch", "XHR"].includes(params.resourceType));
         try {
-          response = await Fetch.getResponseBody({
+          await Fetch.getResponseBody({
             requestId: params.requestId,
+          }).then((data) => {
+            responseData += data.body;
           });
         } catch (error) {}
 
+        if (responseData) responseData = Buffer.from(responseData, "base64");
+
+        if (params.resourceType !== "Image")
+          responseData = responseData.toString();
+
+        if (!isEntiretyCacheFlag && responseData) {
+          const fileSuffix = {
+            Document: ".html",
+            Stylesheet: ".css",
+            Script: ".js",
+          };
+          const nameArr = params.request.url.split("/");
+          const curFileSuffix = fileSuffix[params.resourceType];
+          if (params.resourceType === "Document") {
+            responseData = new JSDOM(responseData).serialize();
+
+            fs.writeFile(
+              `${process.cwd()}/Demo/index${fileSuffix[params.resourceType]}`,
+              responseData,
+              (err) => err && console.error("Error saving file:", err)
+            );
+          } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
+            try {
+              fs.writeFile(
+                `${process.cwd()}/Demo/${
+                  nameArr[nameArr.length - 1].split(curFileSuffix)[0] +
+                  curFileSuffix
+                }`,
+                responseData,
+                (err) => err && console.error("Error saving file:", err)
+              );
+            } catch (e) {
+              console.log(e);
+            }
+          } else if (params.resourceType === "Image") {
+            const [prefix, suffix] = nameArr[nameArr.length - 1].split(".");
+            fs.writeFile(
+              `${process.cwd()}/Demo/${prefix}.${suffix.split("?")[0]}`,
+              responseData,
+              (err) => err && console.error("Error saving file:", err)
+            );
+          }
+        }
+
         try {
-          responseData =
-            response.body &&
-            JSON.parse(Buffer.from(response.body, "base64").toString());
+          responseData = responseData && JSON.parse(responseData);
         } catch (error) {}
 
         params.responseData = responseData;
 
         if (!cacheMatchedPattern && !matchedPattern) {
-          if (
-            isExistLocalServer &&
-            (params.responseStatusCode.toString().startsWith("2") ||
-              params.responseStatusCode.toString().startsWith("3"))
-          ) {
-            updateFileOrFolder(
-              { params, cacheStatus: false },
-              localServerProjectPath,
-              cacheDataUrlPatterns
-            );
-          } else {
-            const serverPath = folderUtils.folderPath(
-              CONSTANT.LOCAL_SERVER,
-              ""
-            );
-            folderUtils.createFolder(serverPath);
-            updateFileOrFolder(
-              { params, cacheStatus: false },
-              localServerProjectPath,
-              cacheDataUrlPatterns
-            );
+          if (isEntiretyCacheFlag) {
+            if (
+              isExistLocalServer &&
+              (params.responseStatusCode.toString().startsWith("2") ||
+                params.responseStatusCode.toString().startsWith("3"))
+            ) {
+              updateFileOrFolder(
+                { params, cacheStatus: false },
+                localServerProjectPath,
+                cacheDataUrlPatterns
+              );
+            } else {
+              const serverPath = folderUtils.folderPath(
+                CONSTANT.LOCAL_SERVER,
+                ""
+              );
+              folderUtils.createFolder(serverPath);
+              updateFileOrFolder(
+                { params, cacheStatus: false },
+                localServerProjectPath,
+                cacheDataUrlPatterns
+              );
+            }
           }
         }
       }
