@@ -19,7 +19,6 @@ import {
   SettingOutlined,
   SmileOutlined,
 } from "@ant-design/icons";
-import RightClickMenu from "../../../components/right-click-menu";
 import { useNavigate } from "../../../hooks/navigate";
 import { url } from "../../../hooks";
 import "./all-rule.css";
@@ -323,20 +322,6 @@ const AllRule: React.FC<{
         className: "break-word max-width-800 min-width-400",
       },
       {
-        title: "Status",
-        align: "center",
-        key: "status",
-        render: (item: any) => (
-          <Tag
-            color={item.status ? "success" : "default"}
-            style={{ marginLeft: "10px" }}
-          >
-            <span>{item.status ? "Running" : "Stop"}</span>
-          </Tag>
-        ),
-      },
-
-      {
         title: "Method Type",
         align: "center",
         dataIndex: "methodType",
@@ -383,6 +368,19 @@ const AllRule: React.FC<{
             </>
           );
         },
+      },
+      {
+        title: "Status",
+        align: "center",
+        key: "status",
+        render: (item: any) => (
+          <Tag
+            color={item.status ? "success" : "default"}
+            style={{ marginLeft: "10px" }}
+          >
+            <span>{item.status ? "Running" : "Stop"}</span>
+          </Tag>
+        ),
       },
       {
         title: "Matched Count",
@@ -481,7 +479,7 @@ const AllRule: React.FC<{
                   handleNavigate(item);
                 }}
               >
-                Setting
+                {item.type !== "cache" ? "Setting" : "Setting & Save"}
               </Button>
 
               {item.type !== "cache" && (
@@ -499,6 +497,7 @@ const AllRule: React.FC<{
       },
     ],
     [
+      currentTab,
       dotStatus,
       findMethod,
       findResource,

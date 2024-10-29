@@ -369,7 +369,7 @@ const DetailInfo: React.FC<{
 
   const handleConfirmMultiple = useCallback(async () => {
     await multipleCreateRule({
-      projectName: project._name + "@@" + encodeURIComponent(project._url),
+      projectName: project._name + "εε" + encodeURIComponent(project._url),
       rulesInfo: checkList.map((item: any) => ({
         id: item.id,
         method: item.method,

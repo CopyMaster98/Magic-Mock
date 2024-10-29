@@ -186,10 +186,10 @@ async function intercept(data, page) {
   const cacheDataConfig = {};
   const { name, url, port, isEntiretyCache } = data;
   const projectName = folderUtils.folderPath(
-    `${name}@@${encodeURIComponent(url)}`
+    `${name}εε${encodeURIComponent(url)}`
   );
   const cacheDataProjectName = folderUtils.folderPath(
-    `${name}@@${encodeURIComponent(url)}`,
+    `${name}εε${encodeURIComponent(url)}`,
     CONSTANT.LOCAL_SERVER
   );
 
@@ -711,7 +711,7 @@ async function intercept(data, page) {
       // const projectName = path.dirname(matchedPattern.configPath);
       // .match(/[^\/]+$/)[0];
 
-      let localServerPath = `${name}@@${encodeURIComponent(url)}`;
+      let localServerPath = `${name}εε${encodeURIComponent(url)}`;
 
       const localServerProjectPath = folderUtils.folderPath(
         localServerPath,
@@ -736,7 +736,7 @@ async function intercept(data, page) {
         if (params.resourceType !== "Image")
           responseData = responseData.toString();
 
-        if (!isEntiretyCacheFlag && responseData) {
+        if (isEntiretyCacheFlag && responseData) {
           const fileSuffix = {
             Document: ".html",
             Stylesheet: ".css",
@@ -768,7 +768,7 @@ async function intercept(data, page) {
           } else if (params.resourceType === "Image") {
             const [prefix, suffix] = nameArr[nameArr.length - 1].split(".");
             fs.writeFile(
-              `${process.cwd()}/Demo/${prefix}.${suffix.split("?")[0]}`,
+              `${process.cwd()}/Demo/${prefix}.${suffix?.split("?")[0]}`,
               responseData,
               (err) => err && console.error("Error saving file:", err)
             );

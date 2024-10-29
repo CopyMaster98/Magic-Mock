@@ -1,11 +1,23 @@
-import { Button, Card, Tag, theme } from "antd";
+import {
+  Button,
+  Card,
+  Divider,
+  Input,
+  InputRef,
+  Select,
+  Space,
+  Tag,
+  theme,
+} from "antd";
 import { Content } from "antd/es/layout/layout";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   PoweroffOutlined,
-  EditOutlined,
   UnorderedListOutlined,
+  PlusOutlined,
+  EditOutlined,
   ChromeOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import { useData } from "../../../context";
 import { FolderAPI, ProjectAPI } from "../../../api";
@@ -13,6 +25,7 @@ import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import AddProjectForm from "../../../components/project-form";
 import { useNavigate } from "../../../hooks/navigate";
 import RightClickMenu from "../../../components/right-click-menu";
+import { addFolderUrl, deleteFolderUrl } from "../../../api/folder";
 
 const HomeDetail: React.FC = () => {
   const {
@@ -99,6 +112,7 @@ const HomeDetail: React.FC = () => {
           projectUrl: data.url,
           id: data.id,
         }}
+        type={"edit"}
         ref={formRef}
       />
     ),
@@ -178,6 +192,95 @@ const HomeDetail: React.FC = () => {
     [closeDialog, openDialog, setRefresh, updateDialogInfo]
   );
 
+  const [url, setUrl] = useState("");
+  const inputRef = useRef<InputRef>(null);
+  const [inputStatus, setInputStatus] = useState<"" | "warning" | "error">("");
+
+  const [errorMessage, setErrorMessage] = useState(
+    "Please enter the correct url address!"
+  );
+
+  const onUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(event.target.value);
+    if (inputStatus === "error") setInputStatus("");
+  };
+
+  const addItem = useCallback(
+    async (item: any, url: string) => {
+      if (
+        !url.trim().length ||
+        item.urlOptions.find((item: any) => item === url)
+      ) {
+        setErrorMessage("Url is already exists!");
+        setInputStatus("error");
+        return;
+      }
+
+      const reg = /^(http|https):\/\/(\S+)$/;
+      if (url.length > 0 && !reg.test(url)) {
+        setErrorMessage("Please enter the correct url address!");
+        setInputStatus("error");
+        return;
+      }
+      await addFolderUrl({
+        pathname: item.name,
+        url: item.url,
+        id: item.id,
+        newUrl: url,
+      });
+      setUrl("");
+      setRefresh();
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    },
+    [setRefresh]
+  );
+
+  const handleDeleteProjectUrl = useCallback(
+    (item: any, url: string) => {
+      const info: IDialogInfo<IFormRefProps | undefined> = {
+        title: "确认删除",
+        handleConfirm: async () => {
+          await deleteFolderUrl({
+            pathname: item.name,
+            url: item.url,
+            id: item.id,
+            deleteUrl: url,
+          });
+          closeDialog?.();
+          setRefresh();
+        },
+      };
+
+      updateDialogInfo?.(info);
+      openDialog?.();
+    },
+    [closeDialog, openDialog, setRefresh, updateDialogInfo]
+  );
+
+  const selectValue = useRef(new Map());
+
+  const handleChangeProjectUrl = useCallback(
+    async (item: any, url: string) => {
+      try {
+        const response = await FolderAPI.updateFolder({
+          pathname: item.name,
+          url,
+          id: item.id,
+        });
+
+        if (response.code !== -1 && selectValue.current.has(item.id))
+          selectValue.current.set(item.id, url);
+      } catch (error) {
+        console.log(error);
+      }
+      console.log(selectValue.current);
+      setRefresh();
+    },
+    [setRefresh]
+  );
+
   return (
     <Content
       style={{
@@ -216,6 +319,93 @@ const HomeDetail: React.FC = () => {
                   icon={<EditOutlined />}
                   style={{ marginRight: "20px" }}
                 />
+
+                <Select
+                  style={{ width: 300, marginRight: 20 }}
+                  placeholder="Select Default URL"
+                  showSearch
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  value={
+                    selectValue.current.get(item.id) ||
+                    item.urlOptions.find((_item: any) => _item === item.url)
+                  }
+                  onChange={(e) => handleChangeProjectUrl(item, e)}
+                  disabled={item.status}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <Divider style={{ margin: "8px 0" }} />
+                      <Space style={{ padding: "0 8px 4px" }}>
+                        <Input
+                          placeholder="Please enter item"
+                          ref={inputRef}
+                          value={url}
+                          onChange={onUrlChange}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          status={inputStatus}
+                        />
+                        <Button
+                          type="text"
+                          icon={<PlusOutlined />}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            addItem(item, url);
+                          }}
+                          disabled={
+                            !url.trim().length || inputStatus === "error"
+                          }
+                        >
+                          Add URL
+                        </Button>
+                      </Space>
+                      <Space>
+                        <span
+                          style={{
+                            display: inputStatus === "error" ? "block" : "none",
+                            marginLeft: "10px",
+                            color: "#ff4d4f",
+                          }}
+                        >
+                          {errorMessage}
+                        </span>
+                      </Space>
+                    </>
+                  )}
+                  options={(item.urlOptions || []).map((item: any) => ({
+                    label: item,
+                    value: item,
+                  }))}
+                  optionRender={(option) => (
+                    <div
+                      style={{
+                        position: "relative",
+                      }}
+                    >
+                      <span>{option.label}</span>
+                      {item.url !== option.value && (
+                        <DeleteOutlined
+                          style={{
+                            position: "absolute",
+                            right: 0,
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            zIndex: 99,
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteProjectUrl(
+                              item,
+                              option.value as string
+                            );
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+                />
                 <Button
                   danger={item.status ? true : false}
                   type="primary"
@@ -237,7 +427,7 @@ const HomeDetail: React.FC = () => {
                 <Button
                   danger={true}
                   type="primary"
-                  onClick={openConfirmDialog}
+                  onClick={() => openConfirmDialog(item)}
                 >
                   Delete
                 </Button>
@@ -249,7 +439,14 @@ const HomeDetail: React.FC = () => {
             </div>
             <div>
               <UnorderedListOutlined style={{ marginRight: "10px" }} />
-              <span>{item.rules.length} Rules</span>{" "}
+              <span style={{ marginRight: "10px" }}>
+                <span style={{ fontWeight: 700 }}>{item.rules.length}</span>{" "}
+                Rules
+              </span>
+              <span>
+                <span style={{ fontWeight: 700 }}>{item.cacheData.length}</span>{" "}
+                Caches
+              </span>
             </div>
           </Card>
         );

@@ -11,32 +11,54 @@ const { folderPath, folderExists, createFolder, folderInfo, folderContent } =
 router.post("/create", async (ctx) => {
   const { url, name } = ctx.request.body;
 
-  if (name) {
-    const path = folderPath(
-      `${encodeURIComponent(name)}@@${encodeURIComponent(url)}`
-    );
-    const isExist = folderExists(path);
+  const path = folderPath(
+    `${encodeURIComponent(name)}εε${encodeURIComponent(url)}`
+  );
 
-    if (!isExist) {
-      createFolder(path);
-      global.projectStatus.set(name + url, {
-        url: url,
-        name: name,
-        status: false,
-      });
-      ctx.response.body = {
-        message: "项目创建成功",
-        statusCode: 0,
-      };
-    } else {
-      ctx.response.status = 500;
-      ctx.response.body = {
-        message: "项目名字已存在",
-        statusCode: -1,
-      };
-    }
-    ctx.set("notification", true);
+  const files = fs.readdirSync(folderPath(""));
+  let isExist = folderExists(path);
+
+  if (
+    !isExist &&
+    files
+      .filter((file) => file.includes("εε"))
+      .map((file) => file.split("εε")[0])
+      .find((file) => file === name)
+  )
+    isExist = true;
+
+  if (!isExist) {
+    createFolder(path);
+    global.projectStatus.set(name + url, {
+      url: url,
+      name: name,
+      status: false,
+    });
+    ctx.response.body = {
+      message: "项目创建成功",
+      statusCode: 0,
+    };
+
+    try {
+      fs.writeFileSync(
+        `${path}/ζζconfig.json`,
+        JSON.stringify(
+          {
+            urls: [url],
+          },
+          null,
+          2
+        )
+      );
+    } catch (error) {}
+  } else {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "项目名字已存在",
+      statusCode: -1,
+    };
   }
+  ctx.set("notification", true);
 });
 
 router.get("/info", async (ctx, next) => {
@@ -45,14 +67,14 @@ router.get("/info", async (ctx, next) => {
   let folder = [];
 
   if (isExist) {
-    const items = fs.readdirSync(path).filter((item) => item.includes("@@"));
+    const items = fs.readdirSync(path).filter((item) => item.includes("εε"));
     items.forEach((item) => {
       try {
         const _folderPath = `${path}/${item}`;
         const stats = folderInfo(_folderPath);
-        const rules = fs
-          .readdirSync(_folderPath)
-          .filter((item) => item.includes(".json"))
+        const files = fs.readdirSync(_folderPath);
+        const rules = files
+          .filter((item) => item.includes(".json") && item !== "ζζconfig.json")
           .map((item) => {
             const content = folderUtils.folderContent(
               folderPath(`${_folderPath}/${item}`)
@@ -66,20 +88,28 @@ router.get("/info", async (ctx, next) => {
             };
           })
           .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
-        const [name, url] = item.split("@@");
+        const [name, url] = item.split("εε");
         const currentProjectStatus = global.projectStatus.get(
           name + decodeURIComponent(url)
         );
-
-        folder.push({
+        const info = {
           id: hashUtils.getHash(item),
           name,
           url: decodeURIComponent(url),
           status: currentProjectStatus?.status ?? false,
           stats,
           rules,
+          urlOptions: [],
           cacheData: getLocalServerProjectData(item),
-        });
+        };
+
+        if (files.includes("ζζconfig.json")) {
+          const config = folderContent(`${_folderPath}/ζζconfig.json`);
+          const { urls } = JSON.parse(config);
+          info.urlOptions = urls;
+        }
+
+        folder.push(info);
       } catch (err) {
         console.error(err);
       }
@@ -106,17 +136,32 @@ router.get("/project/:projectId", async (ctx, next) => {
 });
 
 router.put("/project/:projectName", async (ctx) => {
-  const { url, name, id } = ctx.request.body;
+  const { name, id, url } = ctx.request.body;
   const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
     (item) => hashUtils.getHash(item) === id
   );
   const projectPath = folderPath(projectName);
   const cacheProjectPath = folderPath(projectName, LOCAL_SERVER);
-  const newProjectName = [name, encodeURIComponent(url)].join("@@");
+  const newProjectName = [
+    name ? name : projectName.split("εε")[0],
+    url ? encodeURIComponent(url) : projectName.split("εε")[1],
+  ].join("εε");
   const newProjectPath = folderPath("") + "/" + newProjectName;
   const newCacheProjectPath =
     folderPath("", LOCAL_SERVER) + "/" + newProjectName;
-  const isExist = folderExists(newProjectPath);
+
+  const files = fs.readdirSync(folderPath(""));
+  let isExist = folderExists(newProjectPath);
+
+  if (
+    !isExist &&
+    name &&
+    files
+      .filter((file) => file.includes("εε"))
+      .map((file) => file.split("εε")[0])
+      .find((file) => file === name)
+  )
+    isExist = true;
 
   if (isExist) {
     ctx.response.status = 500;
@@ -173,6 +218,84 @@ router.put("/project/:projectName", async (ctx) => {
       };
     }
   }
+  ctx.set("notification", true);
+});
+
+router.put("/project/:projectName/url", async (ctx) => {
+  const { newUrl, id } = ctx.request.body;
+  const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
+    (item) => hashUtils.getHash(item) === id
+  );
+
+  const projectPath = folderPath(projectName);
+  const config = folderContent(`${projectPath}/ζζconfig.json`);
+
+  const { urls } = JSON.parse(config);
+  const newUrls = [...urls, newUrl];
+
+  try {
+    fs.writeFileSync(
+      `${projectPath}/ζζconfig.json`,
+      JSON.stringify(
+        {
+          urls: newUrls,
+        },
+        null,
+        2
+      )
+    );
+
+    ctx.response.body = {
+      message: "新增成功",
+      statusCode: 0,
+    };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "新增失败",
+      statusCode: -1,
+    };
+  }
+
+  ctx.set("notification", true);
+});
+
+router.delete("/project/:projectName/url", async (ctx) => {
+  const { deleteUrl, id } = ctx.request.body;
+  const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
+    (item) => hashUtils.getHash(item) === id
+  );
+
+  const projectPath = folderPath(projectName);
+  const config = folderContent(`${projectPath}/ζζconfig.json`);
+
+  const { urls } = JSON.parse(config);
+  const newUrls = urls.filter((item) => item !== deleteUrl);
+
+  try {
+    fs.writeFileSync(
+      `${projectPath}/ζζconfig.json`,
+      JSON.stringify(
+        {
+          urls: newUrls,
+        },
+        null,
+        2
+      )
+    );
+
+    ctx.response.body = {
+      message: "删除成功",
+      statusCode: 0,
+    };
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "删除失败",
+      statusCode: -1,
+    };
+  }
+
   ctx.set("notification", true);
 });
 

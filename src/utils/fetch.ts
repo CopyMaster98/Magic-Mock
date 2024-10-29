@@ -142,8 +142,9 @@ class http {
    * @param url
    * @returns {Promise<unknown>}
    */
-  _delete(url: string, option: RequestInit = {}) {
+  _delete(url: string, params: any = {}, option: RequestInit = {}) {
     const options = Object.assign({ method: "DELETE" }, option);
+    if (params) options.body = JSON.stringify(params);
     return http.staticFetch(url, options);
   }
 
