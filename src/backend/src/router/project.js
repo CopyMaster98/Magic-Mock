@@ -8,7 +8,7 @@ router.get("/status", async (ctx) => {
 });
 
 router.post("/start", async (ctx, next) => {
-  const { name, url, isEntiretyCache = false } = ctx.request.body;
+  const { name, url, isEntiretyCache = true } = ctx.request.body;
 
   let port = null;
 

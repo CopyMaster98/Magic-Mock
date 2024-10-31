@@ -7,6 +7,7 @@ import {
   Input,
   Radio,
   Select,
+  Switch,
   theme,
 } from "antd";
 import { Content } from "antd/es/layout/layout";
@@ -45,7 +46,7 @@ const DetailInfo: React.FC<{
   pathname: any;
   project: any;
   rules: any[];
-  cacheData?: any[];
+  cacheData: any[];
 }> = (props) => {
   const { pathname, project, rules, cacheData } = props;
   const {
@@ -923,80 +924,82 @@ const DetailInfo: React.FC<{
 
           <div className="filter-container">
             {pathname.length <= 1 && (
-              <div className="filters">
-                <div className="filter">
-                  <label
-                    htmlFor="status"
-                    style={{
-                      marginRight: "10px",
-                    }}
-                  >
-                    Search
-                  </label>
-                  <Search
-                    style={{
-                      maxWidth: "300px",
-                      minWidth: "150px",
-                    }}
-                    placeholder="Search url pattern"
-                    defaultValue={defaultSearchValue}
-                    onSearch={handleSearch}
-                    onChange={(e) => {
-                      if (!e.target.value.length && searchValue.length) {
-                        setDefaultSearchValue("");
-                        handleSearch("");
-                      }
-                    }}
-                    enterButton
-                  />
+              <>
+                <div className="filters">
+                  <div className="filter">
+                    <label
+                      htmlFor="status"
+                      style={{
+                        marginRight: "10px",
+                      }}
+                    >
+                      Search
+                    </label>
+                    <Search
+                      style={{
+                        maxWidth: "300px",
+                        minWidth: "150px",
+                      }}
+                      placeholder="Search url pattern"
+                      defaultValue={defaultSearchValue}
+                      onSearch={handleSearch}
+                      onChange={(e) => {
+                        if (!e.target.value.length && searchValue.length) {
+                          setDefaultSearchValue("");
+                          handleSearch("");
+                        }
+                      }}
+                      enterButton
+                    />
+                  </div>
+                  <div className="filter">
+                    <label
+                      htmlFor="status"
+                      style={{
+                        marginRight: "10px",
+                      }}
+                    >
+                      Status
+                    </label>
+                    <Select
+                      id="status"
+                      style={{
+                        width: "150px",
+                      }}
+                      // disabled={!!checkList.length}
+                      // showSearch
+                      value={ruleStatus}
+                      placeholder="Select Status"
+                      optionFilterProp="label"
+                      onChange={setRuleStatus}
+                      options={cardStatusSelectOptions}
+                    />
+                  </div>
+                  <div className="filter">
+                    <label
+                      htmlFor="resourceType"
+                      style={{
+                        marginRight: "10px",
+                      }}
+                    >
+                      Resource Type
+                    </label>
+                    <Select
+                      id="resourceType"
+                      style={{
+                        width: "150px",
+                      }}
+                      // disabled={!!checkList.length}
+                      // showSearch
+                      value={ruleResourceType}
+                      placeholder="Select Status"
+                      optionFilterProp="label"
+                      onChange={setRuleResourceType}
+                      options={resourceTypeSelectOptions}
+                    />
+                  </div>
                 </div>
-                <div className="filter">
-                  <label
-                    htmlFor="status"
-                    style={{
-                      marginRight: "10px",
-                    }}
-                  >
-                    Status
-                  </label>
-                  <Select
-                    id="status"
-                    style={{
-                      width: "150px",
-                    }}
-                    // disabled={!!checkList.length}
-                    // showSearch
-                    value={ruleStatus}
-                    placeholder="Select Status"
-                    optionFilterProp="label"
-                    onChange={setRuleStatus}
-                    options={cardStatusSelectOptions}
-                  />
-                </div>
-                <div className="filter">
-                  <label
-                    htmlFor="resourceType"
-                    style={{
-                      marginRight: "10px",
-                    }}
-                  >
-                    Resource Type
-                  </label>
-                  <Select
-                    id="resourceType"
-                    style={{
-                      width: "150px",
-                    }}
-                    // disabled={!!checkList.length}
-                    // showSearch
-                    value={ruleResourceType}
-                    placeholder="Select Status"
-                    optionFilterProp="label"
-                    onChange={setRuleResourceType}
-                    options={resourceTypeSelectOptions}
-                  />
-                </div>
-              </div>
+              </>
             )}
 
             <div
@@ -1009,6 +1012,14 @@ const DetailInfo: React.FC<{
                 gap: "15px 30px",
               }}
             >
+              {location.search.includes("ruleId") && (
+                <div className="switches">
+                  <div>
+                    <span>Cache Static Resources</span>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+              )}
               {location.search.includes("ruleId") && (
                 <Button type="primary" onClick={handleBack}>
                   Back

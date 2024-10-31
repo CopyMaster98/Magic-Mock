@@ -183,6 +183,7 @@ async function intercept(data, page) {
   let client;
   let config = {};
   let urlPatterns = [];
+  let staticResourceName = "";
   const cacheDataConfig = {};
   const { name, url, port, isEntiretyCache } = data;
   const projectName = folderUtils.folderPath(
@@ -736,45 +737,6 @@ async function intercept(data, page) {
         if (params.resourceType !== "Image")
           responseData = responseData.toString();
 
-        if (isEntiretyCacheFlag && responseData) {
-          const fileSuffix = {
-            Document: ".html",
-            Stylesheet: ".css",
-            Script: ".js",
-          };
-          const nameArr = params.request.url.split("/");
-          const curFileSuffix = fileSuffix[params.resourceType];
-          if (params.resourceType === "Document") {
-            responseData = new JSDOM(responseData).serialize();
-
-            fs.writeFile(
-              `${process.cwd()}/Demo/index${fileSuffix[params.resourceType]}`,
-              responseData,
-              (err) => err && console.error("Error saving file:", err)
-            );
-          } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
-            try {
-              fs.writeFile(
-                `${process.cwd()}/Demo/${
-                  nameArr[nameArr.length - 1].split(curFileSuffix)[0] +
-                  curFileSuffix
-                }`,
-                responseData,
-                (err) => err && console.error("Error saving file:", err)
-              );
-            } catch (e) {
-              console.log(e);
-            }
-          } else if (params.resourceType === "Image") {
-            const [prefix, suffix] = nameArr[nameArr.length - 1].split(".");
-            fs.writeFile(
-              `${process.cwd()}/Demo/${prefix}.${suffix?.split("?")[0]}`,
-              responseData,
-              (err) => err && console.error("Error saving file:", err)
-            );
-          }
-        }
-
         try {
           responseData = responseData && JSON.parse(responseData);
         } catch (error) {}
@@ -782,6 +744,7 @@ async function intercept(data, page) {
         params.responseData = responseData;
 
         if (!cacheMatchedPattern && !matchedPattern) {
+          // TODO 当本地启动服务器时 禁止缓存静态资源
           if (isEntiretyCacheFlag) {
             if (
               isExistLocalServer &&
@@ -805,6 +768,64 @@ async function intercept(data, page) {
                 cacheDataUrlPatterns
               );
             }
+          }
+        }
+
+        //TODO
+        if (isEntiretyCacheFlag && responseData) {
+          const fileSuffix = {
+            Document: ".html",
+            Stylesheet: ".css",
+            Script: ".js",
+          };
+          const nameArr = params.request.url.split("?")[0].split("/");
+          const curFileSuffix = fileSuffix[params.resourceType];
+          let staticResourcePath = `${process.cwd()}/Offline-Resource`;
+
+          if (!folderUtils.folderExists(staticResourcePath))
+            folderUtils.createFolder(staticResourcePath);
+
+          if (params.resourceType === "Document") {
+            responseData = new JSDOM(responseData).serialize();
+            staticResourceName = encodeURIComponent(params.request.url);
+
+            if (
+              !folderUtils.folderExists(
+                `${staticResourcePath}/${staticResourceName}`
+              )
+            )
+              folderUtils.createFolder(
+                `${staticResourcePath}/${staticResourceName}`
+              );
+            fs.writeFile(
+              `${staticResourcePath}/${staticResourceName}/index${
+                fileSuffix[params.resourceType]
+              }`,
+              responseData,
+              (err) => err && console.error("Error saving file:", err)
+            );
+          } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
+            try {
+              fs.writeFile(
+                `${staticResourcePath}/${staticResourceName}/${
+                  nameArr[nameArr.length - 1].split(curFileSuffix)[0] +
+                  curFileSuffix
+                }`,
+                responseData,
+                (err) => err && console.error("Error saving file:", err)
+              );
+            } catch (e) {
+              console.log(e);
+            }
+          } else if (params.resourceType === "Image") {
+            const [prefix, suffix] = nameArr[nameArr.length - 1].split(".");
+            fs.writeFile(
+              `${staticResourcePath}/${staticResourceName}/${prefix}.${
+                suffix?.split("?")[0]
+              }`,
+              responseData,
+              (err) => err && console.error("Error saving file:", err)
+            );
           }
         }
       }

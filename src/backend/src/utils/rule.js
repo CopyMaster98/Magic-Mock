@@ -11,20 +11,31 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
       ruleName = new URL(params.request.url).pathname;
     } catch (error) {}
 
-    const payload = params?.request?.postData;
+    let payload = params?.request?.postData;
+    let isKeyValue = true;
+
     let newPayLoadJSON = null;
     if (payload) {
-      const payloadKeyValues = payload
-        .split("&")
-        .map((item) => item.split("="));
+      try {
+        payload = JSON.parse(payload);
+        isKeyValue = false;
+      } catch (error) {}
 
-      newPayLoadJSON = payloadKeyValues.reduce(
-        (pre, cur) => ({
-          ...pre,
-          [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
-        }),
-        {}
-      );
+      if (isKeyValue) {
+        const payloadKeyValues = payload
+          .split("&")
+          .map((item) => item.split("="));
+
+        newPayLoadJSON = payloadKeyValues.reduce(
+          (pre, cur) => ({
+            ...pre,
+            [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
+          }),
+          {}
+        );
+      } else {
+        newPayLoadJSON = payload;
+      }
     }
 
     return {
@@ -61,20 +72,31 @@ const formatRule = ({ projectId, methodType, ruleId, ruleContent }) => {
         ruleName = new URL(params.request.url).pathname;
       } catch (error) {}
 
-      const payload = params?.request?.postData;
+      let payload = params?.request?.postData;
+
+      let isKeyValue = true;
+
       let newPayLoadJSON = null;
       if (payload) {
-        const payloadKeyValues = payload
-          .split("&")
-          .map((item) => item.split("="));
+        try {
+          payload = JSON.parse(payload);
+          isKeyValue = false;
+        } catch (error) {}
+        if (isKeyValue) {
+          const payloadKeyValues = payload
+            .split("&")
+            .map((item) => item.split("="));
 
-        newPayLoadJSON = payloadKeyValues.reduce(
-          (pre, cur) => ({
-            ...pre,
-            [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
-          }),
-          {}
-        );
+          newPayLoadJSON = payloadKeyValues.reduce(
+            (pre, cur) => ({
+              ...pre,
+              [cur[0]]: isValidJSON(cur[1]) ? JSON.parse(cur[1]) : cur[1],
+            }),
+            {}
+          );
+        } else {
+          newPayLoadJSON = payload;
+        }
       }
 
       return {

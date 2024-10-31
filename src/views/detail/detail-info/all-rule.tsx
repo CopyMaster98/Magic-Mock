@@ -34,7 +34,7 @@ const AllRule: React.FC<{
   setCurrentTab: any;
   currentTab: string;
   onChangeCheckList: any;
-  cacheData?: any[];
+  cacheData: any[];
 }> = (props) => {
   const { rules, cacheData, setCurrentTab, currentTab, onChangeCheckList } =
     props;
@@ -56,7 +56,7 @@ const AllRule: React.FC<{
     });
 
     onChangeCheckList?.(res);
-  }, [selectedRowKeys, onChangeCheckList]);
+  }, [selectedRowKeys, onChangeCheckList, currentTab, rules, cacheData]);
 
   const handleNavigate = useCallback(
     (item: any) => {
@@ -594,7 +594,7 @@ const AllRule: React.FC<{
       setSelectedRowKeys([]);
       setTimeout(() => setCurrentTab(e));
     },
-    [setCurrentTab]
+    [onChangeCheckList, setCurrentTab]
   );
   const items = useMemo(() => {
     return [

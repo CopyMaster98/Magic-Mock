@@ -18,6 +18,7 @@ import {
   EditOutlined,
   ChromeOutlined,
   DeleteOutlined,
+  CloudOutlined,
 } from "@ant-design/icons";
 import { useData } from "../../../context";
 import { FolderAPI, ProjectAPI } from "../../../api";
@@ -26,6 +27,7 @@ import AddProjectForm from "../../../components/project-form";
 import { useNavigate } from "../../../hooks/navigate";
 import RightClickMenu from "../../../components/right-click-menu";
 import { addFolderUrl, deleteFolderUrl } from "../../../api/folder";
+import "./index.css";
 
 const HomeDetail: React.FC = () => {
   const {
@@ -305,6 +307,7 @@ const HomeDetail: React.FC = () => {
                 zIndex: 99,
               },
             }}
+            className="project-card"
             title={CardTitle(item)}
             onClick={() =>
               navigate(`/detail/project_${item.name}?projectId=${item.id}`)
@@ -377,18 +380,35 @@ const HomeDetail: React.FC = () => {
                     label: item,
                     value: item,
                   }))}
-                  optionRender={(option) => (
+                  optionRender={(option: any) => (
                     <div
                       style={{
                         position: "relative",
+                        marginRight: "20px",
                       }}
                     >
-                      <span>{option.label}</span>
+                      <div>
+                        {/* <Tag
+                          color={option.data.a === 123 ? "#1677ff" : "#52c41a"}
+                        >
+                          <span>
+                            {option.data.a !== 123 ? "URL" : "Resource"}
+                          </span>
+                        </Tag> */}
+                        <span
+                          style={{
+                            wordBreak: "break-all",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {option.label}
+                        </span>
+                      </div>
                       {item.url !== option.value && (
                         <DeleteOutlined
                           style={{
                             position: "absolute",
-                            right: 0,
+                            right: -20,
                             top: "50%",
                             transform: "translateY(-50%)",
                             zIndex: 99,
@@ -437,7 +457,8 @@ const HomeDetail: React.FC = () => {
               <ChromeOutlined style={{ marginRight: "10px" }} />
               <span>{item.url}</span>
             </div>
-            <div>
+
+            <div style={{ marginBottom: "10px" }}>
               <UnorderedListOutlined style={{ marginRight: "10px" }} />
               <span style={{ marginRight: "10px" }}>
                 <span style={{ fontWeight: 700 }}>{item.rules.length}</span>{" "}
@@ -447,6 +468,10 @@ const HomeDetail: React.FC = () => {
                 <span style={{ fontWeight: 700 }}>{item.cacheData.length}</span>{" "}
                 Caches
               </span>
+            </div>
+            <div>
+              <CloudOutlined style={{ marginRight: "10px" }} />
+              <span>Online</span>
             </div>
           </Card>
         );

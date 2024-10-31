@@ -11,6 +11,7 @@ import Header from "../../components/header";
 import { header } from "../../constant/index";
 import Detail from "../detail";
 import HomeDetail from "./home-detail";
+import Resource from "../resource";
 
 const Home: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const Home: React.FC = () => {
             <Route path="/detail" Component={Detail}></Route>
             <Route path="/detail/:id" Component={Detail}></Route>
             <Route path="/detail/:projectId/:ruleId" Component={Detail}></Route>
+            <Route path="/resource" Component={Resource}></Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Layout>

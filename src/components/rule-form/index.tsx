@@ -103,6 +103,10 @@ const RuleForm: React.FC<any> = forwardRef((props, ref) => {
     responseStatusCode: 200,
   });
 
+  useEffect(() => {
+    data && setCurrentRuleMethod(data.ruleMethod);
+  }, [data]);
+
   const handleInitRequestHeaderEditor = useCallback(() => {
     if (requestHeaderEditor && requestHeaderEditorValueRef.current) {
       requestHeaderEditor.setTextSelection(requestHeaderEditorValueRef.current);

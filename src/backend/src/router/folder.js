@@ -230,8 +230,10 @@ router.put("/project/:projectName/url", async (ctx) => {
   const projectPath = folderPath(projectName);
   const config = folderContent(`${projectPath}/ζζconfig.json`);
 
-  const { urls } = JSON.parse(config);
-  const newUrls = [...urls, newUrl];
+  const fileContent = JSON.parse(config);
+
+  const newUrls = [newUrl];
+  if (fileContent) newUrls.unshift(...fileContent.urls);
 
   try {
     fs.writeFileSync(
