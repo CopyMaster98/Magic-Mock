@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   Divider,
+  Empty,
   Input,
   InputRef,
   Select,
@@ -211,7 +212,7 @@ const HomeDetail: React.FC = () => {
     async (item: any, url: string) => {
       if (
         !url.trim().length ||
-        item.urlOptions.find((item: any) => item === url)
+        item.config.urls.find((item: any) => item === url)
       ) {
         setErrorMessage("Url is already exists!");
         setInputStatus("error");
@@ -277,7 +278,6 @@ const HomeDetail: React.FC = () => {
       } catch (error) {
         console.log(error);
       }
-      console.log(selectValue.current);
       setRefresh();
     },
     [setRefresh]
@@ -293,189 +293,214 @@ const HomeDetail: React.FC = () => {
         borderRadius: borderRadiusLG,
       }}
     >
-      {projectData?.map((item: any, index) => {
-        return (
-          <Card
-            key={item.id}
-            hoverable
-            style={{ marginBottom: 16 }}
-            styles={{
-              body: { padding: "10px 24px" },
-              extra: {
-                position: "absolute",
-                right: "24px",
-                zIndex: 99,
-              },
-            }}
-            className="project-card"
-            title={CardTitle(item)}
-            onClick={() =>
-              navigate(`/detail/project_${item.name}?projectId=${item.id}`)
-            }
-            extra={
-              <>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditDialog(item);
-                  }}
-                  icon={<EditOutlined />}
-                  style={{ marginRight: "20px" }}
-                />
-
-                <Select
-                  style={{ width: 300, marginRight: 20 }}
-                  placeholder="Select Default URL"
-                  showSearch
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  value={
-                    selectValue.current.get(item.id) ||
-                    item.urlOptions.find((_item: any) => _item === item.url)
-                  }
-                  onChange={(e) => handleChangeProjectUrl(item, e)}
-                  disabled={item.status}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      <Divider style={{ margin: "8px 0" }} />
-                      <Space style={{ padding: "0 8px 4px" }}>
-                        <Input
-                          placeholder="Please enter item"
-                          ref={inputRef}
-                          value={url}
-                          onChange={onUrlChange}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          status={inputStatus}
-                        />
-                        <Button
-                          type="text"
-                          icon={<PlusOutlined />}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            addItem(item, url);
-                          }}
-                          disabled={
-                            !url.trim().length || inputStatus === "error"
-                          }
-                        >
-                          Add URL
-                        </Button>
-                      </Space>
-                      <Space>
-                        <span
-                          style={{
-                            display: inputStatus === "error" ? "block" : "none",
-                            marginLeft: "10px",
-                            color: "#ff4d4f",
-                          }}
-                        >
-                          {errorMessage}
-                        </span>
-                      </Space>
-                    </>
-                  )}
-                  options={(item.urlOptions || []).map((item: any) => ({
-                    label: item,
-                    value: item,
-                  }))}
-                  optionRender={(option: any) => (
-                    <div
-                      style={{
-                        position: "relative",
-                        marginRight: "20px",
-                      }}
-                    >
-                      <div>
-                        {/* <Tag
-                          color={option.data.a === 123 ? "#1677ff" : "#52c41a"}
-                        >
-                          <span>
-                            {option.data.a !== 123 ? "URL" : "Resource"}
-                          </span>
-                        </Tag> */}
-                        <span
-                          style={{
-                            wordBreak: "break-all",
-                            whiteSpace: "normal",
-                          }}
-                        >
-                          {option.label}
-                        </span>
-                      </div>
-                      {item.url !== option.value && (
-                        <DeleteOutlined
-                          style={{
-                            position: "absolute",
-                            right: -20,
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            zIndex: 99,
-                          }}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleDeleteProjectUrl(
-                              item,
-                              option.value as string
-                            );
-                          }}
-                        />
-                      )}
-                    </div>
-                  )}
-                />
-                <Button
-                  danger={item.status ? true : false}
-                  type="primary"
-                  icon={<PoweroffOutlined />}
-                  loading={loading[item.id]}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleChangeStatus(item, !item.status);
-                  }}
-                >
-                  {item.status ? "Stop" : "Start"}
-                </Button>
-              </>
-            }
-          >
-            <RightClickMenu
-              item={item}
-              menuButtons={
-                <Button
-                  danger={true}
-                  type="primary"
-                  onClick={() => openConfirmDialog(item)}
-                >
-                  Delete
-                </Button>
+      {projectData.length ? (
+        projectData?.map((item: any, index) => {
+          return (
+            <Card
+              key={item.id}
+              hoverable
+              style={{ marginBottom: 16 }}
+              styles={{
+                body: { padding: "10px 24px" },
+                extra: {
+                  position: "absolute",
+                  right: "24px",
+                  zIndex: 99,
+                },
+              }}
+              className="project-card"
+              title={CardTitle(item)}
+              onClick={() =>
+                navigate(`/detail/project_${item.name}?projectId=${item.id}`)
               }
-            />
-            <div style={{ marginBottom: "10px" }}>
-              <ChromeOutlined style={{ marginRight: "10px" }} />
-              <span>{item.url}</span>
-            </div>
+              extra={
+                <>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditDialog(item);
+                    }}
+                    icon={<EditOutlined />}
+                    style={{ marginRight: "20px" }}
+                  />
 
-            <div style={{ marginBottom: "10px" }}>
-              <UnorderedListOutlined style={{ marginRight: "10px" }} />
-              <span style={{ marginRight: "10px" }}>
-                <span style={{ fontWeight: 700 }}>{item.rules.length}</span>{" "}
-                Rules
-              </span>
-              <span>
-                <span style={{ fontWeight: 700 }}>{item.cacheData.length}</span>{" "}
-                Caches
-              </span>
-            </div>
-            <div>
-              <CloudOutlined style={{ marginRight: "10px" }} />
-              <span>Online</span>
-            </div>
-          </Card>
-        );
-      })}
+                  <Select
+                    style={{ width: 300, marginRight: 20 }}
+                    placeholder="Select Default URL"
+                    showSearch
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
+                    value={
+                      selectValue.current.get(item.id) ||
+                      item.config.urls.find((_item: any) => _item === item.url)
+                    }
+                    onChange={(e) => handleChangeProjectUrl(item, e)}
+                    disabled={item.status}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider style={{ margin: "8px 0" }} />
+                        <Space style={{ padding: "0 8px 4px" }}>
+                          <Input
+                            placeholder="Please enter item"
+                            ref={inputRef}
+                            value={url}
+                            onChange={onUrlChange}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            status={inputStatus}
+                          />
+                          <Button
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              addItem(item, url);
+                            }}
+                            disabled={
+                              !url.trim().length || inputStatus === "error"
+                            }
+                          >
+                            Add URL
+                          </Button>
+                        </Space>
+                        <Space>
+                          <span
+                            style={{
+                              display:
+                                inputStatus === "error" ? "block" : "none",
+                              marginLeft: "10px",
+                              color: "#ff4d4f",
+                            }}
+                          >
+                            {errorMessage}
+                          </span>
+                        </Space>
+                      </>
+                    )}
+                    options={[
+                      ...(item.config.urls || []),
+                      ...(item.resource || []).map((item: any) => item?.key),
+                    ].map((item: any) => ({
+                      label: item.includes("resourceγγ")
+                        ? item.split("resourceγγ")[1]
+                        : item,
+                      value: item.includes("resourceγγ")
+                        ? item.split("resourceγγ")[1]
+                        : item,
+                      type: item.includes("resourceγγ") ? "resource" : "url",
+                    }))}
+                    optionRender={(option: any) => (
+                      <div
+                        style={{
+                          position: "relative",
+                          marginRight: "20px",
+                        }}
+                      >
+                        <div>
+                          <Tag
+                            color={
+                              option.data.type === "url" ? "#1677ff" : "#52c41a"
+                            }
+                          >
+                            <span>
+                              {option.data.type === "url" ? "URL" : "Resource"}
+                            </span>
+                          </Tag>
+                          <span
+                            style={{
+                              wordBreak: "break-all",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {option.label}
+                          </span>
+                        </div>
+                        {item.url !== option.value &&
+                          option.data.type !== "resource" && (
+                            <DeleteOutlined
+                              style={{
+                                position: "absolute",
+                                right: -20,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                zIndex: 99,
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeleteProjectUrl(
+                                  item,
+                                  option.value as string
+                                );
+                              }}
+                            />
+                          )}
+                      </div>
+                    )}
+                  />
+                  <Button
+                    danger={item.status ? true : false}
+                    type="primary"
+                    icon={<PoweroffOutlined />}
+                    loading={loading[item.id]}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleChangeStatus(item, !item.status);
+                    }}
+                  >
+                    {item.status ? "Stop" : "Start"}
+                  </Button>
+                </>
+              }
+            >
+              <RightClickMenu
+                item={item}
+                menuButtons={
+                  <Button
+                    danger={true}
+                    type="primary"
+                    onClick={() => openConfirmDialog(item)}
+                  >
+                    Delete
+                  </Button>
+                }
+              />
+              <div style={{ marginBottom: "10px" }}>
+                <ChromeOutlined style={{ marginRight: "10px" }} />
+                <span>{item.url}</span>
+              </div>
+
+              <div style={{ marginBottom: "10px" }}>
+                <UnorderedListOutlined style={{ marginRight: "10px" }} />
+                <span style={{ marginRight: "10px" }}>
+                  <span style={{ fontWeight: 700 }}>{item.rules.length}</span>{" "}
+                  Rules
+                </span>
+                <span>
+                  <span style={{ fontWeight: 700 }}>
+                    {item.cacheData.length}
+                  </span>{" "}
+                  Caches
+                </span>
+              </div>
+              <div>
+                <CloudOutlined style={{ marginRight: "10px" }} />
+                <span>Online</span>
+              </div>
+            </Card>
+          );
+        })
+      ) : (
+        <Empty
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      )}
     </Content>
   );
 };

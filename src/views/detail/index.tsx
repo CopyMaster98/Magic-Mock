@@ -108,29 +108,31 @@ const Detail: React.FC = () => {
 
   return (
     <>
-      <Sider
-        width={200}
-        trigger={
-          collapsed ? (
-            <MenuUnfoldOutlined className="collapsed-icon" />
-          ) : (
-            <MenuFoldOutlined className="collapsed-icon" />
-          )
-        }
-        style={{ background: colorBgContainer }}
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value: boolean) => setCollapsed(value)}
-      >
-        <Menu
-          key={updateMenu}
-          mode="inline"
-          defaultSelectedKeys={currentPathname}
-          defaultOpenKeys={[currentPathname[0]]}
-          style={{ height: "100%", borderRight: 0 }}
-          items={projectData}
-        />
-      </Sider>
+      {projectData.length ? (
+        <Sider
+          width={200}
+          trigger={
+            collapsed ? (
+              <MenuUnfoldOutlined className="collapsed-icon" />
+            ) : (
+              <MenuFoldOutlined className="collapsed-icon" />
+            )
+          }
+          style={{ background: colorBgContainer }}
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value: boolean) => setCollapsed(value)}
+        >
+          <Menu
+            key={updateMenu}
+            mode="inline"
+            defaultSelectedKeys={currentPathname}
+            defaultOpenKeys={[currentPathname[0]]}
+            style={{ height: "100%", borderRight: 0 }}
+            items={projectData}
+          />
+        </Sider>
+      ) : null}
       <Layout style={{ padding: "0 24px 24px" }}>
         {isDetailInfo ? (
           <DetailInfo

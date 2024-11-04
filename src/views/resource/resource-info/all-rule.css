@@ -1,0 +1,185 @@
+.container {
+  .ant-tabs-content-holder {
+    scrollbar-width: none;
+    overflow-y: scroll;
+  }
+
+  .ant-card-body {
+    line-height: 1;
+
+  }
+
+  >.ant-tabs {
+    width: 100%;
+  }
+}
+
+@property --dir {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.rule-card {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    filter: blur(5px);
+    background: repeating-conic-gradient(from var(--dir), #0f0, #ff0, #0ff, #f0f, #0ff);
+    animation: rotate 4s linear infinite
+  }
+
+  >span {
+    height: 100%;
+  }
+}
+
+@keyframes rotate {
+  from {
+    --dir: 0deg;
+  }
+
+  to {
+    --dir: 360deg;
+  }
+}
+
+.ant-tabs-tabpane>div {
+  flex-wrap: wrap;
+  justify-content: space-around;
+
+  &>.ant-checkbox-group {
+    flex: 1;
+  }
+}
+
+.ant-card-meta-title>div>div {
+  align-items: center;
+}
+
+.ant-card-actions {
+  color: transparent;
+}
+
+.method-select {
+  position: absolute;
+  width: auto;
+  right: 48px
+}
+
+.card-selected,
+.card-select {
+  position: relative;
+}
+
+.card-select::after {
+  background-color: rgba(0, 0, 0, .1);
+}
+
+.card-select:hover::after {
+  background-color: rgba(0, 0, 0, .2);
+}
+
+.card-selected::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  filter: blur(10px);
+  background-color: rgba(0, 0, 0, .3);
+  z-index: 1;
+}
+
+.card-selected::after {
+  content: 'Selected';
+  font-size: 24px;
+  font-weight: 700;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.card-select::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+}
+
+/* 
+.success-border td {
+  border-top: 2px solid #52c41a !important;
+  border-bottom: 2px solid #52c41a !important
+}
+
+.success-border+.success-border td {
+  border-top: 0 !important;
+}
+
+.success-border td:first-child {
+  border-left: 2px solid #52c41a !important;
+}
+
+.success-border td:last-child {
+  border-right: 2px solid #52c41a !important
+}
+
+.warning-border td {
+  border-bottom: 2px solid #ffe58f !important
+}
+
+
+.warning-border td:first-of-child {
+  border-left: 2px solid #ffe58f !important;
+}
+
+.warning-border td:last-of-child {
+  border-right: 2px solid #ffe58f !important
+}
+
+.warning-border:first-of-child {
+  border-top: 2px solid #ffe58f !important
+} */
+
+.break-word {
+  word-break: break-word;
+  white-space: normal;
+}
+
+.min-width-200 {
+  min-width: 200px;
+}
+
+.min-width-400 {
+  min-width: 400px;
+}
+
+.max-width-400 {
+  max-width: 400px;
+}
+
+.max-width-600 {
+  max-width: 600px;
+}
+
+.max-width-800 {
+  max-width: 800px;
+}
+
+.matched-item:hover {
+  background-color: rgba(0, 0, 0, .04);
+}

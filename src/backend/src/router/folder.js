@@ -2,7 +2,7 @@ const Router = require("koa-router");
 const fs = require("fs");
 const { folderUtils, hashUtils } = require("../utils/index");
 const { getLocalServerProjectData } = require("../core");
-const { LOCAL_SERVER } = require("../constants");
+const { LOCAL_SERVER, OFFLINE_RESOURCE } = require("../constants");
 const router = new Router();
 
 const { folderPath, folderExists, createFolder, folderInfo, folderContent } =
@@ -45,6 +45,7 @@ router.post("/create", async (ctx) => {
         JSON.stringify(
           {
             urls: [url],
+            staticResourceCache: true,
           },
           null,
           2
@@ -64,10 +65,31 @@ router.post("/create", async (ctx) => {
 router.get("/info", async (ctx, next) => {
   const path = folderPath("");
   const isExist = folderExists(path);
+  const resourcePath = folderPath("", OFFLINE_RESOURCE);
+  const isResourceExist = folderExists(resourcePath);
   let folder = [];
+
+  let resourceItems = [];
+  if (isResourceExist) {
+    resourceItems = fs
+      .readdirSync(resourcePath)
+      .filter((item) => !item.startsWith("."))
+      .map((path) => {
+        const stats = folderInfo(folderPath(`${resourcePath}/${path}`));
+
+        return {
+          key: `resourceγγ${path}`,
+          name: encodeURIComponent(path),
+          stats,
+          cacheData: [],
+          id: hashUtils.getHash(path),
+        };
+      });
+  }
 
   if (isExist) {
     const items = fs.readdirSync(path).filter((item) => item.includes("εε"));
+
     items.forEach((item) => {
       try {
         const _folderPath = `${path}/${item}`;
@@ -81,7 +103,7 @@ router.get("/info", async (ctx, next) => {
             );
             return {
               id: hashUtils.getHash(item),
-              name: decodeURIComponent(item),
+              name: encodeURIComponent(item),
               stats: folderInfo(`${_folderPath}/${item}`),
               content: content.length ? JSON.parse(content) : {},
               type: "mock",
@@ -99,14 +121,23 @@ router.get("/info", async (ctx, next) => {
           status: currentProjectStatus?.status ?? false,
           stats,
           rules,
-          urlOptions: [],
+          config: {
+            urls: [],
+            staticResourceCache: true,
+          },
           cacheData: getLocalServerProjectData(item),
+          resource: resourceItems,
         };
 
         if (files.includes("ζζconfig.json")) {
           const config = folderContent(`${_folderPath}/ζζconfig.json`);
-          const { urls } = JSON.parse(config);
-          info.urlOptions = urls;
+
+          const { urls, staticResourceCache } = JSON.parse(config);
+          info.config = {
+            ...info.config,
+            urls,
+            staticResourceCache,
+          };
         }
 
         folder.push(info);
@@ -114,12 +145,13 @@ router.get("/info", async (ctx, next) => {
         console.error(err);
       }
     });
-  }
 
-  folder = folder.sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
+    folder = folder.sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
+  }
 
   ctx.response.body = {
     project: !isExist ? [] : folder,
+    resource: !isResourceExist ? [] : resourceItems,
     statusCode: 0,
   };
 });
@@ -240,6 +272,7 @@ router.put("/project/:projectName/url", async (ctx) => {
       `${projectPath}/ζζconfig.json`,
       JSON.stringify(
         {
+          ...fileContent,
           urls: newUrls,
         },
         null,
@@ -271,7 +304,8 @@ router.delete("/project/:projectName/url", async (ctx) => {
   const projectPath = folderPath(projectName);
   const config = folderContent(`${projectPath}/ζζconfig.json`);
 
-  const { urls } = JSON.parse(config);
+  const fileContent = JSON.parse(config);
+  const { urls } = fileContent;
   const newUrls = urls.filter((item) => item !== deleteUrl);
 
   try {
@@ -279,6 +313,7 @@ router.delete("/project/:projectName/url", async (ctx) => {
       `${projectPath}/ζζconfig.json`,
       JSON.stringify(
         {
+          ...fileContent,
           urls: newUrls,
         },
         null,

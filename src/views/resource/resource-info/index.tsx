@@ -25,7 +25,7 @@ import { useData } from "../../../context";
 import "./index.css";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import RuleForm from "../../../components/rule-form";
-import DetailRule from "./detail-rule";
+import DetailRule from "./resource-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import {
@@ -979,29 +979,6 @@ const DetailInfo: React.FC<{
                       options={cardStatusSelectOptions}
                     />
                   </div>
-                  <div className="filter">
-                    <label
-                      htmlFor="resourceType"
-                      style={{
-                        marginRight: "10px",
-                      }}
-                    >
-                      Resource Type
-                    </label>
-                    <Select
-                      id="resourceType"
-                      style={{
-                        width: "150px",
-                      }}
-                      // disabled={!!checkList.length}
-                      // showSearch
-                      value={ruleResourceType}
-                      placeholder="Select Status"
-                      optionFilterProp="label"
-                      onChange={setRuleResourceType}
-                      options={resourceTypeSelectOptions}
-                    />
-                  </div>
                 </div>
               </>
             )}
@@ -1016,14 +993,6 @@ const DetailInfo: React.FC<{
                 gap: "15px 30px",
               }}
             >
-              {!location.search.includes("ruleId") && (
-                <div className="switches">
-                  <div>
-                    <span>Cache Static Resources</span>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              )}
               {location.search.includes("ruleId") && (
                 <Button type="primary" onClick={handleBack}>
                   Back

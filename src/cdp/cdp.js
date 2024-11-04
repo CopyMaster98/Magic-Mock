@@ -127,13 +127,16 @@ const updateConfig = (configPath) => {
   };
 };
 
-const updateFileOrFolder = (data, path, cacheDataUrlPatterns) => {
+const updateFileOrFolder = (
+  data,
+  path,
+  newFilePathSuffix,
+  cacheDataUrlPatterns
+) => {
   if (!folderUtils.folderExists(path)) folderUtils.createFolder(path);
 
-  const methodPath = path + "/" + data.params.request.method;
-
-  if (!folderUtils.folderExists(methodPath))
-    folderUtils.createFolder(methodPath);
+  if (!folderUtils.folderExists(newFilePathSuffix))
+    folderUtils.createFolder(newFilePathSuffix);
 
   const fileNameHash = hashUtils.getHash(
     encodeURIComponent(data.params.request.url?.split("?")[0])
@@ -146,7 +149,7 @@ const updateFileOrFolder = (data, path, cacheDataUrlPatterns) => {
   )
     return;
 
-  const requestFile = methodPath + "/" + fileNameHash + ".request.json";
+  const requestFile = newFilePathSuffix + "/" + fileNameHash + ".request.json";
 
   if (folderUtils.folderExists(requestFile)) {
     fs.writeFileSync(
@@ -745,30 +748,49 @@ async function intercept(data, page) {
 
         if (!cacheMatchedPattern && !matchedPattern) {
           // TODO 当本地启动服务器时 禁止缓存静态资源
-          if (isEntiretyCacheFlag) {
-            if (
-              isExistLocalServer &&
-              (params.responseStatusCode.toString().startsWith("2") ||
-                params.responseStatusCode.toString().startsWith("3"))
-            ) {
-              updateFileOrFolder(
-                { params, cacheStatus: false },
-                localServerProjectPath,
-                cacheDataUrlPatterns
-              );
-            } else {
-              const serverPath = folderUtils.folderPath(
-                CONSTANT.LOCAL_SERVER,
-                ""
-              );
-              folderUtils.createFolder(serverPath);
-              updateFileOrFolder(
-                { params, cacheStatus: false },
-                localServerProjectPath,
-                cacheDataUrlPatterns
-              );
-            }
+          // if (isEntiretyCacheFlag) {
+          let savePath = localServerProjectPath;
+          let newFilePathSuffix =
+            localServerProjectPath + "/" + params.request.method;
+          if (
+            ["Document", "Stylesheet", "Script", "Image"].includes(
+              params.resourceType
+            )
+          ) {
+            savePath = folderUtils.folderPath(
+              staticResourceName,
+              CONSTANT.OFFLINE_RESOURCE
+            );
+
+            newFilePathSuffix = savePath;
           }
+
+          if (
+            isExistLocalServer &&
+            (params.responseStatusCode.toString().startsWith("2") ||
+              params.responseStatusCode.toString().startsWith("3"))
+          ) {
+            updateFileOrFolder(
+              { params, cacheStatus: false },
+              newFilePathSuffix,
+              savePath,
+              cacheDataUrlPatterns
+            );
+          } else {
+            const serverPath = folderUtils.folderPath(
+              CONSTANT.LOCAL_SERVER,
+              ""
+            );
+            folderUtils.createFolder(serverPath);
+            updateFileOrFolder(
+              { params, cacheStatus: false },
+              newFilePathSuffix,
+              savePath,
+              cacheDataUrlPatterns
+            );
+          }
+
+          // }
         }
 
         //TODO

@@ -4,9 +4,11 @@ const ROOT_PATH = "/";
 
 const MAGIC_MOCK_DATA = "Magic-Mock-Data";
 
-const METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
-
 const LOCAL_SERVER = "Local-Server";
+
+const OFFLINE_RESOURCE = "Offline-Resource";
+
+const METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"];
 
 const MAGIC_MOCK_ROOT_PATH = path.resolve(
   process.cwd() + `/${MAGIC_MOCK_DATA}`
@@ -21,4 +23,5 @@ module.exports = {
   MAGIC_MOCK_ROOT_PATH,
   METHODS,
   LOCAL_SERVER_ROOT_PATH,
+  OFFLINE_RESOURCE,
 };

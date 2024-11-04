@@ -1,0 +1,85 @@
+.container {
+  display: flex;
+  margin-top: 20px;
+  overflow-y: auto;
+}
+
+.sub-title {
+  display: flex;
+
+  >span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 24px;
+    font-weight: 700;
+    margin-right: 30px;
+  }
+
+  >.buttons {
+    flex-shrink: 0;
+  }
+
+  .filter-container {
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    gap: 0 30px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 15px 30px;
+
+
+    >.filter {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+
+  }
+
+  @media screen and (max-width: 1549px) {
+
+    .filters {
+      flex-direction: column;
+    }
+
+    .filter *:last-child {
+      flex: 1;
+    }
+
+    .buttons {
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+  }
+
+}
+
+
+
+.multiple-create-dialog .ant-modal-body .ant-descriptions {
+  overflow-y: auto;
+  scrollbar-width: none;
+  max-height: 50vh;
+}
+
+.switches {
+  display: flex;
+  gap: 15px 30px;
+
+  >div {
+    display: flex;
+    align-items: center;
+    height: 32px;
+
+
+    >span {
+      margin-right: 10px;
+    }
+  }
+}
