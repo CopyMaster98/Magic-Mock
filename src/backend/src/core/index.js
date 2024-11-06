@@ -1,4 +1,4 @@
-const { LOCAL_SERVER, METHODS } = require("../constants");
+const { LOCAL_SERVER, METHODS, OFFLINE_RESOURCE } = require("../constants");
 const {
   folderExists,
   folderPath,

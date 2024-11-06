@@ -173,6 +173,7 @@ const AllRule: React.FC<{
         dataIndex: "name",
         key: "name",
         className: "break-word max-width-400",
+        render: (item: any) => decodeURIComponent(decodeURIComponent(item)),
       },
       {
         title: "Rule Pattern",

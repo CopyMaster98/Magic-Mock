@@ -91,12 +91,6 @@ const createChildProcess = (projectInfo, resolve, reject) => {
   else global.projectStatus.get(name + url).childProcess = child;
 };
 
-// createChildProcess({
-//   name: '123',
-//   url: 'https://www.baidu.com',
-//   port: 9333
-// })
-
 module.exports = {
   createChildProcess,
 };

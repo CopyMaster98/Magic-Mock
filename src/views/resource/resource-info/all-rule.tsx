@@ -317,20 +317,7 @@ const AllRule: React.FC<{
             item.type === "cache" ? item?.content?.cacheStatus : item.status;
           return (
             <div style={{ display: "flex", justifyContent: "space-around" }}>
-              <Button
-                danger={itemStatus ? true : false}
-                type="primary"
-                icon={<PoweroffOutlined />}
-                loading={switchLoading}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (item.type === "cache") toggleCacheStatus(item);
-                  else toggleRuleStatus(item);
-                }}
-              >
-                {itemStatus ? "Stop" : "Start"}
-              </Button>
-              <Button
+              {/* <Button
                 color="default"
                 icon={<SettingOutlined />}
                 onClick={(e) => {
@@ -339,7 +326,7 @@ const AllRule: React.FC<{
                 }}
               >
                 {item.type !== "cache" ? "Setting" : "Setting & Save"}
-              </Button>
+              </Button> */}
 
               {item.type !== "cache" && (
                 <Button
@@ -360,12 +347,8 @@ const AllRule: React.FC<{
       dotStatus,
       findMethod,
       findResource,
-      handleNavigate,
       matchedMap,
       openConfirmDialog,
-      switchLoading,
-      toggleCacheStatus,
-      toggleRuleStatus,
     ]
   );
 

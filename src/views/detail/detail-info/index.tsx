@@ -49,7 +49,6 @@ const DetailInfo: React.FC<{
   cacheData: any[];
 }> = (props) => {
   const { pathname, project, rules, cacheData } = props;
-  console.log(project);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -195,10 +194,18 @@ const DetailInfo: React.FC<{
     const isLast = currentRoute?.path === items[items.length - 1]?.path;
 
     return isLast ? (
-      <span>{currentRoute.title}</span>
+      <span>
+        {currentRoute.title &&
+          decodeURIComponent(
+            decodeURIComponent(currentRoute.title?.toString())
+          )}
+      </span>
     ) : (
       <Link to={`/${paths.join("/")}?${(currentRoute as any).search}`}>
-        {currentRoute.title}
+        {currentRoute.title &&
+          decodeURIComponent(
+            decodeURIComponent(currentRoute.title?.toString())
+          )}
       </Link>
     );
   };

@@ -7,7 +7,7 @@ const headerItems: Array<{
     key: "home",
   },
   {
-    label: "API",
+    label: "Api",
     key: "detail",
   },
   {

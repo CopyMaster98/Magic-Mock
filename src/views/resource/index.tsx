@@ -56,41 +56,39 @@ const Detail: React.FC = () => {
               static_{item.name}
             </Link>
           ),
-          _status: +item.status,
           _url: item.url,
           _name: item.name,
         };
-        // if (item.rules.length > 0) {
-        //   folderInfo.children = [...item.rules]?.map((rule: any) => {
-        //     let ruleName = rule?.name;
+        if (item.rules?.length > 0) {
+          folderInfo.children = [...item.rules]?.map((rule: any) => {
+            let ruleName = rule?.name;
 
-        //     if (ruleName.includes(".config.json")) {
-        //       ruleName = ruleName.split(".config.json")[0];
-        //     }
+            if (ruleName.includes(".config.json")) {
+              ruleName = ruleName.split(".config.json")[0];
+            }
 
-        //     const ruleInfo = {
-        //       id: rule?.id,
-        //       key: "rule_" + encodeURIComponent(ruleName),
-        //       name: encodeURIComponent(ruleName),
-        //       label: (
-        //         <Link
-        //           to={`/resource/project_${encodeURIComponent(
-        //             item.name
-        //           )}/rule_${encodeURIComponent(ruleName)}?projectId=${
-        //             item.id
-        //           }&ruleId=${rule.id}&type=mock`}
-        //         >
-        //           rule_{ruleName}
-        //         </Link>
-        //       ),
-        //       content: rule?.content,
-        //       parent: item,
-        //     };
+            const ruleInfo = {
+              id: rule?.id,
+              key: "rule_" + encodeURIComponent(ruleName),
+              name: encodeURIComponent(ruleName),
+              label: (
+                <Link
+                  to={`/resource/project_${encodeURIComponent(
+                    item.name
+                  )}/rule_${encodeURIComponent(ruleName)}?projectId=${
+                    item.id
+                  }&ruleId=${rule.id}&type=mock`}
+                >
+                  rule_{ruleName}
+                </Link>
+              ),
+              content: rule?.content,
+              parent: item,
+            };
 
-        //     return ruleInfo;
-        //   });
-        // }
-
+            return ruleInfo;
+          });
+        }
         if (item.cacheData.length > 0) {
           folderInfo.cacheData = item.cacheData.map((cacheData: any) => ({
             ...cacheData,
@@ -106,46 +104,57 @@ const Detail: React.FC = () => {
     });
   }, [refresh]);
 
+  const rules = useMemo(
+    () =>
+      projectData?.find(
+        (item: any) => item.id === search.split("resourceId=")[1]
+      )?.children || [],
+    [projectData, search]
+  );
+
+  const cacheData = useMemo(
+    () =>
+      projectData?.find(
+        (item: any) => item.id === search.split("resourceId=")[1]
+      )?.cacheData || [],
+    [projectData, search]
+  );
+
   return (
     <>
-      <Sider
-        width={200}
-        trigger={
-          collapsed ? (
-            <MenuUnfoldOutlined className="collapsed-icon" />
-          ) : (
-            <MenuFoldOutlined className="collapsed-icon" />
-          )
-        }
-        style={{ background: colorBgContainer }}
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value: boolean) => setCollapsed(value)}
-      >
-        <Menu
-          key={updateMenu}
-          mode="inline"
-          defaultSelectedKeys={currentPathname}
-          defaultOpenKeys={[currentPathname[0]]}
-          style={{ height: "100%", borderRight: 0 }}
-          items={projectData}
-        />
-      </Sider>
+      {projectData?.length ? (
+        <Sider
+          width={200}
+          trigger={
+            collapsed ? (
+              <MenuUnfoldOutlined className="collapsed-icon" />
+            ) : (
+              <MenuFoldOutlined className="collapsed-icon" />
+            )
+          }
+          style={{ background: colorBgContainer }}
+          collapsible
+          collapsed={collapsed}
+          onCollapse={(value: boolean) => setCollapsed(value)}
+        >
+          <Menu
+            key={updateMenu}
+            mode="inline"
+            defaultSelectedKeys={currentPathname}
+            defaultOpenKeys={[currentPathname[0]]}
+            style={{ height: "100%", borderRight: 0 }}
+            items={projectData}
+          />
+        </Sider>
+      ) : null}
+
       <Layout style={{ padding: "0 24px 24px" }}>
         {isDetailInfo ? (
           <DetailInfo
             pathname={currentPathname}
             project={currentProject}
-            rules={
-              projectData?.find(
-                (item: any) => item.id === search.split("projectId=")[1]
-              )?.children || []
-            }
-            cacheData={
-              projectData?.find(
-                (item: any) => item.id === search.split("projectId=")[1]
-              )?.cacheData || []
-            }
+            rules={rules}
+            cacheData={cacheData}
           />
         ) : (
           <Content

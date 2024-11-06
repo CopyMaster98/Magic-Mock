@@ -106,9 +106,25 @@ const Detail: React.FC = () => {
     });
   }, [refresh]);
 
+  const rules = useMemo(
+    () =>
+      projectData?.find(
+        (item: any) => item.id === search.split("projectId=")[1]
+      )?.children || [],
+    [projectData, search]
+  );
+
+  const cacheData = useMemo(
+    () =>
+      projectData?.find(
+        (item: any) => item.id === search.split("projectId=")[1]
+      )?.cacheData || [],
+    [projectData, search]
+  );
+
   return (
     <>
-      {projectData.length ? (
+      {projectData?.length ? (
         <Sider
           width={200}
           trigger={
@@ -138,16 +154,8 @@ const Detail: React.FC = () => {
           <DetailInfo
             pathname={currentPathname}
             project={currentProject}
-            rules={
-              projectData?.find(
-                (item: any) => item.id === search.split("projectId=")[1]
-              )?.children || []
-            }
-            cacheData={
-              projectData?.find(
-                (item: any) => item.id === search.split("projectId=")[1]
-              )?.cacheData || []
-            }
+            rules={rules}
+            cacheData={cacheData}
           />
         ) : (
           <Content

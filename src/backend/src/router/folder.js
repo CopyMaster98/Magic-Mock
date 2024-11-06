@@ -15,17 +15,18 @@ router.post("/create", async (ctx) => {
     `${encodeURIComponent(name)}εε${encodeURIComponent(url)}`
   );
 
-  const files = fs.readdirSync(folderPath(""));
   let isExist = folderExists(path);
 
-  if (
-    !isExist &&
-    files
-      .filter((file) => file.includes("εε"))
-      .map((file) => file.split("εε")[0])
-      .find((file) => file === name)
-  )
-    isExist = true;
+  if (!isExist && folderExists(folderPath(""))) {
+    const files = fs.readdirSync(folderPath(""));
+    if (
+      files
+        .filter((file) => file.includes("εε"))
+        .map((file) => file.split("εε")[0])
+        .find((file) => file === name)
+    )
+      isExist = true;
+  }
 
   if (!isExist) {
     createFolder(path);
@@ -75,13 +76,38 @@ router.get("/info", async (ctx, next) => {
       .readdirSync(resourcePath)
       .filter((item) => !item.startsWith("."))
       .map((path) => {
-        const stats = folderInfo(folderPath(`${resourcePath}/${path}`));
+        const currentResourcePath = folderPath(`${resourcePath}/${path}`);
+        const stats = folderInfo(currentResourcePath);
+        const resourceCacheFiles = fs
+          .readdirSync(currentResourcePath)
+          .filter((item) => item.endsWith(".request.json"));
+
+        const cacheData = resourceCacheFiles
+          .map((item) => {
+            const content = folderContent(
+              folderPath(`${currentResourcePath}/${item}`)
+            );
+            let fileContent = null;
+            try {
+              if (content.length) fileContent = JSON.parse(content);
+            } catch (error) {}
+            return {
+              id: hashUtils.getHash(item),
+              name: item,
+              method: fileContent ? fileContent?.params?.request?.method : null,
+              stats: folderInfo(folderPath(`${currentResourcePath}/${item}`)),
+              content: fileContent,
+              type: "cache",
+            };
+          })
+          .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
 
         return {
           key: `resourceγγ${path}`,
-          name: encodeURIComponent(path),
+          name: path,
           stats,
-          cacheData: [],
+          cacheData,
+          rules: [],
           id: hashUtils.getHash(path),
         };
       });
@@ -103,7 +129,7 @@ router.get("/info", async (ctx, next) => {
             );
             return {
               id: hashUtils.getHash(item),
-              name: encodeURIComponent(item),
+              name: item,
               stats: folderInfo(`${_folderPath}/${item}`),
               content: content.length ? JSON.parse(content) : {},
               type: "mock",
@@ -132,11 +158,16 @@ router.get("/info", async (ctx, next) => {
         if (files.includes("ζζconfig.json")) {
           const config = folderContent(`${_folderPath}/ζζconfig.json`);
 
-          const { urls, staticResourceCache } = JSON.parse(config);
+          const {
+            urls = [],
+            staticResourceCache = false,
+            currentUrl = [],
+          } = JSON.parse(config);
           info.config = {
             ...info.config,
             urls,
             staticResourceCache,
+            currentUrl,
           };
         }
 
@@ -169,6 +200,16 @@ router.get("/project/:projectId", async (ctx, next) => {
 
 router.put("/project/:projectName", async (ctx) => {
   const { name, id, url } = ctx.request.body;
+  const urlArr = url.map((item) => {
+    let suffix = item.startsWith("url_") ? "url_" : "resource_";
+
+    return {
+      type: suffix.slice(0, suffix.length - 1),
+      url: item.split(suffix)[1],
+    };
+  });
+
+  const urlItem = urlArr.find((item) => item.type === "url");
   const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
     (item) => hashUtils.getHash(item) === id
   );
@@ -176,13 +217,77 @@ router.put("/project/:projectName", async (ctx) => {
   const cacheProjectPath = folderPath(projectName, LOCAL_SERVER);
   const newProjectName = [
     name ? name : projectName.split("εε")[0],
-    url ? encodeURIComponent(url) : projectName.split("εε")[1],
+    urlItem ? encodeURIComponent(urlItem.url) : projectName.split("εε")[1],
   ].join("εε");
   const newProjectPath = folderPath("") + "/" + newProjectName;
   const newCacheProjectPath =
     folderPath("", LOCAL_SERVER) + "/" + newProjectName;
-
   const files = fs.readdirSync(folderPath(""));
+
+  const resourceItem = urlArr.find((item) => item.type === "resource");
+
+  let isResource = false;
+  let isNewUrl = false;
+
+  if (resourceItem) {
+    isResource = true;
+
+    const currentUrl = [resourceItem];
+
+    if (urlItem) currentUrl.push(urlItem);
+
+    if (!folderExists(`${projectPath}/ζζconfig.json`)) {
+      fs.writeFileSync(
+        `${projectPath}/ζζconfig.json`,
+        JSON.stringify(
+          {
+            currentUrl,
+            staticResourceCache: true,
+          },
+          null,
+          2
+        )
+      );
+    } else {
+      let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
+      if (content) content = JSON.parse(content);
+
+      fs.writeFileSync(
+        `${projectPath}/ζζconfig.json`,
+        JSON.stringify(
+          {
+            ...content,
+            currentUrl,
+          },
+          null,
+          2
+        )
+      );
+    }
+  } else {
+    if (folderExists(`${projectPath}/ζζconfig.json`)) {
+      let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
+      if (content) content = JSON.parse(content);
+      const fileUrl = content?.currentUrl?.filter(
+        (item) => item.type !== "resource"
+      );
+      isNewUrl =
+        !fileUrl.length ||
+        (fileUrl.length > 0 && fileUrl[0].url !== urlItem.url);
+      fs.writeFileSync(
+        `${projectPath}/ζζconfig.json`,
+        JSON.stringify(
+          {
+            ...content,
+            currentUrl: fileUrl,
+          },
+          null,
+          2
+        )
+      );
+    }
+  }
+
   let isExist = folderExists(newProjectPath);
 
   if (
@@ -196,11 +301,18 @@ router.put("/project/:projectName", async (ctx) => {
     isExist = true;
 
   if (isExist) {
-    ctx.response.status = 500;
-    ctx.response.body = {
-      message: "项目名字已存在",
-      statusCode: -1,
-    };
+    if (isResource || isNewUrl) {
+      ctx.response.body = {
+        message: "修改成功",
+        statusCode: 0,
+      };
+    } else {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        message: "项目名字已存在",
+        statusCode: -1,
+      };
+    }
 
     return;
   }

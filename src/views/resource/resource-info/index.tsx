@@ -49,7 +49,6 @@ const DetailInfo: React.FC<{
   cacheData: any[];
 }> = (props) => {
   const { pathname, project, rules, cacheData } = props;
-  console.log(project);
 
   const {
     token: { colorBgContainer, borderRadiusLG },
@@ -747,31 +746,21 @@ const DetailInfo: React.FC<{
   const ruleCard = useMemo(
     () =>
       handleCardResourceTypeChange(
-        ruleResourceType,
+        "All",
         "",
         handleCardStatusSelectChange(ruleStatus, "1")
       ),
-    [
-      handleCardResourceTypeChange,
-      handleCardStatusSelectChange,
-      ruleResourceType,
-      ruleStatus,
-    ]
+    [handleCardResourceTypeChange, handleCardStatusSelectChange, ruleStatus]
   );
 
   const cacheCard = useMemo(
     () =>
       handleCardResourceTypeChange(
-        ruleResourceType,
+        "All",
         "",
         handleCardStatusSelectChange(ruleStatus, "2")
       ),
-    [
-      handleCardResourceTypeChange,
-      handleCardStatusSelectChange,
-      ruleResourceType,
-      ruleStatus,
-    ]
+    [handleCardResourceTypeChange, handleCardStatusSelectChange, ruleStatus]
   );
 
   useEffect(() => {
@@ -956,7 +945,7 @@ const DetailInfo: React.FC<{
                       enterButton
                     />
                   </div>
-                  <div className="filter">
+                  {/* <div className="filter">
                     <label
                       htmlFor="status"
                       style={{
@@ -978,7 +967,7 @@ const DetailInfo: React.FC<{
                       onChange={setRuleStatus}
                       options={cardStatusSelectOptions}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </>
             )}
@@ -1013,7 +1002,7 @@ const DetailInfo: React.FC<{
                   >
                     Delete
                   </Button>
-                  <Button
+                  {/* <Button
                     type="primary"
                     style={{
                       display:
@@ -1026,10 +1015,10 @@ const DetailInfo: React.FC<{
                     onClick={handleMultipleCreateSave}
                   >
                     Multiple Select
-                  </Button>
+                  </Button> */}
                 </>
               )}
-              <Button
+              {/* <Button
                 type="primary"
                 loading={saveLoading}
                 disabled={!project}
@@ -1046,9 +1035,9 @@ const DetailInfo: React.FC<{
                     ? "Create & Save"
                     : "Save"
                   : "Add Rule"}
-              </Button>
+              </Button> */}
 
-              {!location.search.includes("ruleId") && (
+              {/* {!location.search.includes("ruleId") && (
                 <Button
                   type="primary"
                   danger={project?._status ? true : false}
@@ -1059,7 +1048,7 @@ const DetailInfo: React.FC<{
                 >
                   {project?._status ? "Stop" : "Start"}
                 </Button>
-              )}
+              )} */}
             </div>
           </div>
         </div>

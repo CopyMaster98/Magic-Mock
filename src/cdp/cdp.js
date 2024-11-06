@@ -18,9 +18,15 @@ const { JSDOM } = require("jsdom");
     return;
   }
 
-  const { name, url, port, isEntiretyCache } = process.env.projectInfo
-    ? JSON.parse(process.env.projectInfo)
-    : {};
+  const {
+    name,
+    url,
+    resourceUrl,
+    port,
+    isEntiretyCache,
+    resourceName,
+    noSelectLocalUrl,
+  } = process.env.projectInfo ? JSON.parse(process.env.projectInfo) : {};
   const browser = await puppeteer.launch({
     executablePath: chromePath,
     headless: false,
@@ -38,12 +44,67 @@ const { JSDOM } = require("jsdom");
   const pages = await browser.pages(); // 获取所有打开的页面
 
   pages[0].close();
+
+  if (resourceUrl) {
+    await page.setRequestInterception(true);
+    let files = [];
+    try {
+      files = fs.readdirSync(
+        folderUtils.folderPath(
+          encodeURIComponent(resourceName),
+          CONSTANT.OFFLINE_RESOURCE
+        )
+      );
+    } catch (error) {}
+
+    page.on("request", async (request) => {
+      const url = request.url();
+      // 检查请求 URL 是否是目标 URL
+      if (resourceUrl && !url.includes(resourceUrl)) {
+        if (!["stylesheet", "image", "script"].includes(request.resourceType()))
+          await request.continue();
+        else {
+          const suffixArr = url
+            .split("/")
+            .filter((item) => !item.startsWith("?"));
+          let idx = suffixArr.length - 1;
+          let suffix = "";
+          const type = [".js", ".mjs", ".css", ".png", ".jpg", ".svg", ".gif"];
+          while (idx >= 0 && !type.find((item) => suffix.includes(item))) {
+            if (!suffix) suffix = suffixArr[idx--];
+            else if (type.find((item) => suffixArr[idx].includes(item))) {
+              suffix = suffixArr[idx--];
+            } else {
+              idx--;
+            }
+          }
+
+          if (!files.find((item) => item === suffix.split("?")[0]))
+            await request.continue();
+          else {
+            let endStr = `${url.split(suffix)[1]}`.startsWith("/")
+              ? ""
+              : `${url.split(suffix)[1]}`;
+            await request.continue({
+              url: `${resourceUrl}/${suffix}${endStr}`,
+            });
+          }
+        }
+      } else {
+        await request.continue();
+      }
+    });
+  }
+
   intercept(
     {
       name,
       url,
+      resourceUrl,
       port,
       isEntiretyCache,
+      resourceName,
+      noSelectLocalUrl,
     },
     page
   );
@@ -127,16 +188,11 @@ const updateConfig = (configPath) => {
   };
 };
 
-const updateFileOrFolder = (
-  data,
-  path,
-  newFilePathSuffix,
-  cacheDataUrlPatterns
-) => {
+const updateFileOrFolder = (data, path, newFilePath, cacheDataUrlPatterns) => {
   if (!folderUtils.folderExists(path)) folderUtils.createFolder(path);
 
-  if (!folderUtils.folderExists(newFilePathSuffix))
-    folderUtils.createFolder(newFilePathSuffix);
+  if (!folderUtils.folderExists(newFilePath))
+    folderUtils.createFolder(newFilePath);
 
   const fileNameHash = hashUtils.getHash(
     encodeURIComponent(data.params.request.url?.split("?")[0])
@@ -149,7 +205,7 @@ const updateFileOrFolder = (
   )
     return;
 
-  const requestFile = newFilePathSuffix + "/" + fileNameHash + ".request.json";
+  const requestFile = newFilePath + "/" + fileNameHash + ".request.json";
 
   if (folderUtils.folderExists(requestFile)) {
     fs.writeFileSync(
@@ -188,7 +244,21 @@ async function intercept(data, page) {
   let urlPatterns = [];
   let staticResourceName = "";
   const cacheDataConfig = {};
-  const { name, url, port, isEntiretyCache } = data;
+  let resourceDataConfig = [];
+  let prevRequest = {
+    data: null,
+    request: null,
+    needSave: false,
+  };
+  const {
+    name,
+    url,
+    port,
+    isEntiretyCache,
+    resourceUrl,
+    noSelectLocalUrl,
+    resourceName,
+  } = data;
   const projectName = folderUtils.folderPath(
     `${name}εε${encodeURIComponent(url)}`
   );
@@ -197,7 +267,15 @@ async function intercept(data, page) {
     CONSTANT.LOCAL_SERVER
   );
 
+  const resourceProjectName = resourceName
+    ? folderUtils.folderPath(
+        encodeURIComponent(resourceName),
+        CONSTANT.OFFLINE_RESOURCE
+      )
+    : "";
+
   let cacheDataUrlPatterns = [];
+  let resourceDataUrlPatterns = [];
   let rules = fs.readdirSync(projectName);
   let configFile = rules.filter((item) => item.endsWith(".config.json"));
   const fileContentMap = new Map();
@@ -366,6 +444,104 @@ async function intercept(data, page) {
         resolve();
       });
 
+    const initResourceDataConfig = async (resourcePath) => {
+      // const _resourcePath = path
+      //   .dirname(resourcePath)
+      //   .endsWith("Offline-Resource")
+      //   ? resourcePath
+      //   : path.dirname(resourcePath);
+      if (!path.dirname(resourcePath).endsWith("Offline-Resource")) {
+        let content = fs.readFileSync(resourcePath, "utf8");
+
+        content = isValidJSON(content)
+          ? JSON.parse(fs.readFileSync(resourcePath, "utf8"))
+          : content;
+        content.path = resourcePath;
+
+        resourceDataConfig = resourceDataConfig.filter(
+          (item) => item.id !== content.id
+        );
+        resourceDataConfig.push(content);
+      } else {
+        try {
+          const configFileNames = fs
+            .readdirSync(resourcePath)
+            .filter((item) => item.endsWith(".request.json"));
+
+          configFileNames.forEach(async (name) => {
+            const content = JSON.parse(
+              fs.readFileSync(`${resourcePath}/${name}`, "utf8")
+            );
+
+            content.path = `${resourcePath}/${name}`;
+            resourceDataConfig.push(content);
+          });
+        } catch (error) {}
+      }
+
+      const urlPattern = [];
+      resourceDataConfig.forEach((item) => {
+        const url = item.params?.request.url;
+        const method = item.params?.request.method;
+        const findCachePattern = urlPattern.find(
+          (_item) => _item.rulePattern === url
+        );
+
+        if (findCachePattern) {
+          findCachePattern.value = findCachePattern.value.filter(
+            (_item) =>
+              _item.methodType &&
+              _item.methodType !== item.params.request.method
+          );
+
+          findCachePattern.value.push(
+            ...[
+              {
+                ...item,
+                responseStatusCode: 200,
+                urlPattern: url + "*",
+                requestStage: "Request",
+                methodType: method,
+                patternType: "cache",
+              },
+              {
+                ...item,
+                responseStatusCode: 200,
+                urlPattern: url + "*",
+                requestStage: "Response",
+                methodType: method,
+                patternType: "cache",
+              },
+            ]
+          );
+        } else {
+          urlPattern.push({
+            rulePattern: url,
+            ruleName: item.id,
+            value: [
+              {
+                ...item,
+                responseStatusCode: 200,
+                urlPattern: url + "*",
+                requestStage: "Request",
+                methodType: method,
+                patternType: "cache",
+              },
+              {
+                ...item,
+                responseStatusCode: 200,
+                urlPattern: url + "*",
+                requestStage: "Response",
+                methodType: method,
+                patternType: "cache",
+              },
+            ],
+          });
+        }
+      });
+      resourceDataUrlPatterns = urlPattern;
+    };
+
     const initCacheDataConfig = async (dataPath) => {
       if (dataPath) {
         const method = path.basename(path.dirname(dataPath));
@@ -481,9 +657,11 @@ async function intercept(data, page) {
           .flat(Infinity),
       ];
 
-      await Fetch.enable({
-        patterns: newUrlPatters,
-      });
+      try {
+        await Fetch.enable({
+          patterns: newUrlPatters,
+        });
+      } catch (error) {}
     };
 
     const watcher = chokidar.watch(cacheDataProjectName, {
@@ -542,6 +720,34 @@ async function intercept(data, page) {
       await initWatch();
     }
 
+    if (noSelectLocalUrl && resourceUrl) {
+      const watcher = chokidar.watch(resourceProjectName, {
+        ignored: /(^|[/\\])\../, // 忽略隐藏文件
+        persistent: true, // 持续监听
+      });
+
+      watcher.on("change", async (path, stats) => {
+        if (!path.endsWith(".request.json")) return;
+        await initResourceDataConfig(path);
+      });
+
+      watcher.on("unlink", async (_path, stats) => {
+        if (!_path.endsWith(".request.json")) return;
+
+        const name = path.basename(_path).split(".request.json")[0];
+
+        const currentRule = resourceDataUrlPatterns.find(
+          (item) => item.ruleName === name
+        );
+
+        if (currentRule)
+          currentRule.value = currentRule.value.filter(
+            (item) => item.aaa7d2e2fd8e7610 !== name
+          );
+      });
+      await initResourceDataConfig(resourceProjectName);
+    }
+
     Fetch.requestPaused(async (params) => {
       const requestUrl = params.request.url;
       const allUrlPatterns = urlPatterns
@@ -551,96 +757,106 @@ async function intercept(data, page) {
       let matchedPattern = null;
       let matchedPatternStr = "";
 
-      allUrlPatterns.forEach((pattern) => {
-        let flag =
-          (!pattern.ruleMethod?.length ||
-            pattern.ruleMethod.includes(params.request.method)) &&
-          (!pattern.resourceType?.length ||
-            pattern.resourceType.includes(params.resourceType));
+      if (!noSelectLocalUrl) {
+        allUrlPatterns.forEach((pattern) => {
+          let flag =
+            (!pattern.ruleMethod?.length ||
+              pattern.ruleMethod.includes(params.request.method)) &&
+            (!pattern.resourceType?.length ||
+              pattern.resourceType.includes(params.resourceType));
 
-        if (flag && pattern.payload) {
-          if (matchedPattern && matchedPattern.payload) {
-            const payload = matchedPattern.payload;
-            const payloadKeysLength = Object.keys(payload).length;
+          if (flag && pattern.payload) {
+            if (matchedPattern && matchedPattern.payload) {
+              const payload = matchedPattern.payload;
+              const payloadKeysLength = Object.keys(payload).length;
 
-            if (params.request.method.toLowerCase() === "get") {
-              const searchParamsKeyValue = new URL(params.request.url)
-                .searchParams;
-              const searchParamsKeysLength =
-                Object.keys(searchParamsKeyValue)?.length;
+              if (params.request.method.toLowerCase() === "get") {
+                const searchParamsKeyValue = new URL(params.request.url)
+                  .searchParams;
+                const searchParamsKeysLength =
+                  Object.keys(searchParamsKeyValue)?.length;
 
-              if (
-                !searchParamsKeysLength ||
-                searchParamsKeysLength !== payloadKeysLength
-              )
-                flag = false;
-              else {
-                flag = Object.keys(payload).every(
-                  (key) => payload[key] === searchParamsKeyValue[key]
-                );
-              }
-            } else {
-              const requestData = commonUtils.isValidJSON(
-                params.request.postData
-              )
-                ? JSON.parse(params.request.postData)
-                : {};
+                if (
+                  !searchParamsKeysLength ||
+                  searchParamsKeysLength !== payloadKeysLength
+                )
+                  flag = false;
+                else {
+                  flag = Object.keys(payload).every(
+                    (key) => payload[key] === searchParamsKeyValue[key]
+                  );
+                }
+              } else {
+                const requestData = commonUtils.isValidJSON(
+                  params.request.postData
+                )
+                  ? JSON.parse(params.request.postData)
+                  : {};
 
-              const requestDataLength = Object.keys(requestData)?.length;
+                const requestDataLength = Object.keys(requestData)?.length;
 
-              if (!requestDataLength || requestDataLength !== payloadKeysLength)
-                flag = false;
-              else
-                flag = Object.keys(payload).every(
-                  (key) => payload[key] === requestData[key]
-                );
-            }
-          }
-        }
-
-        if (
-          pattern.urlPattern.length > 1 &&
-          pattern.urlPattern.endsWith("*") &&
-          params.request.url.startsWith(pattern.urlPattern.slice(0, -1))
-        ) {
-          if (
-            pattern.urlPattern.slice(0, -1).length > matchedPatternStr.length &&
-            flag
-          ) {
-            matchedPattern = pattern;
-            matchedPatternStr = pattern.urlPattern.slice(0, -1);
-          }
-        } else if (
-          pattern.urlPattern.length > 1 &&
-          pattern.urlPattern.startsWith("*") &&
-          params.request.url.endsWith(pattern.urlPattern.slice(1))
-        ) {
-          if (
-            pattern.urlPattern.slice(1).length > matchedPatternStr.length &&
-            flag
-          ) {
-            matchedPattern = pattern;
-            matchedPatternStr = pattern.urlPattern.slice(1);
-          }
-        } else {
-          const regex = /^[*]?([^*]+)[*]?$/g;
-
-          let match;
-          while ((match = regex.exec(pattern.urlPattern)) !== null) {
-            const res = params.request.url.includes(match[1]);
-
-            if (res) {
-              if (match[1].length > matchedPatternStr.length && flag) {
-                matchedPattern = pattern;
-                matchedPatternStr = match[1];
+                if (
+                  !requestDataLength ||
+                  requestDataLength !== payloadKeysLength
+                )
+                  flag = false;
+                else
+                  flag = Object.keys(payload).every(
+                    (key) => payload[key] === requestData[key]
+                  );
               }
             }
           }
-        }
-      });
+
+          if (
+            pattern.urlPattern.length > 1 &&
+            pattern.urlPattern.endsWith("*") &&
+            params.request.url.startsWith(pattern.urlPattern.slice(0, -1))
+          ) {
+            if (
+              pattern.urlPattern.slice(0, -1).length >
+                matchedPatternStr.length &&
+              flag
+            ) {
+              matchedPattern = pattern;
+              matchedPatternStr = pattern.urlPattern.slice(0, -1);
+            }
+          } else if (
+            pattern.urlPattern.length > 1 &&
+            pattern.urlPattern.startsWith("*") &&
+            params.request.url.endsWith(pattern.urlPattern.slice(1))
+          ) {
+            if (
+              pattern.urlPattern.slice(1).length > matchedPatternStr.length &&
+              flag
+            ) {
+              matchedPattern = pattern;
+              matchedPatternStr = pattern.urlPattern.slice(1);
+            }
+          } else {
+            const regex = /^[*]?([^*]+)[*]?$/g;
+
+            let match;
+            while ((match = regex.exec(pattern.urlPattern)) !== null) {
+              const res = params.request.url.includes(match[1]);
+
+              if (res) {
+                if (match[1].length > matchedPatternStr.length && flag) {
+                  matchedPattern = pattern;
+                  matchedPatternStr = match[1];
+                }
+              }
+            }
+          }
+        });
+      }
 
       let cacheMatchedPattern = null;
       let cacheMatchedPatternStr = "";
+
+      let resourceMatchedPattern = null;
+      let resourceMatchedPatternStr = "";
+
       if (!matchedPattern) {
         cacheDataUrlPatterns
           .filter((item) => item.cacheStatus)
@@ -672,48 +888,38 @@ async function intercept(data, page) {
           });
       }
 
-      // let payloadMatched = true;
+      if (!cacheMatchedPattern) {
+        resourceDataUrlPatterns
+          .map((item) => item.value)
+          .flat(Infinity)
+          .forEach((pattern) => {
+            const regex = /^[*]?([^*]+)[*]?$/g;
 
-      // if (matchedPattern && matchedPattern.payload) {
-      //   const payload = matchedPattern.payload;
-      //   const payloadKeysLength = Object.keys(payload).length;
+            let match;
+            while ((match = regex.exec(pattern.urlPattern)) !== null) {
+              const res =
+                params.request.url.includes(match[1]) &&
+                params.request.method === pattern.methodType &&
+                params.resourceType ===
+                  (pattern.resourceType ?? pattern.params.resourceType);
 
-      //   if (params.request.method.toLowerCase() === "get") {
-      //     const searchParamsKeyValue = new URL(params.request.url).searchParams;
-      //     const searchParamsKeysLength =
-      //       Object.keys(searchParamsKeyValue)?.length;
-
-      //     if (
-      //       !searchParamsKeysLength ||
-      //       searchParamsKeysLength !== payloadKeysLength
-      //     )
-      //       payloadMatched = false;
-      //     else {
-      //       payloadMatched = Object.keys(payload).every(
-      //         (key) => payload[key] === searchParamsKeyValue[key]
-      //       );
-      //     }
-      //   } else {
-      //     const requestData = commonUtils.isValidJSON(params.request.postData)
-      //       ? JSON.parse(params.request.postData)
-      //       : {};
-
-      //     const requestDataLength = Object.keys(requestData)?.length;
-
-      //     if (!requestDataLength || requestDataLength !== payloadKeysLength)
-      //       payloadMatched = false;
-      //     else
-      //       payloadMatched = Object.keys(payload).every(
-      //         (key) => payload[key] === requestData[key]
-      //       );
-      //   }
-      // }
-
+              if (res) {
+                if (
+                  match[1].length > resourceMatchedPatternStr.length &&
+                  pattern.methodType === params.request.method &&
+                  (pattern.resourceType ?? pattern.params.resourceType) ===
+                    params.resourceType
+                ) {
+                  resourceMatchedPattern = pattern;
+                  resourceMatchedPatternStr = match[1];
+                }
+              }
+            }
+          });
+      }
       const isExistLocalServer = folderUtils.folderExists(
         CONSTANT.LOCAL_SERVER
       );
-      // const projectName = path.dirname(matchedPattern.configPath);
-      // .match(/[^\/]+$/)[0];
 
       let localServerPath = `${name}εε${encodeURIComponent(url)}`;
 
@@ -746,55 +952,8 @@ async function intercept(data, page) {
 
         params.responseData = responseData;
 
-        if (!cacheMatchedPattern && !matchedPattern) {
-          // TODO 当本地启动服务器时 禁止缓存静态资源
-          // if (isEntiretyCacheFlag) {
-          let savePath = localServerProjectPath;
-          let newFilePathSuffix =
-            localServerProjectPath + "/" + params.request.method;
-          if (
-            ["Document", "Stylesheet", "Script", "Image"].includes(
-              params.resourceType
-            )
-          ) {
-            savePath = folderUtils.folderPath(
-              staticResourceName,
-              CONSTANT.OFFLINE_RESOURCE
-            );
-
-            newFilePathSuffix = savePath;
-          }
-
-          if (
-            isExistLocalServer &&
-            (params.responseStatusCode.toString().startsWith("2") ||
-              params.responseStatusCode.toString().startsWith("3"))
-          ) {
-            updateFileOrFolder(
-              { params, cacheStatus: false },
-              newFilePathSuffix,
-              savePath,
-              cacheDataUrlPatterns
-            );
-          } else {
-            const serverPath = folderUtils.folderPath(
-              CONSTANT.LOCAL_SERVER,
-              ""
-            );
-            folderUtils.createFolder(serverPath);
-            updateFileOrFolder(
-              { params, cacheStatus: false },
-              newFilePathSuffix,
-              savePath,
-              cacheDataUrlPatterns
-            );
-          }
-
-          // }
-        }
-
         //TODO
-        if (isEntiretyCacheFlag && responseData) {
+        if (isEntiretyCacheFlag && !resourceUrl && responseData) {
           const fileSuffix = {
             Document: ".html",
             Stylesheet: ".css",
@@ -809,7 +968,8 @@ async function intercept(data, page) {
 
           if (params.resourceType === "Document") {
             responseData = new JSDOM(responseData).serialize();
-            staticResourceName = encodeURIComponent(params.request.url);
+            staticResourceName =
+              encodeURIComponent(params.request.url) + +new Date();
 
             if (
               !folderUtils.folderExists(
@@ -828,11 +988,38 @@ async function intercept(data, page) {
             );
           } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
             try {
+              const type = [".css", ".js"];
+              let idx = nameArr.length - 1;
+              let fileName = "";
+              while (
+                idx >= 0 &&
+                !type.find((item) => fileName.includes(item))
+              ) {
+                if (!fileName) {
+                  fileName = nameArr[idx--];
+                } else if (type.find((item) => nameArr[idx].includes(item))) {
+                  fileName = nameArr[idx--];
+                } else idx--;
+              }
+
+              let prefix = "",
+                suffix = "",
+                saveName = "";
+              const suffixStr = fileName.includes(".css")
+                ? ".css"
+                : fileName.includes(".js")
+                ? ".js"
+                : "";
+              if (suffixStr) {
+                prefix = fileName.split(suffixStr)[0];
+                suffix = suffixStr;
+                saveName = `${prefix}${suffix?.split("?")[0]}`;
+              } else {
+                saveName = fileName;
+              }
+
               fs.writeFile(
-                `${staticResourcePath}/${staticResourceName}/${
-                  nameArr[nameArr.length - 1].split(curFileSuffix)[0] +
-                  curFileSuffix
-                }`,
+                `${staticResourcePath}/${staticResourceName}/${saveName}`,
                 responseData,
                 (err) => err && console.error("Error saving file:", err)
               );
@@ -840,14 +1027,113 @@ async function intercept(data, page) {
               console.log(e);
             }
           } else if (params.resourceType === "Image") {
-            const [prefix, suffix] = nameArr[nameArr.length - 1].split(".");
+            const type = [".png", ".svg", ".jpg", ".gif"];
+            let idx = nameArr.length - 1;
+            let fileName = "";
+            while (idx >= 0 && !type.find((item) => fileName.includes(item))) {
+              if (!fileName) {
+                fileName = nameArr[idx--];
+              } else if (type.find((item) => nameArr[idx].includes(item))) {
+                fileName = nameArr[idx--];
+              } else idx--;
+            }
+
+            let prefix = "",
+              suffix = "",
+              saveName = "";
+
+            const suffixStr = fileName.includes(".png")
+              ? ".png"
+              : fileName.includes(".svg")
+              ? ".svg"
+              : fileName.includes(".jpg")
+              ? ".jpg"
+              : fileName.includes(".gif")
+              ? ".gif"
+              : "";
+            if (suffixStr) {
+              prefix = fileName.split(suffixStr)[0];
+              suffix = suffixStr;
+              saveName = `${prefix}${suffix?.split("?")[0]}`;
+            } else {
+              saveName = fileName;
+            }
+
             fs.writeFile(
-              `${staticResourcePath}/${staticResourceName}/${prefix}.${
-                suffix?.split("?")[0]
-              }`,
+              `${staticResourcePath}/${staticResourceName}/${saveName}`,
               responseData,
               (err) => err && console.error("Error saving file:", err)
             );
+            // TODO buffer chunk
+            // if (
+            //   prevRequest?.request?.request.url.split("?")[0] !==
+            //   params.request.url.split("?")[0]
+            // ) {
+            //   fs.writeFile(
+            //     `${staticResourcePath}/${staticResourceName}/${saveName}`,
+            //     prevRequest.needSave ? prevRequest.data : responseData,
+            //     (err) => err && console.error("Error saving file:", err)
+            //   );
+
+            //   prevRequest = {
+            //     request: params,
+            //     data: Buffer.from(responseData, "base64"),
+            //     needSave: false,
+            //   };
+            // } else {
+            //   prevRequest.data = Buffer.concat([
+            //     prevRequest.data,
+            //     responseData,
+            //   ]);
+
+            //   prevRequest.needSave = true;
+            // }
+          }
+        }
+
+        if (!cacheMatchedPattern && !matchedPattern) {
+          // TODO 当本地启动服务器时 禁止缓存静态资源
+          if (!resourceUrl) {
+            let savePath = localServerProjectPath;
+            let newFilePath =
+              localServerProjectPath + "/" + params.request.method;
+            if (
+              ["Document", "Stylesheet", "Script", "Image"].includes(
+                params.resourceType
+              )
+            ) {
+              savePath = folderUtils.folderPath(
+                staticResourceName,
+                CONSTANT.OFFLINE_RESOURCE
+              );
+
+              newFilePath = savePath;
+            }
+
+            if (
+              isExistLocalServer &&
+              (params.responseStatusCode.toString().startsWith("2") ||
+                params.responseStatusCode.toString().startsWith("3"))
+            ) {
+              updateFileOrFolder(
+                { params, cacheStatus: false },
+                savePath,
+                newFilePath,
+                cacheDataUrlPatterns
+              );
+            } else {
+              const serverPath = folderUtils.folderPath(
+                CONSTANT.LOCAL_SERVER,
+                ""
+              );
+              folderUtils.createFolder(serverPath);
+              updateFileOrFolder(
+                { params, cacheStatus: false },
+                savePath,
+                newFilePath,
+                cacheDataUrlPatterns
+              );
+            }
           }
         }
       }
@@ -992,7 +1278,67 @@ async function intercept(data, page) {
             console.log(error);
           }
         }
-      } else {
+      }
+      // else if (resourceMatchedPattern) {
+      //   console.log(
+      //     `请求 ${requestUrl} 符合Resource模式 ${resourceMatchedPattern.urlPattern}`
+      //   );
+
+      //   // 根据需要执行相应的逻辑
+      //   if (
+      //     params.responseStatusCode
+      //     // || params.responseErrorReason === "InternetDisconnected"
+      //   ) {
+      //     console.log(
+      //       `matchedPath=${resourceMatchedPattern.path}δprojectName=${name}δurl=${url}δtype=Resource`
+      //     );
+      //     // modify responseData
+      //     responseData = resourceMatchedPattern.params.responseData;
+
+      //     responseData =
+      //       params.resourceType === "Image"
+      //         ? responseData
+      //         : JSON.stringify(responseData);
+      //     await Fetch.fulfillRequest({
+      //       requestId: params.requestId,
+      //       responseHeaders: params.responseHeaders ?? [
+      //         {
+      //           name: "Access-Control-Allow-Origin",
+      //           value: "*",
+      //         },
+      //       ],
+      //       responseCode:
+      //         resourceMatchedPattern.params.responseStatusCode ??
+      //         params.responseStatusCode,
+      //       body: Buffer.from(responseData).toString("base64"),
+      //     });
+      //   } else if (params.request.method !== "OPTIONS") {
+      //     const headersArray = Object.entries(params.request.headers).map(
+      //       ([name, value]) => ({ name, value: value?.toString() })
+      //     );
+      //     try {
+      //       await Fetch.continueRequest({
+      //         headers: headersArray,
+      //         requestId: params.requestId,
+      //         postData: params.request.postData
+      //           ? Buffer.from(
+      //               JSON.stringify(params.request.postData),
+      //               "utf8"
+      //             ).toString("base64")
+      //           : params.request.postData,
+      //       });
+      //     } catch (error) {
+      //       console.log(error);
+      //     }
+      //   } else {
+      //     try {
+      //       await Fetch.continueRequest({ requestId: params.requestId });
+      //     } catch (error) {
+      //       console.log(error);
+      //     }
+      //   }
+      // }
+      else {
         // console.log(`请求 ${requestUrl} 不匹配任何模式`);
         try {
           await Fetch.continueRequest({ requestId: params.requestId });
@@ -1024,8 +1370,14 @@ async function intercept(data, page) {
 
     // await Page.navigate({ url })
 
+    // 监听网络请求
+    Network.responseReceived(async (response) => {
+      if (response.response.mimeType.startsWith("image")) {
+      }
+    });
+
     // 在页面加载前执行你的操作
-    await page.goto(url);
+    await page.goto(resourceUrl || url);
 
     process.stdin.on("data", async (data) => {
       if (data?.toString().includes("Page: close")) {

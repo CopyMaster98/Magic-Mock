@@ -17,6 +17,7 @@
     "chrome-finder": "^1.0.7",
     "chrome-remote-interface": "^0.33.0",
     "crypto": "^1.0.1",
+    "http-server": "^14.1.1",
     "jsdom": "^25.0.1",
     "jsoneditor": "^10.0.3",
     "koa": "^2.15.3",
@@ -44,8 +45,8 @@
     "eject": "react-scripts eject",
     "cdp": "nodemon ./src/cdp/cdp.js",
     "backend": "nodemon ./src/backend/app.js",
-    "spawn": "nodemon ./src/cdp/createExec.js",
-    "backend-client-websocket": "nodemon ./src/cdp/client-websocket.js"
+    "backend-client-websocket": "nodemon ./src/cdp/client-websocket.js",
+    "liveServer": "nodemon ./src/backend/src/core/live-server.js"
   },
   "eslintConfig": {
     "extends": [
