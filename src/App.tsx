@@ -27,10 +27,10 @@ function App() {
     if (data) {
       const [matchedIdStr, projectNameStr, urlStr, portStr, typeStr] =
         data.split("δ");
-      const matchedId = matchedIdStr.split("matchedId=")[1].trim();
-      const projectName = projectNameStr.split("projectName=")[1].trim();
-      const url = urlStr.split("url=")[1].trim();
-      const type = typeStr.split("type=")[1].trim();
+      const matchedId = matchedIdStr.split("matchedId=")[1]?.trim() || "";
+      const projectName = projectNameStr.split("projectName=")[1]?.trim() || "";
+      const url = urlStr.split("url=")[1]?.trim() || "";
+      const type = typeStr.split("type=")[1]?.trim() || "";
       const mapName = `${projectName}&${url}`;
 
       if (!matchedMap.current.has(mapName))

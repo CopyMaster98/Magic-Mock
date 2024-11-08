@@ -61,34 +61,17 @@ const { JSDOM } = require("jsdom");
       const url = request.url();
       // 检查请求 URL 是否是目标 URL
       if (resourceUrl && !url.includes(resourceUrl)) {
-        if (!["stylesheet", "image", "script"].includes(request.resourceType()))
+        if (
+          !["stylesheet", "image", "script"].includes(request.resourceType()) ||
+          !url.includes("http")
+        )
           await request.continue();
         else {
-          const suffixArr = url
-            .split("/")
-            .filter((item) => !item.startsWith("?"));
-          let idx = suffixArr.length - 1;
-          let suffix = "";
-          const type = [".js", ".mjs", ".css", ".png", ".jpg", ".svg", ".gif"];
-          while (idx >= 0 && !type.find((item) => suffix.includes(item))) {
-            if (!suffix) suffix = suffixArr[idx--];
-            else if (type.find((item) => suffixArr[idx].includes(item))) {
-              suffix = suffixArr[idx--];
-            } else {
-              idx--;
-            }
-          }
+          const suffix = url.split("/").slice(3).join("/");
 
-          if (!files.find((item) => item === suffix.split("?")[0]))
-            await request.continue();
-          else {
-            let endStr = `${url.split(suffix)[1]}`.startsWith("/")
-              ? ""
-              : `${url.split(suffix)[1]}`;
-            await request.continue({
-              url: `${resourceUrl}/${suffix}${endStr}`,
-            });
-          }
+          await request.continue({
+            url: `${resourceUrl}/${suffix}`,
+          });
         }
       } else {
         await request.continue();
@@ -959,8 +942,11 @@ async function intercept(data, page) {
             Stylesheet: ".css",
             Script: ".js",
           };
-          const nameArr = params.request.url.split("?")[0].split("/");
-          const curFileSuffix = fileSuffix[params.resourceType];
+          const fileNameArr = params.request.url
+            .split("?")[0]
+            .split("/")
+            .slice(3);
+
           let staticResourcePath = `${process.cwd()}/Offline-Resource`;
 
           if (!folderUtils.folderExists(staticResourcePath))
@@ -968,8 +954,13 @@ async function intercept(data, page) {
 
           if (params.resourceType === "Document") {
             responseData = new JSDOM(responseData).serialize();
-            staticResourceName =
-              encodeURIComponent(params.request.url) + +new Date();
+            const urlName =
+              params.request.url.length > 50
+                ? params.request.url.includes(".com")
+                  ? params.request.url.split(".com")[0] + ".com"
+                  : params.request.url.slice(0, 50)
+                : params.request.url;
+            staticResourceName = encodeURIComponent(urlName) + +new Date();
 
             if (
               !folderUtils.folderExists(
@@ -987,83 +978,32 @@ async function intercept(data, page) {
               (err) => err && console.error("Error saving file:", err)
             );
           } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
-            try {
-              const type = [".css", ".js"];
-              let idx = nameArr.length - 1;
-              let fileName = "";
-              while (
-                idx >= 0 &&
-                !type.find((item) => fileName.includes(item))
-              ) {
-                if (!fileName) {
-                  fileName = nameArr[idx--];
-                } else if (type.find((item) => nameArr[idx].includes(item))) {
-                  fileName = nameArr[idx--];
-                } else idx--;
+            fs.mkdir(
+              `${staticResourcePath}/${staticResourceName}/${fileNameArr
+                .slice(0, fileNameArr.length - 1)
+                .join("/")}`,
+              { recursive: true },
+              (err) => {
+                if (err) {
+                  console.error("Error creating directory:", err);
+                } else {
+                  fs.writeFile(
+                    `${staticResourcePath}/${staticResourceName}/${fileNameArr.join(
+                      "/"
+                    )}`,
+                    responseData,
+                    (err) => {
+                      if (err) {
+                        console.error("Error writing file:", err);
+                      } else {
+                        console.log("File created successfully!");
+                      }
+                    }
+                  );
+                }
               }
-
-              let prefix = "",
-                suffix = "",
-                saveName = "";
-              const suffixStr = fileName.includes(".css")
-                ? ".css"
-                : fileName.includes(".js")
-                ? ".js"
-                : "";
-              if (suffixStr) {
-                prefix = fileName.split(suffixStr)[0];
-                suffix = suffixStr;
-                saveName = `${prefix}${suffix?.split("?")[0]}`;
-              } else {
-                saveName = fileName;
-              }
-
-              fs.writeFile(
-                `${staticResourcePath}/${staticResourceName}/${saveName}`,
-                responseData,
-                (err) => err && console.error("Error saving file:", err)
-              );
-            } catch (e) {
-              console.log(e);
-            }
-          } else if (params.resourceType === "Image") {
-            const type = [".png", ".svg", ".jpg", ".gif"];
-            let idx = nameArr.length - 1;
-            let fileName = "";
-            while (idx >= 0 && !type.find((item) => fileName.includes(item))) {
-              if (!fileName) {
-                fileName = nameArr[idx--];
-              } else if (type.find((item) => nameArr[idx].includes(item))) {
-                fileName = nameArr[idx--];
-              } else idx--;
-            }
-
-            let prefix = "",
-              suffix = "",
-              saveName = "";
-
-            const suffixStr = fileName.includes(".png")
-              ? ".png"
-              : fileName.includes(".svg")
-              ? ".svg"
-              : fileName.includes(".jpg")
-              ? ".jpg"
-              : fileName.includes(".gif")
-              ? ".gif"
-              : "";
-            if (suffixStr) {
-              prefix = fileName.split(suffixStr)[0];
-              suffix = suffixStr;
-              saveName = `${prefix}${suffix?.split("?")[0]}`;
-            } else {
-              saveName = fileName;
-            }
-
-            fs.writeFile(
-              `${staticResourcePath}/${staticResourceName}/${saveName}`,
-              responseData,
-              (err) => err && console.error("Error saving file:", err)
             );
+          } else if (params.resourceType === "Image") {
             // TODO buffer chunk
             // if (
             //   prevRequest?.request?.request.url.split("?")[0] !==
@@ -1088,6 +1028,31 @@ async function intercept(data, page) {
 
             //   prevRequest.needSave = true;
             // }
+            fs.mkdir(
+              `${staticResourcePath}/${staticResourceName}/${fileNameArr
+                .slice(0, fileNameArr.length - 1)
+                .join("/")}`,
+              { recursive: true },
+              (err) => {
+                if (err) {
+                  console.error("Error creating directory:", err);
+                } else {
+                  fs.writeFile(
+                    `${staticResourcePath}/${staticResourceName}/${fileNameArr.join(
+                      "/"
+                    )}`,
+                    responseData,
+                    (err) => {
+                      if (err) {
+                        console.error("Error writing file:", err);
+                      } else {
+                        console.log("File created successfully!");
+                      }
+                    }
+                  );
+                }
+              }
+            );
           }
         }
 
@@ -1111,28 +1076,36 @@ async function intercept(data, page) {
             }
 
             if (
-              isExistLocalServer &&
-              (params.responseStatusCode.toString().startsWith("2") ||
-                params.responseStatusCode.toString().startsWith("3"))
+              isEntiretyCacheFlag ||
+              (!isEntiretyCacheFlag &&
+                !["Document", "Stylesheet", "Script", "Image"].includes(
+                  params.resourceType
+                ))
             ) {
-              updateFileOrFolder(
-                { params, cacheStatus: false },
-                savePath,
-                newFilePath,
-                cacheDataUrlPatterns
-              );
-            } else {
-              const serverPath = folderUtils.folderPath(
-                CONSTANT.LOCAL_SERVER,
-                ""
-              );
-              folderUtils.createFolder(serverPath);
-              updateFileOrFolder(
-                { params, cacheStatus: false },
-                savePath,
-                newFilePath,
-                cacheDataUrlPatterns
-              );
+              if (
+                isExistLocalServer &&
+                (params.responseStatusCode.toString().startsWith("2") ||
+                  params.responseStatusCode.toString().startsWith("3"))
+              ) {
+                updateFileOrFolder(
+                  { params, cacheStatus: false },
+                  savePath,
+                  newFilePath,
+                  cacheDataUrlPatterns
+                );
+              } else {
+                const serverPath = folderUtils.folderPath(
+                  CONSTANT.LOCAL_SERVER,
+                  ""
+                );
+                folderUtils.createFolder(serverPath);
+                updateFileOrFolder(
+                  { params, cacheStatus: false },
+                  savePath,
+                  newFilePath,
+                  cacheDataUrlPatterns
+                );
+              }
             }
           }
         }
