@@ -268,18 +268,21 @@ router.put("/project/:projectName", async (ctx) => {
     if (folderExists(`${projectPath}/ζζconfig.json`)) {
       let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
       if (content) content = JSON.parse(content);
-      const fileUrl = content?.currentUrl?.filter(
+      const fileUrl = (content?.currentUrl || [])?.filter(
         (item) => item.type !== "resource"
       );
-      isNewUrl =
+      if (
         !fileUrl.length ||
-        (fileUrl.length > 0 && fileUrl[0].url !== urlItem.url);
+        (fileUrl.length > 0 && fileUrl[0].url !== urlItem.url)
+      ) {
+        isNewUrl = urlItem;
+      }
       fs.writeFileSync(
         `${projectPath}/ζζconfig.json`,
         JSON.stringify(
           {
             ...content,
-            currentUrl: fileUrl,
+            currentUrl: [urlItem],
           },
           null,
           2
