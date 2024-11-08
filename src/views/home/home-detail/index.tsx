@@ -294,7 +294,7 @@ const HomeDetail: React.FC = () => {
         );
         setSelectedValue((oldValue: any) => ({
           ...oldValue,
-          [item.id]: currentUrl.length
+          [item.id]: currentUrl?.length
             ? currentUrl
             : [
                 `url_${item.config.urls.find(
@@ -394,7 +394,7 @@ const HomeDetail: React.FC = () => {
             );
             setSelectedValue((oldValue: any) => ({
               ...oldValue,
-              [item.id]: currentUrl.length
+              [item.id]: currentUrl?.length
                 ? currentUrl
                 : [
                     `url_${item.config.urls.find(
