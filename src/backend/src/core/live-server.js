@@ -14,8 +14,8 @@ const localPath = path.join(
 console.log(localPath, path.dirname(__dirname));
 // 启动 live-server
 const server = spawn(
-  "npx",
-  ["http-server", `${localPath}/`, `--port=${port}`, "--cors"],
+  "npm",
+  ["run", "create-server", "--", `${localPath}/`, `--port=${port}`, "--cors"],
   {
     shell: true,
   }

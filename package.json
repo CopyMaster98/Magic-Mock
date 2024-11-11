@@ -46,7 +46,8 @@
     "cdp": "nodemon ./src/cdp/cdp.js",
     "backend": "nodemon ./src/backend/app.js",
     "backend-client-websocket": "nodemon ./src/cdp/client-websocket.js",
-    "liveServer": "nodemon ./src/backend/src/core/live-server.js"
+    "liveServer": "nodemon ./src/backend/src/core/live-server.js",
+    "create-server": "http-server"
   },
   "eslintConfig": {
     "extends": [

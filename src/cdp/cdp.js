@@ -62,7 +62,9 @@ const { JSDOM } = require("jsdom");
       // 检查请求 URL 是否是目标 URL
       if (resourceUrl && !url.includes(resourceUrl)) {
         if (
-          !["stylesheet", "image", "script"].includes(request.resourceType()) ||
+          !["stylesheet", "image", "script", "font"].includes(
+            request.resourceType()
+          ) ||
           !url.includes("http")
         )
           await request.continue();
