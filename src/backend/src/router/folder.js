@@ -46,7 +46,7 @@ router.post("/create", async (ctx) => {
         JSON.stringify(
           {
             urls: [url],
-            staticResourceCache: true,
+            staticResourceCache: false,
           },
           null,
           2
@@ -64,6 +64,7 @@ router.post("/create", async (ctx) => {
 });
 
 router.get("/info", async (ctx, next) => {
+  const { isResource } = ctx.query;
   const path = folderPath("");
   const isExist = folderExists(path);
   const resourcePath = folderPath("", OFFLINE_RESOURCE);
@@ -78,29 +79,35 @@ router.get("/info", async (ctx, next) => {
       .map((path) => {
         const currentResourcePath = folderPath(`${resourcePath}/${path}`);
         const stats = folderInfo(currentResourcePath);
-        const resourceCacheFiles = fs
-          .readdirSync(currentResourcePath)
-          .filter((item) => item.endsWith(".request.json"));
+        let cacheData = [];
 
-        const cacheData = resourceCacheFiles
-          .map((item) => {
-            const content = folderContent(
-              folderPath(`${currentResourcePath}/${item}`)
-            );
-            let fileContent = null;
-            try {
-              if (content.length) fileContent = JSON.parse(content);
-            } catch (error) {}
-            return {
-              id: hashUtils.getHash(item),
-              name: item,
-              method: fileContent ? fileContent?.params?.request?.method : null,
-              stats: folderInfo(folderPath(`${currentResourcePath}/${item}`)),
-              content: fileContent,
-              type: "cache",
-            };
-          })
-          .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
+        if (isResource) {
+          const resourceCacheFiles = fs
+            .readdirSync(currentResourcePath)
+            .filter((item) => item.endsWith(".request.json"));
+
+          cacheData = resourceCacheFiles
+            .map((item) => {
+              const content = folderContent(
+                folderPath(`${currentResourcePath}/${item}`)
+              );
+              let fileContent = null;
+              try {
+                if (content.length) fileContent = JSON.parse(content);
+              } catch (error) {}
+              return {
+                id: hashUtils.getHash(item),
+                name: item,
+                method: fileContent
+                  ? fileContent?.params?.request?.method
+                  : null,
+                stats: folderInfo(folderPath(`${currentResourcePath}/${item}`)),
+                content: fileContent,
+                type: "cache",
+              };
+            })
+            .sort((a, b) => b.stats.birthtimeMs - a.stats.birthtimeMs);
+        }
 
         return {
           key: `resourceγγ${path}`,
@@ -149,7 +156,7 @@ router.get("/info", async (ctx, next) => {
           rules,
           config: {
             urls: [],
-            staticResourceCache: true,
+            staticResourceCache: false,
           },
           cacheData: getLocalServerProjectData(item),
           resource: resourceItems,
@@ -224,71 +231,37 @@ router.put("/project/:projectName", async (ctx) => {
     folderPath("", LOCAL_SERVER) + "/" + newProjectName;
   const files = fs.readdirSync(folderPath(""));
 
-  const resourceItem = urlArr.find((item) => item.type === "resource");
-
-  let isResource = false;
   let isNewUrl = false;
+  let oldFileContent = null;
 
-  if (resourceItem) {
-    isResource = true;
-
-    const currentUrl = [resourceItem];
-
-    if (urlItem) currentUrl.push(urlItem);
-
-    if (!folderExists(`${projectPath}/ζζconfig.json`)) {
-      fs.writeFileSync(
-        `${projectPath}/ζζconfig.json`,
-        JSON.stringify(
-          {
-            currentUrl,
-            staticResourceCache: true,
-          },
-          null,
-          2
-        )
-      );
-    } else {
-      let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
-      if (content) content = JSON.parse(content);
-
-      fs.writeFileSync(
-        `${projectPath}/ζζconfig.json`,
-        JSON.stringify(
-          {
-            ...content,
-            currentUrl,
-          },
-          null,
-          2
-        )
-      );
-    }
+  if (!folderExists(`${projectPath}/ζζconfig.json`)) {
+    fs.writeFileSync(
+      `${projectPath}/ζζconfig.json`,
+      JSON.stringify(
+        {
+          currentUrl: urlArr,
+          staticResourceCache: false,
+        },
+        null,
+        2
+      )
+    );
   } else {
-    if (folderExists(`${projectPath}/ζζconfig.json`)) {
-      let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
-      if (content) content = JSON.parse(content);
-      const fileUrl = (content?.currentUrl || [])?.filter(
-        (item) => item.type !== "resource"
-      );
-      if (
-        !fileUrl.length ||
-        (fileUrl.length > 0 && fileUrl[0].url !== urlItem.url)
-      ) {
-        isNewUrl = urlItem;
-      }
-      fs.writeFileSync(
-        `${projectPath}/ζζconfig.json`,
-        JSON.stringify(
-          {
-            ...content,
-            currentUrl: [urlItem],
-          },
-          null,
-          2
-        )
-      );
-    }
+    let content = fs.readFileSync(`${projectPath}/ζζconfig.json`, "utf8");
+    if (content) content = JSON.parse(content);
+
+    oldFileContent = content;
+    fs.writeFileSync(
+      `${projectPath}/ζζconfig.json`,
+      JSON.stringify(
+        {
+          ...content,
+          currentUrl: urlArr,
+        },
+        null,
+        2
+      )
+    );
   }
 
   let isExist = folderExists(newProjectPath);
@@ -303,19 +276,29 @@ router.put("/project/:projectName", async (ctx) => {
   )
     isExist = true;
 
-  if (isExist) {
-    if (isResource || isNewUrl) {
-      ctx.response.body = {
-        message: "修改成功",
-        statusCode: 0,
-      };
-    } else {
-      ctx.response.status = 500;
-      ctx.response.body = {
-        message: "项目名字已存在",
-        statusCode: -1,
-      };
-    }
+  if (
+    oldFileContent &&
+    urlArr.length === oldFileContent.currentUrl?.length &&
+    urlArr.every((item) =>
+      oldFileContent.currentUrl?.find(
+        (url) => url.url === item.url && url.type === item.type
+      )
+    )
+  )
+    isNewUrl = false;
+  else isNewUrl = true;
+
+  if (isExist && isNewUrl) {
+    ctx.response.body = {
+      message: "修改成功",
+      statusCode: 0,
+    };
+  } else {
+    ctx.response.status = 500;
+    ctx.response.body = {
+      message: "项目名字已存在",
+      statusCode: -1,
+    };
 
     return;
   }
@@ -421,7 +404,7 @@ router.delete("/project/:projectName/url", async (ctx) => {
 
   const fileContent = JSON.parse(config);
   const { urls } = fileContent;
-  const newUrls = urls.filter((item) => item !== deleteUrl);
+  const newUrls = urls.filter((item) => `url_${item}` !== deleteUrl);
 
   try {
     fs.writeFileSync(

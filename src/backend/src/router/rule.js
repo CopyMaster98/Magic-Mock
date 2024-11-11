@@ -2,10 +2,16 @@ const Router = require("koa-router");
 const fs = require("fs");
 const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
-const { renameFile, findFile } = require("../utils/folder");
 const { LOCAL_SERVER } = require("../constants");
 const { formatRule } = require("../utils/rule");
-const { folderPath, folderExists, createFile, folderContent } = folderUtils;
+const {
+  folderPath,
+  folderExists,
+  createFile,
+  folderContent,
+  renameFile,
+  findFile,
+} = folderUtils;
 
 router.post("/create", async (ctx) => {
   const {

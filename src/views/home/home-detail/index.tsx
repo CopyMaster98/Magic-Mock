@@ -20,6 +20,7 @@ import {
   ChromeOutlined,
   DeleteOutlined,
   CloudOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
 import { useData } from "../../../context";
 import { FolderAPI, ProjectAPI } from "../../../api";
@@ -62,6 +63,7 @@ const HomeDetail: React.FC = () => {
       fn({
         name: project.name,
         url: url,
+        isEntiretyCache: project?.config?.staticResourceCache,
       })
         .then((res) => {
           console.log(res);
@@ -189,7 +191,7 @@ const HomeDetail: React.FC = () => {
           color={isResource ? "#fa541c" : "#52c41a"}
           style={{ marginLeft: "10px" }}
         >
-          <span>{isResource ? "Localhost" : "Server"}</span>
+          <span>{isResource ? "Local" : "Server"}</span>
         </Tag>
         {/* <span
           style={{ color: "rgba(0, 0, 0, .5)" }}
@@ -223,6 +225,8 @@ const HomeDetail: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState(
     "Please enter the correct url address!"
   );
+
+  const isDeleteRef = useRef(false);
 
   const onUrlChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(event.target.value);
@@ -287,11 +291,11 @@ const HomeDetail: React.FC = () => {
   const lastSelectedValue = useRef([]);
 
   const handleChangeProjectUrl = useCallback(
-    async (item: any) => {
+    async (item: any, key?: string) => {
+      const currentUrl = item.config?.currentUrl?.map(
+        (item: any) => `${item.type}_${item.url}`
+      );
       if (!selectedValue[item.id].length) {
-        const currentUrl = item.config?.currentUrl?.map(
-          (item: any) => `${item.type}_${item.url}`
-        );
         setSelectedValue((oldValue: any) => ({
           ...oldValue,
           [item.id]: currentUrl?.length
@@ -307,32 +311,24 @@ const HomeDetail: React.FC = () => {
       }
       if (
         selectedValue[item.id].length === 1 &&
-        selectedValue[item.id]?.find(
-          (_item: any) => _item === `${item.type}_${item.url}`
-        )
+        currentUrl?.every((_item: any) => _item === selectedValue[item.id][0])
       )
         return;
 
-      //   console.log(selectedValue[item.id])
-      // const selectedUrl = selectedValue[item.id]?.find((url: string) =>
-      //   url.startsWith("url_")
-      // );
+      const ans = key
+        ? selectedValue[item.id].filter((item: string) => item !== key)
+        : selectedValue[item.id];
 
-      // if (!selectedUrl) return;
+      if (!ans.length) return;
 
       try {
         const response = await FolderAPI.updateFolder({
           pathname: item.name,
-          url: selectedValue[item.id],
+          url: ans,
           id: item.id,
         });
 
-        if (response.code !== -1 && selectedValue[item.id]) {
-          // setSelectedValue((oldValue: any) => ({
-          //   ...oldValue,
-          //   [item.id]: lastSelectedValue.current,
-          // }));
-        } else {
+        if (response.code === -1 || !selectedValue[item.id]) {
           lastSelectedValue.current = selectedValue[item.id];
         }
       } catch (error) {
@@ -375,6 +371,32 @@ const HomeDetail: React.FC = () => {
     },
     [selectedValue]
   );
+
+  const urlInfo = useCallback((item: any) => {
+    const url = item.config?.currentUrl?.find(
+      (item: any) => item.type === "url"
+    )?.url;
+    const resource = item.config?.currentUrl?.find(
+      (item: any) => item.type === "resource"
+    )?.url;
+    return (
+      <>
+        {url && (
+          <div style={{ marginBottom: "10px" }}>
+            <ChromeOutlined style={{ marginRight: "10px" }} />
+            <span>{url || item.url}</span>
+          </div>
+        )}
+
+        {resource && (
+          <div style={{ marginBottom: "10px" }}>
+            <HomeOutlined style={{ marginRight: "10px" }} />
+            <span>{resource}</span>
+          </div>
+        )}
+      </>
+    );
+  }, []);
 
   return (
     <Content
@@ -449,7 +471,10 @@ const HomeDetail: React.FC = () => {
                         [item.id]: e,
                       }));
                     }}
-                    onBlur={() => handleChangeProjectUrl(item)}
+                    onBlur={() =>
+                      !isDeleteRef.current && handleChangeProjectUrl(item)
+                    }
+                    onDeselect={(e) => handleChangeProjectUrl(item, e)}
                     disabled={item.status}
                     dropdownRender={(menu) => (
                       <>
@@ -551,10 +576,12 @@ const HomeDetail: React.FC = () => {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                isDeleteRef.current = true;
                                 handleDeleteProjectUrl(
                                   item,
                                   option.value as string
                                 );
+                                isDeleteRef.current = false;
                               }}
                             />
                           )}
@@ -589,10 +616,7 @@ const HomeDetail: React.FC = () => {
                   </Button>
                 }
               />
-              <div style={{ marginBottom: "10px" }}>
-                <ChromeOutlined style={{ marginRight: "10px" }} />
-                <span>{item.url}</span>
-              </div>
+              {urlInfo(item)}
 
               <div style={{ marginBottom: "10px" }}>
                 <UnorderedListOutlined style={{ marginRight: "10px" }} />

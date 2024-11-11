@@ -290,29 +290,29 @@ const DetailInfo: React.FC<{
     setCheckList(checkList);
   }, []);
 
-  const handleChangeStatus = useCallback(
-    async (project: any, status: boolean) => {
-      setLoading(status);
+  // const handleChangeStatus = useCallback(
+  //   async (project: any, status: boolean) => {
+  //     setLoading(status);
 
-      const fn = status ? startProject : stopProject;
+  //     const fn = status ? startProject : stopProject;
 
-      fn({
-        name: project?._name,
-        url: project?._url,
-      })
-        .then((res) => {
-          console.log(res);
-        })
-        .finally(() => {
-          setLoading(false);
-          if (!status) {
-            matchedMap?.set(`${project._name}&${project._url}`, new Map());
-          }
-          setRefresh();
-        });
-    },
-    [matchedMap, setRefresh]
-  );
+  //     fn({
+  //       name: project?._name,
+  //       url: project?._url,
+  //     })
+  //       .then((res) => {
+  //         console.log(res);
+  //       })
+  //       .finally(() => {
+  //         setLoading(false);
+  //         if (!status) {
+  //           matchedMap?.set(`${project._name}&${project._url}`, new Map());
+  //         }
+  //         setRefresh();
+  //       });
+  //   },
+  //   [matchedMap, setRefresh]
+  // );
 
   const handleBack = useCallback(() => {
     setTimeout(() => {

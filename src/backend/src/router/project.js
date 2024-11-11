@@ -9,9 +9,8 @@ router.get("/status", async (ctx) => {
 });
 
 router.post("/start", async (ctx, next) => {
-  const { name, url, isEntiretyCache = true } = ctx.request.body;
+  const { name, url, isEntiretyCache } = ctx.request.body;
 
-  let isLiveServer = false;
   let resourceUrl = null;
   // todo 本地resource服务器启动
   const resourceItem = url.find((item) => item.type === "resource");
@@ -30,9 +29,6 @@ router.post("/start", async (ctx, next) => {
         reject
       );
     });
-
-    isLiveServer = true;
-    console.log(url);
   }
 
   let port = null;

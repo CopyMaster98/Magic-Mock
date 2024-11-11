@@ -926,7 +926,7 @@ async function intercept(data, page) {
 
         if (responseData) responseData = Buffer.from(responseData, "base64");
 
-        if (params.resourceType !== "Image")
+        if (!["Image", "Font"].includes(params.resourceType))
           responseData = responseData.toString();
 
         try {
@@ -1003,7 +1003,10 @@ async function intercept(data, page) {
                 }
               }
             );
-          } else if (params.resourceType === "Image") {
+          } else if (
+            params.resourceType === "Image" ||
+            params.resourceType === "Font"
+          ) {
             // TODO buffer chunk
             // if (
             //   prevRequest?.request?.request.url.split("?")[0] !==
@@ -1041,7 +1044,7 @@ async function intercept(data, page) {
                     `${staticResourcePath}/${staticResourceName}/${fileNameArr.join(
                       "/"
                     )}`,
-                    responseData,
+                    Buffer.from(responseData, "base64"),
                     (err) => {
                       if (err) {
                         console.error("Error writing file:", err);
@@ -1063,7 +1066,7 @@ async function intercept(data, page) {
             let newFilePath =
               localServerProjectPath + "/" + params.request.method;
             if (
-              ["Document", "Stylesheet", "Script", "Image"].includes(
+              ["Document", "Stylesheet", "Script", "Image", "Font"].includes(
                 params.resourceType
               )
             ) {
@@ -1078,7 +1081,7 @@ async function intercept(data, page) {
             if (
               isEntiretyCacheFlag ||
               (!isEntiretyCacheFlag &&
-                !["Document", "Stylesheet", "Script", "Image"].includes(
+                !["Document", "Stylesheet", "Script", "Image", "Font"].includes(
                   params.resourceType
                 ))
             ) {

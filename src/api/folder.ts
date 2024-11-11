@@ -10,8 +10,14 @@ const createFolder = (
   return post("/folder/create", data, config);
 };
 
-const getFolderInfo = (config = {}) => {
-  return get("/folder/info", config);
+const getFolderInfo = (
+  info?: {
+    isResource: boolean;
+  },
+  config = {}
+) => {
+  const filter = info?.isResource ? "?isResource=true" : "";
+  return get(`/folder/info${filter}`, config);
 };
 
 const getFolderDetail = (projectId: string, config = {}, callback: any) => {

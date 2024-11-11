@@ -45,7 +45,9 @@ const Detail: React.FC = () => {
   }, [currentPathname, projectData]);
 
   useEffect(() => {
-    FolderAPI.getFolderInfo().then((res: any) => {
+    FolderAPI.getFolderInfo({
+      isResource: true,
+    }).then((res: any) => {
       const data = res.resource?.map((item: any) => {
         const folderInfo: any = {
           id: item.id,

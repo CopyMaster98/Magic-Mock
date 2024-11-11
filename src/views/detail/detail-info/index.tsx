@@ -40,7 +40,7 @@ import Search from "antd/es/input/Search";
 import { updateCacheInfo } from "../../../api/cache";
 import { startProject, stopProject } from "../../../api/project";
 import { clipboard } from "../../../hooks";
-import { RuleAPI } from "../../../api";
+import { ResourceAPI, RuleAPI } from "../../../api";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -307,6 +307,7 @@ const DetailInfo: React.FC<{
       fn({
         name: project?._name,
         url: project?._url,
+        isEntiretyCache: project?.config?.staticResourceCache,
       })
         .then((res) => {
           console.log(res);
@@ -897,6 +898,17 @@ const DetailInfo: React.FC<{
     setRefreshNumber((oldValue) => oldValue + 1);
   }, [ruleStatus]);
 
+  const handleUpdateResource = useCallback(
+    async (status: boolean) => {
+      console.log(project, status);
+      await ResourceAPI.updateResourceInfo({
+        projectId: project.id,
+        status,
+      });
+    },
+    [project]
+  );
+
   return (
     <>
       <Breadcrumb
@@ -1027,7 +1039,11 @@ const DetailInfo: React.FC<{
                 <div className="switches">
                   <div>
                     <span>Cache Static Resources</span>
-                    <Switch defaultChecked />
+                    <Switch
+                      value={project?.config?.staticResourceCache}
+                      disabled={project?._status}
+                      onChange={(e) => handleUpdateResource(e)}
+                    />
                   </div>
                 </div>
               )}

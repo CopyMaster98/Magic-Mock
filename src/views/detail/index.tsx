@@ -59,6 +59,7 @@ const Detail: React.FC = () => {
           _status: +item.status,
           _url: item.url,
           _name: item.name,
+          config: item.config,
         };
         if (item.rules.length > 0) {
           folderInfo.children = [...item.rules]?.map((rule: any) => {
