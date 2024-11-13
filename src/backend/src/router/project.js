@@ -1,5 +1,6 @@
 const Router = require("koa-router");
-const { portUtils } = require("../utils/index");
+const { portUtils, folderUtils } = require("../utils/index");
+const CONSTANT = require("../constants/index");
 const router = new Router();
 const { createChildProcess } = require("../../../cdp/createExec.js");
 const { createLiveServer } = require("../core/createLiveServer");
@@ -15,6 +16,21 @@ router.post("/start", async (ctx, next) => {
   // todo 本地resource服务器启动
   const resourceItem = url.find((item) => item.type === "resource");
   if (resourceItem) {
+    const resourceDir = folderUtils.folderPath(
+      encodeURIComponent(resourceItem.url),
+      CONSTANT.OFFLINE_RESOURCE
+    );
+    if (!folderUtils.folderExists(resourceDir)) {
+      ctx.response.status = 500;
+      ctx.response.body = {
+        message: "Resource Server cannot find",
+        statusCode: -1,
+      };
+
+      ctx.set("notification", true);
+      return;
+    }
+
     let port = portUtils.getRandomPort();
     while (portUtils.handleExistPort(port)) {
       port = portUtils.getRandomPort();

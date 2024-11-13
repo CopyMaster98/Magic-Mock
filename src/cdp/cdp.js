@@ -47,20 +47,20 @@ const { JSDOM } = require("jsdom");
 
   if (resourceUrl) {
     await page.setRequestInterception(true);
-    let files = [];
-    try {
-      files = fs.readdirSync(
-        folderUtils.folderPath(
-          encodeURIComponent(resourceName),
-          CONSTANT.OFFLINE_RESOURCE
-        )
-      );
-    } catch (error) {}
+    // let files = [];
+    // try {
+    //   files = fs.readdirSync(
+    //     folderUtils.folderPath(
+    //       encodeURIComponent(resourceName),
+    //       CONSTANT.OFFLINE_RESOURCE
+    //     )
+    //   );
+    // } catch (error) {}
 
     page.on("request", async (request) => {
       const url = request.url();
       // 检查请求 URL 是否是目标 URL
-      if (resourceUrl && !url.includes(resourceUrl)) {
+      if (resourceUrl) {
         if (
           !["stylesheet", "image", "script", "font"].includes(
             request.resourceType()
@@ -69,8 +69,22 @@ const { JSDOM } = require("jsdom");
         )
           await request.continue();
         else {
-          const suffix = url.split("/").slice(3).join("/");
+          let suffix = url.split("/").slice(3).join("/");
 
+          let hasSuffix = false;
+
+          let suffixArr = suffix.split("?");
+
+          if (suffixArr.length === 2 && !suffix[0]) hasSuffix = true;
+          else if (
+            suffixArr.length > 2 &&
+            suffixArr[suffixArr.length - 2].endsWith("/")
+          ) {
+            hasSuffix = true;
+          }
+
+          if (hasSuffix)
+            suffix = hashUtils.getHash(suffix.slice(1)) + suffix.slice(1);
           await request.continue({
             url: `${resourceUrl}/${suffix}`,
           });
@@ -228,7 +242,9 @@ async function intercept(data, page) {
   let config = {};
   let urlPatterns = [];
   let staticResourceName = "";
+  let folderName = "";
   const cacheDataConfig = {};
+  const urlDirMap = new Map();
   let resourceDataConfig = [];
   let prevRequest = {
     data: null,
@@ -944,44 +960,75 @@ async function intercept(data, page) {
             Stylesheet: ".css",
             Script: ".js",
           };
-          const fileNameArr = params.request.url
-            .split("?")[0]
-            .split("/")
-            .slice(3);
+          let fileNameArr = params.request.url.split("?");
+
+          if (fileNameArr.length > 1)
+            fileNameArr = fileNameArr.slice(0, fileNameArr.length - 1);
+
+          fileNameArr = fileNameArr.join("?").split("/").slice(3);
+
+          if (
+            !fileNameArr[0] &&
+            params.resourceType !== "Document" &&
+            params.request.url.includes("?")
+          ) {
+            fileNameArr = [hashUtils.getHash(params.request.url.split("?")[1])];
+          }
 
           let staticResourcePath = `${process.cwd()}/Offline-Resource`;
 
           if (!folderUtils.folderExists(staticResourcePath))
             folderUtils.createFolder(staticResourcePath);
 
+          const urlName = params.request.url.includes(".com")
+            ? params.request.url.split(".com")[0] + ".com"
+            : params.request.url;
+
+          let urlNameArr = urlName.split("/");
+          let currentUrlName = "",
+            idx = urlNameArr.length - 1;
+          while (idx >= 0) {
+            let urlName = urlNameArr.slice(0, idx).join("/") + "/";
+            if (urlDirMap.has(urlName)) {
+              currentUrlName = urlName;
+              break;
+            }
+            idx--;
+          }
+
+          const newUrl = new URL(urlName);
+          staticResourceName = newUrl.pathname.endsWith("/")
+            ? newUrl.pathname.slice(0, newUrl.pathname.length - 1)
+            : newUrl.pathname;
+          if (currentUrlName) {
+            folderName =
+              urlDirMap.get(currentUrlName) +
+              (urlDirMap.get(currentUrlName)?.endsWith("/") ? "" : "/");
+          } else {
+            folderName = urlDirMap.size
+              ? urlDirMap.get("root")
+              : encodeURIComponent(newUrl.origin) + +new Date();
+          }
+          if (!urlDirMap.size) {
+            urlDirMap.set(newUrl.origin, folderName);
+            urlDirMap.set("root", folderName);
+          }
+
+          if (!urlDirMap.has(urlName)) urlDirMap.set(urlName, folderName);
+
           if (params.resourceType === "Document") {
             responseData = new JSDOM(responseData).serialize();
-            const urlName =
-              params.request.url.length > 50
-                ? params.request.url.includes(".com")
-                  ? params.request.url.split(".com")[0] + ".com"
-                  : params.request.url.slice(0, 50)
-                : params.request.url;
-            staticResourceName = encodeURIComponent(urlName) + +new Date();
-
-            if (
-              !folderUtils.folderExists(
-                `${staticResourcePath}/${staticResourceName}`
-              )
-            )
-              folderUtils.createFolder(
-                `${staticResourcePath}/${staticResourceName}`
-              );
+            const homePagePath = `${staticResourcePath}/${folderName}${staticResourceName}`;
+            if (!folderUtils.folderExists(homePagePath))
+              folderUtils.createFolder(homePagePath);
             fs.writeFile(
-              `${staticResourcePath}/${staticResourceName}/index${
-                fileSuffix[params.resourceType]
-              }`,
+              `${homePagePath}/index${fileSuffix[params.resourceType]}`,
               responseData,
               (err) => err && console.error("Error saving file:", err)
             );
           } else if (["Stylesheet", "Script"].includes(params.resourceType)) {
             fs.mkdir(
-              `${staticResourcePath}/${staticResourceName}/${fileNameArr
+              `${staticResourcePath}/${folderName}/${fileNameArr
                 .slice(0, fileNameArr.length - 1)
                 .join("/")}`,
               { recursive: true },
@@ -990,7 +1037,7 @@ async function intercept(data, page) {
                   console.error("Error creating directory:", err);
                 } else {
                   fs.writeFile(
-                    `${staticResourcePath}/${staticResourceName}/${fileNameArr.join(
+                    `${staticResourcePath}/${folderName}/${fileNameArr.join(
                       "/"
                     )}`,
                     responseData,
@@ -1015,7 +1062,7 @@ async function intercept(data, page) {
             //   params.request.url.split("?")[0]
             // ) {
             //   fs.writeFile(
-            //     `${staticResourcePath}/${staticResourceName}/${saveName}`,
+            //     `${staticResourcePath}/${folderName}${staticResourceName}/${saveName}`,
             //     prevRequest.needSave ? prevRequest.data : responseData,
             //     (err) => err && console.error("Error saving file:", err)
             //   );
@@ -1034,7 +1081,7 @@ async function intercept(data, page) {
             //   prevRequest.needSave = true;
             // }
             fs.mkdir(
-              `${staticResourcePath}/${staticResourceName}/${fileNameArr
+              `${staticResourcePath}/${folderName}/${fileNameArr
                 .slice(0, fileNameArr.length - 1)
                 .join("/")}`,
               { recursive: true },
@@ -1043,7 +1090,7 @@ async function intercept(data, page) {
                   console.error("Error creating directory:", err);
                 } else {
                   fs.writeFile(
-                    `${staticResourcePath}/${staticResourceName}/${fileNameArr.join(
+                    `${staticResourcePath}/${folderName}/${fileNameArr.join(
                       "/"
                     )}`,
                     Buffer.from(responseData, "base64"),
@@ -1073,7 +1120,7 @@ async function intercept(data, page) {
               )
             ) {
               savePath = folderUtils.folderPath(
-                staticResourceName,
+                folderName,
                 CONSTANT.OFFLINE_RESOURCE
               );
 

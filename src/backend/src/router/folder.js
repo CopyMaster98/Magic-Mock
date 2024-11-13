@@ -288,7 +288,7 @@ router.put("/project/:projectName", async (ctx) => {
     isNewUrl = false;
   else isNewUrl = true;
 
-  if (isExist && isNewUrl) {
+  if (isNewUrl) {
     ctx.response.body = {
       message: "修改成功",
       statusCode: 0,

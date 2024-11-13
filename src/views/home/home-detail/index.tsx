@@ -62,7 +62,7 @@ const HomeDetail: React.FC = () => {
 
       fn({
         name: project.name,
-        url: url,
+        url,
         isEntiretyCache: project?.config?.staticResourceCache,
       })
         .then((res) => {
@@ -381,7 +381,7 @@ const HomeDetail: React.FC = () => {
     )?.url;
     return (
       <>
-        {url && (
+        {(url || (!url && !resource)) && (
           <div style={{ marginBottom: "10px" }}>
             <ChromeOutlined style={{ marginRight: "10px" }} />
             <span>{url || item.url}</span>

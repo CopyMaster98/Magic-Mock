@@ -300,13 +300,21 @@ const DetailInfo: React.FC<{
 
   const handleChangeStatus = useCallback(
     async (project: any, status: boolean) => {
+      let url = project.config?.currentUrl;
+
+      if (!url.find((item: any) => item.type === "url")) {
+        url.push({
+          type: "url",
+          url: project?._url,
+        });
+      }
       setLoading(status);
 
       const fn = status ? startProject : stopProject;
-
+      if (status) setCacheStaticButtonLoading(true);
       fn({
         name: project?._name,
-        url: project?._url,
+        url,
         isEntiretyCache: project?.config?.staticResourceCache,
       })
         .then((res) => {
@@ -317,6 +325,7 @@ const DetailInfo: React.FC<{
           if (!status) {
             matchedMap?.set(`${project._name}&${project._url}`, new Map());
           }
+          setCacheStaticButtonLoading(false);
           setRefresh();
         });
     },
@@ -898,6 +907,9 @@ const DetailInfo: React.FC<{
     setRefreshNumber((oldValue) => oldValue + 1);
   }, [ruleStatus]);
 
+  const [cacheStaticButtonLoading, setCacheStaticButtonLoading] =
+    useState(false);
+
   const handleUpdateResource = useCallback(
     async (status: boolean) => {
       console.log(project, status);
@@ -1041,7 +1053,7 @@ const DetailInfo: React.FC<{
                     <span>Cache Static Resources</span>
                     <Switch
                       value={project?.config?.staticResourceCache}
-                      disabled={project?._status}
+                      disabled={project?._status || cacheStaticButtonLoading}
                       onChange={(e) => handleUpdateResource(e)}
                     />
                   </div>

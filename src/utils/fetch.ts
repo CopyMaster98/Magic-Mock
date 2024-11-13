@@ -14,7 +14,7 @@ const checkStatus = async (res: Response, callback?: any) => {
   }
 
   const tip = cloneRes.message ?? "网络请求失败";
-  message.error(`${tip} ${res.status}`);
+  message.error(`${res.status} ${tip}`);
 
   const error: any = new Error(res.statusText);
   error["response"] = error;
