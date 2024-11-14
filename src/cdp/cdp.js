@@ -8,7 +8,8 @@ const findChrome = require("chrome-finder");
 const chokidar = require("chokidar");
 const { folderUtils, commonUtils, hashUtils } = require("../backend/src/utils");
 const { isValidJSON } = require("../backend/src/utils/common");
-const { JSDOM } = require("jsdom");
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 (async () => {
   const chromePath = findChrome();
   // 如果找到了 Chrome，启动 Puppeteer 并指定 Chrome 可执行文件的路径
@@ -71,20 +72,22 @@ const { JSDOM } = require("jsdom");
         else {
           let suffix = url.split("/").slice(3).join("/");
 
-          let hasSuffix = false;
+          let suffixArr = suffix.split("/");
 
-          let suffixArr = suffix.split("?");
-
-          if (suffixArr.length === 2 && !suffix[0]) hasSuffix = true;
-          else if (
-            suffixArr.length > 2 &&
-            suffixArr[suffixArr.length - 2].endsWith("/")
-          ) {
-            hasSuffix = true;
+          if (suffixArr[suffixArr.length - 1].includes("?")) {
+            let regex = /\/([^\/?]+)(?=\?)/;
+            let matched = suffix.match(regex);
+            if (!matched) {
+              suffix =
+                suffixArr.slice(0, suffixArr.length - 1).join("/") +
+                "/" +
+                hashUtils.getHash(
+                  suffixArr.slice(0, suffixArr.length - 1).join("/")
+                ) +
+                suffixArr[suffixArr.length - 1];
+            }
           }
-
-          if (hasSuffix)
-            suffix = hashUtils.getHash(suffix.slice(1)) + suffix.slice(1);
+          console.log(request.headers());
           await request.continue({
             url: `${resourceUrl}/${suffix}`,
           });
@@ -968,11 +971,17 @@ async function intercept(data, page) {
           fileNameArr = fileNameArr.join("?").split("/").slice(3);
 
           if (
-            !fileNameArr[0] &&
-            params.resourceType !== "Document" &&
-            params.request.url.includes("?")
+            ((!fileNameArr[0] && params.request.url.includes("?")) ||
+              !fileNameArr[fileNameArr.length - 1]) &&
+            params.resourceType !== "Document"
           ) {
-            fileNameArr = [hashUtils.getHash(params.request.url.split("?")[1])];
+            if (!fileNameArr[fileNameArr.length - 1])
+              fileNameArr = fileNameArr.slice(0, fileNameArr.length - 1);
+
+            fileNameArr = [
+              ...fileNameArr,
+              hashUtils.getHash(fileNameArr.join("/")),
+            ];
           }
 
           let staticResourcePath = `${process.cwd()}/Offline-Resource`;
@@ -1017,7 +1026,13 @@ async function intercept(data, page) {
           if (!urlDirMap.has(urlName)) urlDirMap.set(urlName, folderName);
 
           if (params.resourceType === "Document") {
-            responseData = new JSDOM(responseData).serialize();
+            const virtualConsole = new jsdom.VirtualConsole();
+            virtualConsole.on("error", () => {
+              // No-op to skip console errors.
+            });
+            responseData = new JSDOM(responseData, {
+              virtualConsole,
+            }).serialize();
             const homePagePath = `${staticResourcePath}/${folderName}${staticResourceName}`;
             if (!folderUtils.folderExists(homePagePath))
               folderUtils.createFolder(homePagePath);
@@ -1134,23 +1149,17 @@ async function intercept(data, page) {
                   params.resourceType
                 ))
             ) {
-              if (
-                isExistLocalServer &&
-                (params.responseStatusCode.toString().startsWith("2") ||
-                  params.responseStatusCode.toString().startsWith("3"))
-              ) {
-                updateFileOrFolder(
-                  { params, cacheStatus: false },
-                  savePath,
-                  newFilePath,
-                  cacheDataUrlPatterns
-                );
-              } else {
+              if (!isExistLocalServer) {
                 const serverPath = folderUtils.folderPath(
                   CONSTANT.LOCAL_SERVER,
                   ""
                 );
                 folderUtils.createFolder(serverPath);
+              }
+              if (
+                params.responseStatusCode.toString().startsWith("2") ||
+                params.responseStatusCode.toString().startsWith("3")
+              ) {
                 updateFileOrFolder(
                   { params, cacheStatus: false },
                   savePath,

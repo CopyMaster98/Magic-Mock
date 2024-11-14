@@ -50,7 +50,7 @@ const HomeDetail: React.FC = () => {
         url.push({
           type: "url",
           url: project.url,
-          noSelect: true,
+          noSelect: false,
         });
       }
       setLoading((oldValue: any) => ({
@@ -99,7 +99,7 @@ const HomeDetail: React.FC = () => {
               await FolderAPI.updateFolder({
                 pathname: data.name,
                 name: formValue.projectName,
-                url: formValue.projectUrl,
+                url: [formValue.projectUrl],
                 id: data.id,
               });
               setRefresh();
@@ -291,35 +291,40 @@ const HomeDetail: React.FC = () => {
   const lastSelectedValue = useRef([]);
 
   const handleChangeProjectUrl = useCallback(
-    async (item: any, key?: string) => {
+    async (item: any, value: string) => {
       const currentUrl = item.config?.currentUrl?.map(
         (item: any) => `${item.type}_${item.url}`
-      );
-      if (!selectedValue[item.id].length) {
-        setSelectedValue((oldValue: any) => ({
-          ...oldValue,
-          [item.id]: currentUrl?.length
-            ? currentUrl
-            : [
-                `url_${item.config.urls.find(
-                  (_item: any) => _item === item.url
-                )}`,
-              ],
-        }));
+      )[0];
+      // if (!selectedValue[item.id].length) {
+      //   setSelectedValue((oldValue: any) => ({
+      //     ...oldValue,
+      //     [item.id]: currentUrl?.length
+      //       ? currentUrl
+      //       : `url_${item.config.urls.find(
+      //           (_item: any) => _item === item.url
+      //         )}`,
+      //   }));
 
-        return;
+      //   return;
+      // }
+      setSelectedValue((oldValue: any) => ({
+        ...oldValue,
+        [item.id]: value,
+      }));
+
+      if (currentUrl === value) return;
+
+      const isUrl = value?.startsWith("url_");
+      const ans: any[] = [value];
+
+      if (!isUrl) {
+        ans.push(`url_${item.url}`);
       }
-      if (
-        selectedValue[item.id].length === 1 &&
-        currentUrl?.every((_item: any) => _item === selectedValue[item.id][0])
-      )
-        return;
+      // const ans = key
+      //   ? selectedValue[item.id].filter((item: string) => item !== key)
+      //   : selectedValue[item.id];
 
-      const ans = key
-        ? selectedValue[item.id].filter((item: string) => item !== key)
-        : selectedValue[item.id];
-
-      if (!ans.length) return;
+      // if (!ans.length) return;
 
       try {
         const response = await FolderAPI.updateFolder({
@@ -331,6 +336,10 @@ const HomeDetail: React.FC = () => {
         if (response.code === -1 || !selectedValue[item.id]) {
           lastSelectedValue.current = selectedValue[item.id];
         }
+
+        setSelectedValue((oldValue: any) => ({
+          [item.id]: oldValue[item.id],
+        }));
       } catch (error) {
         console.log(error);
       }
@@ -347,18 +356,13 @@ const HomeDetail: React.FC = () => {
       ];
 
       const urls = selectedValue[item.id];
-      if (urls?.length) {
+      if (urls) {
         res = res.filter((url) => {
           if (
-            (urls.find(
-              (_url: any) =>
-                !_url.includes("resourceγγ") && !_url.startsWith("resource_")
-            ) &&
+            (!urls?.includes("resourceγγ") &&
+              !urls?.startsWith("resource_") &&
               !url.includes("resourceγγ")) ||
-            (urls.find(
-              (_url: any) =>
-                _url.includes("resourceγγ") || _url.startsWith("resource_")
-            ) &&
+            ((urls?.includes("resourceγγ") || urls?.startsWith("resource_")) &&
               url.includes("resourceγγ"))
           )
             return false;
@@ -381,12 +385,10 @@ const HomeDetail: React.FC = () => {
     )?.url;
     return (
       <>
-        {(url || (!url && !resource)) && (
-          <div style={{ marginBottom: "10px" }}>
-            <ChromeOutlined style={{ marginRight: "10px" }} />
-            <span>{url || item.url}</span>
-          </div>
-        )}
+        <div style={{ marginBottom: "10px" }}>
+          <ChromeOutlined style={{ marginRight: "10px" }} />
+          <span>{url || item.url}</span>
+        </div>
 
         {resource && (
           <div style={{ marginBottom: "10px" }}>
@@ -413,16 +415,14 @@ const HomeDetail: React.FC = () => {
           if (!selectedValue[item.id]) {
             const currentUrl = item.config?.currentUrl?.map(
               (item: any) => `${item.type}_${item.url}`
-            );
+            )[0];
             setSelectedValue((oldValue: any) => ({
               ...oldValue,
               [item.id]: currentUrl?.length
                 ? currentUrl
-                : [
-                    `url_${item.config.urls.find(
-                      (_item: any) => _item === item.url
-                    )}`,
-                  ],
+                : `url_${item.config.urls.find(
+                    (_item: any) => _item === item.url
+                  )}`,
             }));
           }
           return (
@@ -459,22 +459,33 @@ const HomeDetail: React.FC = () => {
                     placeholder="Select Default URL"
                     showSearch
                     allowClear
-                    mode="multiple"
+                    // mode="multiple"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
                     value={selectedValue[item.id]}
                     onChange={(e) => {
-                      console.log(e);
-                      setSelectedValue((oldValue: any) => ({
-                        ...oldValue,
-                        [item.id]: e,
-                      }));
+                      if (!e) {
+                        setSelectedValue((oldValue: any) => ({
+                          ...oldValue,
+                          [item.id]: [],
+                        }));
+                        return;
+                      }
+
+                      handleChangeProjectUrl(item, e);
                     }}
-                    onBlur={() =>
-                      !isDeleteRef.current && handleChangeProjectUrl(item)
-                    }
-                    onDeselect={(e) => handleChangeProjectUrl(item, e)}
+                    // onChange={(e) => {
+                    //   console.log(e);
+                    //   setSelectedValue((oldValue: any) => ({
+                    //     ...oldValue,
+                    //     [item.id]: e,
+                    //   }));
+                    // }}
+                    // onBlur={() =>
+                    //   !isDeleteRef.current && handleChangeProjectUrl(item)
+                    // }
+                    // onDeselect={(e) => handleChangeProjectUrl(item, e)}
                     disabled={item.status}
                     dropdownRender={(menu) => (
                       <>
@@ -517,7 +528,10 @@ const HomeDetail: React.FC = () => {
                         </Space>
                       </>
                     )}
-                    options={selectOptions(item).map((item: any) => {
+                    options={[
+                      ...(item.config.urls || []),
+                      ...(item.resource || []).map((item: any) => item?.key),
+                    ].map((item: any) => {
                       const data = decodeURIComponent(
                         item.includes("resourceγγ")
                           ? item.replace(/γ+/g, "_")
@@ -563,7 +577,7 @@ const HomeDetail: React.FC = () => {
                             )}
                           </span>
                         </div>
-                        {`urlγγ${item.url}` !== option.value &&
+                        {`url_${item.url}` !== option.value &&
                           option.data.type !== "resource" && (
                             <DeleteOutlined
                               style={{

@@ -4,6 +4,7 @@ const { folderUtils, hashUtils } = require("../utils/index");
 const { getLocalServerProjectData } = require("../core");
 const { LOCAL_SERVER, OFFLINE_RESOURCE } = require("../constants");
 const router = new Router();
+const path = require("path");
 
 const { folderPath, folderExists, createFolder, folderInfo, folderContent } =
   folderUtils;
@@ -217,6 +218,7 @@ router.put("/project/:projectName", async (ctx) => {
   });
 
   const urlItem = urlArr.find((item) => item.type === "url");
+  const resourceItem = urlArr.find((item) => item.type === "resource");
   const projectName = (fs.readdirSync(folderPath("")) ?? []).find(
     (item) => hashUtils.getHash(item) === id
   );
@@ -226,7 +228,7 @@ router.put("/project/:projectName", async (ctx) => {
     name ? name : projectName.split("εε")[0],
     urlItem ? encodeURIComponent(urlItem.url) : projectName.split("εε")[1],
   ].join("εε");
-  const newProjectPath = folderPath("") + "/" + newProjectName;
+  const newProjectPath = path.join(folderPath(""), newProjectName);
   const newCacheProjectPath =
     folderPath("", LOCAL_SERVER) + "/" + newProjectName;
   const files = fs.readdirSync(folderPath(""));
@@ -256,7 +258,7 @@ router.put("/project/:projectName", async (ctx) => {
       JSON.stringify(
         {
           ...content,
-          currentUrl: urlArr,
+          currentUrl: resourceItem ? [resourceItem] : urlArr,
         },
         null,
         2
@@ -288,11 +290,14 @@ router.put("/project/:projectName", async (ctx) => {
     isNewUrl = false;
   else isNewUrl = true;
 
+  ctx.set("notification", true);
+
   if (isNewUrl) {
     ctx.response.body = {
       message: "修改成功",
       statusCode: 0,
     };
+    if (projectPath === newProjectPath) return;
   } else {
     ctx.response.status = 500;
     ctx.response.body = {
@@ -348,7 +353,6 @@ router.put("/project/:projectName", async (ctx) => {
       };
     }
   }
-  ctx.set("notification", true);
 });
 
 router.put("/project/:projectName/url", async (ctx) => {

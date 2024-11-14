@@ -31,7 +31,7 @@ const deleteFolder = (projectId: string, params = null, config = {}) => {
 const updateFolder = (
   data: {
     id: string;
-    url: string;
+    url: any[];
     pathname: string;
     name?: string;
   },
