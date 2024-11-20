@@ -6,4 +6,5 @@
 - [x] 新增`rule pattern` / `rule name`搜索功能
 - [x] 完善其余`Content-Type`格式`Response Data`显示
 - [x] 新增新建`rule`时 格式为`fetch`请求时自动解析参数
+- [x] 新增缓存整个页面静态资源
 - [ ] 新增未匹配成功时的日志显示
