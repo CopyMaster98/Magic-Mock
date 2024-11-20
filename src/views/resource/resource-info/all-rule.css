@@ -4,10 +4,6 @@
     overflow-y: scroll;
   }
 
-  .ant-table-body {
-    scrollbar-width: none;
-  }
-
   .ant-card-body {
     line-height: 1;
 

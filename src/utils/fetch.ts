@@ -14,7 +14,7 @@ const checkStatus = async (res: Response, callback?: any) => {
   }
 
   const tip = cloneRes.message ?? "网络请求失败";
-  message.error(`${tip} ${res.status}`);
+  message.error(`${res.status} ${tip}`);
 
   const error: any = new Error(res.statusText);
   error["response"] = error;
@@ -142,8 +142,9 @@ class http {
    * @param url
    * @returns {Promise<unknown>}
    */
-  _delete(url: string, option: RequestInit = {}) {
+  _delete(url: string, params: any = {}, option: RequestInit = {}) {
     const options = Object.assign({ method: "DELETE" }, option);
+    if (params) options.body = JSON.stringify(params);
     return http.staticFetch(url, options);
   }
 

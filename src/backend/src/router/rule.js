@@ -2,10 +2,16 @@ const Router = require("koa-router");
 const fs = require("fs");
 const router = new Router();
 const { folderUtils, hashUtils } = require("../utils/index");
-const { renameFile, findFile } = require("../utils/folder");
 const { LOCAL_SERVER } = require("../constants");
 const { formatRule } = require("../utils/rule");
-const { folderPath, folderExists, createFile, folderContent } = folderUtils;
+const {
+  folderPath,
+  folderExists,
+  createFile,
+  folderContent,
+  renameFile,
+  findFile,
+} = folderUtils;
 
 router.post("/create", async (ctx) => {
   const {
@@ -35,7 +41,7 @@ router.post("/create", async (ctx) => {
     const fileName =
       encodeURIComponent(ruleName.slice(-50)) +
       "ηhash=" +
-      hashUtils.getHash(ruleName);
+      hashUtils.getHash(ruleName + rulePattern);
     const path = folderPath(`${isExistParentFolder}/${fileName}.config.json`);
     const isExist = folderExists(path);
 
@@ -75,7 +81,6 @@ router.post("/create", async (ctx) => {
           `${folderPath(`${isExistParentFolder}`)}/${fileName}.config.json`,
           JSON.stringify(
             {
-              id: hashUtils.getHash(JSON.stringify(+new Date())),
               ruleName,
               rulePattern,
               ruleMethod: ruleMethod
@@ -90,6 +95,7 @@ router.post("/create", async (ctx) => {
                 : resourceType,
               ruleStatus,
               ...info,
+              id: hashUtils.getHash(JSON.stringify(+new Date())),
             },
             null,
             2
@@ -113,67 +119,78 @@ router.post("/create", async (ctx) => {
 
 router.post("/multipleCreate", async (ctx) => {
   const { projectName, rulesInfo } = ctx.request.body;
-
-  const cachePath = folderPath(
-    `${projectName}/${rulesInfo[0].method}`,
-    LOCAL_SERVER
+  const methods = [...new Set(rulesInfo.map((item) => item.method)).values()];
+  const cachePath = methods.map((method) =>
+    folderPath(`${projectName}/${method}`, LOCAL_SERVER)
   );
 
-  if (folderExists(cachePath)) {
-    const cacheData = fs
-      .readdirSync(cachePath)
-      ?.filter((item) =>
-        rulesInfo.find((rule) => rule.id === hashUtils.getHash(item))
-      );
+  const errorData = [];
 
-    const errorData = [];
-    cacheData.forEach((item) => {
-      let content = folderContent(`${cachePath}/${item}`);
+  if (cachePath.find((item) => folderExists(item))) {
+    const cacheData = cachePath.reduce(
+      (pre, currentPath) => ({
+        ...pre,
+        [currentPath]: fs
+          .readdirSync(currentPath)
+          ?.filter((item) =>
+            rulesInfo.find((rule) => rule.id === hashUtils.getHash(item))
+          ),
+      }),
+      {}
+    );
 
-      if (content) content = JSON.parse(content);
+    let total = 0;
+    Object.keys(cacheData).forEach((_path) => {
+      total += cacheData[_path].length;
+      cacheData[_path].forEach((item) => {
+        let content = folderContent(`${_path}/${item}`);
 
-      const currentRuleInfo = rulesInfo.find(
-        (info) => info.id === hashUtils.getHash(item)
-      );
+        if (content) content = JSON.parse(content);
 
-      if (currentRuleInfo.newRulePattern) {
-        content.params.request.url = currentRuleInfo.newRulePattern;
-      }
+        const currentRuleInfo = rulesInfo.find(
+          (info) => info.id === hashUtils.getHash(item)
+        );
 
-      content = formatRule({
-        ruleContent: content,
+        if (currentRuleInfo.newRulePattern) {
+          content.params.request.url = currentRuleInfo.newRulePattern;
+        }
+
+        content = formatRule({
+          ruleContent: content,
+        });
+
+        const filePath = folderPath(
+          `${projectName}/${
+            encodeURIComponent(content.ruleName).slice(-50) +
+            "ηhash=" +
+            hashUtils.getHash(content.ruleName + content.rulePattern)
+          }.config.json`
+        );
+        console.log(filePath);
+        if (folderExists(filePath)) {
+          errorData.push({
+            data: item,
+            message: "规则已存在",
+          });
+          return;
+        }
+
+        content.ruleStatus = true;
+
+        try {
+          createFile(filePath, JSON.stringify(content, null, 2));
+        } catch (error) {
+          errorData.push({
+            data: item,
+            message: error,
+          });
+        }
       });
-
-      const filePath = folderPath(
-        `${projectName}/${
-          encodeURIComponent(content.ruleName).slice(-50) +
-          "ηhash=" +
-          hashUtils.getHash(content.ruleName)
-        }.config.json`
-      );
-      if (folderExists(filePath)) {
-        errorData.push({
-          data: item,
-          message: "规则已存在",
-        });
-        return;
-      }
-
-      content.ruleStatus = true;
-
-      try {
-        createFile(filePath, JSON.stringify(content, null, 2));
-      } catch (error) {
-        errorData.push({
-          data: item,
-          message: error,
-        });
-      }
     });
 
-    if (errorData.length < cacheData.length)
+    if (errorData.length < total)
       ctx.response.body = {
-        message: `创建成功: ${cacheData.length - errorData.length}
+        message: `创建成功: ${total - errorData.length}
                   创建失败: ${errorData.length}`,
         statusCode: 0,
         info: errorData,
@@ -229,7 +246,7 @@ router.put("/info/:projectId/:ruleId", async (ctx) => {
   const ruleInfoName = ruleInfo.ruleName
     ? encodeURIComponent(ruleInfo.ruleName.slice(-50)) +
       "ηhash=" +
-      hashUtils.getHash(ruleInfo.ruleName)
+      hashUtils.getHash(ruleInfo.ruleName + ruleInfo.rulePattern)
     : oldRuleName?.split(".config.json")[0];
 
   if (!ruleInfoName) {

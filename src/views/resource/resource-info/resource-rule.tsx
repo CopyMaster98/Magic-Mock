@@ -1,8 +1,8 @@
 import { forwardRef, useCallback, useEffect, useState } from "react";
 import RuleForm from "../../../components/rule-form";
-import "./detail-rule.css";
+import "./resource-rule.css";
 import { useLocation } from "react-router-dom";
-import { CacheAPI, RuleAPI } from "../../../api";
+import { CacheAPI, RuleAPI, ResourceAPI } from "../../../api";
 import { methods } from "../../../constant";
 
 const DetailRule: React.FC<any> = forwardRef((props, ref) => {
@@ -10,7 +10,7 @@ const DetailRule: React.FC<any> = forwardRef((props, ref) => {
   const [ruleForm, setRuleForm] = useState(null);
 
   const getRuleInfo = useCallback(async (projectId: string, ruleId: string) => {
-    const res = await RuleAPI.getRuleInfo({
+    const res = await ResourceAPI.getResourceInfo({
       projectId,
       ruleId,
     });

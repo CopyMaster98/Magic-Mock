@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 .history
+.VSCodeCounter
 .vscode
 # dependencies
 /node_modules
@@ -8,6 +9,8 @@
 .pnp.js
 /Magic-Mock-Data
 /Local-Server
+/Offline-Resource
+package-lock.json
 
 # testing
 /coverage

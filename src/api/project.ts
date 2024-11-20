@@ -4,6 +4,7 @@ const startProject = (
   data: {
     name: string;
     url: string;
+    isEntiretyCache: boolean;
   },
   config = {}
 ) => {

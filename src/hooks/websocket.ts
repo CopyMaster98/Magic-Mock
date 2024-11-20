@@ -5,7 +5,7 @@ const initWebSocket = (callback: any) => {
 
   ws.onopen = function () {
     console.log("Connected to server");
-    ws.send("React: open");
+    if (ws.readyState === WebSocket.OPEN) ws.send("React: open");
   };
 
   ws.onmessage = function (event) {
@@ -34,7 +34,7 @@ export const useCreateWebSocket = (callback: any) => {
     const ws = initWebSocket(callback);
 
     return () => {
-      ws.close();
+      ws?.close();
     };
   }, [callback]);
 };

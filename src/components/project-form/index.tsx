@@ -2,7 +2,7 @@ import { Form, FormProps, Input } from "antd";
 import { forwardRef, useEffect, useImperativeHandle } from "react";
 
 const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
-  const { data } = props;
+  const { data, type = "add" } = props;
   const [form] = Form.useForm();
   const onFinish: FormProps["onFinish"] = (values) => {
     console.log("Success:", values);
@@ -44,23 +44,25 @@ const AddProjectForm: React.FC<any> = forwardRef((props, ref) => {
         <Input />
       </Form.Item>
 
-      <Form.Item
-        label="Project Url"
-        name="projectUrl"
-        rules={[
-          {
-            required: true,
-            validator: async (rule, value) => {
-              const reg = /^(http|https):\/\/(\S+)$/;
-              if (!reg.test(value)) {
-                throw new Error("Please enter the correct url address!");
-              }
+      {type === "add" && (
+        <Form.Item
+          label="Project Url"
+          name="projectUrl"
+          rules={[
+            {
+              required: true,
+              validator: async (rule, value) => {
+                const reg = /^(http|https):\/\/(\S+)$/;
+                if (!reg.test(value)) {
+                  throw new Error("Please enter the correct url address!");
+                }
+              },
             },
-          },
-        ]}
-      >
-        <Input />
-      </Form.Item>
+          ]}
+        >
+          <Input />
+        </Form.Item>
+      )}
     </Form>
   );
 });

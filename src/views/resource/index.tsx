@@ -8,7 +8,7 @@ import {
 import { Link } from "react-router-dom";
 import { FolderAPI } from "../../api";
 import { useData } from "../../context";
-import DetailInfo from "./detail-info";
+import DetailInfo from "./resource-info";
 import { url } from "../../hooks";
 import "./index.css";
 
@@ -45,23 +45,23 @@ const Detail: React.FC = () => {
   }, [currentPathname, projectData]);
 
   useEffect(() => {
-    FolderAPI.getFolderInfo().then((res: any) => {
-      const data = res.project?.map((item: any) => {
+    FolderAPI.getFolderInfo({
+      isResource: true,
+    }).then((res: any) => {
+      const data = res.resource?.map((item: any) => {
         const folderInfo: any = {
           id: item.id,
           icon: React.createElement(FolderOutlined),
-          key: "project_" + item.name,
+          key: "static_" + item.name,
           label: (
-            <Link to={`/detail/project_${item.name}?projectId=${item.id}`}>
-              project_{item.name}
+            <Link to={`/resource/static_${item.name}?resourceId=${item.id}`}>
+              static_{item.name}
             </Link>
           ),
-          _status: +item.status,
           _url: item.url,
           _name: item.name,
-          config: item.config,
         };
-        if (item.rules.length > 0) {
+        if (item.rules?.length > 0) {
           folderInfo.children = [...item.rules]?.map((rule: any) => {
             let ruleName = rule?.name;
 
@@ -75,7 +75,7 @@ const Detail: React.FC = () => {
               name: encodeURIComponent(ruleName),
               label: (
                 <Link
-                  to={`/detail/project_${encodeURIComponent(
+                  to={`/resource/project_${encodeURIComponent(
                     item.name
                   )}/rule_${encodeURIComponent(ruleName)}?projectId=${
                     item.id
@@ -91,7 +91,6 @@ const Detail: React.FC = () => {
             return ruleInfo;
           });
         }
-
         if (item.cacheData.length > 0) {
           folderInfo.cacheData = item.cacheData.map((cacheData: any) => ({
             ...cacheData,
@@ -110,7 +109,7 @@ const Detail: React.FC = () => {
   const rules = useMemo(
     () =>
       projectData?.find(
-        (item: any) => item.id === search.split("projectId=")[1]
+        (item: any) => item.id === search.split("resourceId=")[1]
       )?.children || [],
     [projectData, search]
   );
@@ -118,7 +117,7 @@ const Detail: React.FC = () => {
   const cacheData = useMemo(
     () =>
       projectData?.find(
-        (item: any) => item.id === search.split("projectId=")[1]
+        (item: any) => item.id === search.split("resourceId=")[1]
       )?.cacheData || [],
     [projectData, search]
   );
@@ -150,6 +149,7 @@ const Detail: React.FC = () => {
           />
         </Sider>
       ) : null}
+
       <Layout style={{ padding: "0 24px 24px" }}>
         {isDetailInfo ? (
           <DetailInfo

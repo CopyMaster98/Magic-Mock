@@ -1,6 +1,7 @@
 import * as header from "./header";
 
 const methods = [
+  "ALL",
   "GET",
   "POST",
   "PUT",
@@ -19,17 +20,10 @@ const resourceType = [
   "Media",
   "Font",
   "Script",
-  "TextTrack",
   "XHR",
   "Fetch",
-  "Prefetch",
-  "EventSource",
-  "WebSocket",
-  "Manifest",
-  "SignedExchange",
   "Ping",
   "CSPViolationReport",
-  "Preflight",
   "Other",
 ] as const;
 
@@ -49,7 +43,6 @@ const statusOptions = status.map((item) => ({
 }));
 
 const color = [
-  "magenta",
   "purple",
   "burlywood",
   "bisque",
@@ -68,6 +61,7 @@ const color = [
   "darkred",
   "lightseagreen",
   "lightsalmon",
+  "magenta",
 ];
 
 const methodColors = methodOptions.map((item, index) => ({
@@ -88,4 +82,5 @@ export {
   resourceTypeOptions,
   statusOptions,
   resourceTypeColors,
+  color,
 };

@@ -25,7 +25,7 @@ import { useData } from "../../../context";
 import "./index.css";
 import { IDialogInfo, IFormRefProps } from "../../../types/dialog";
 import RuleForm from "../../../components/rule-form";
-import DetailRule from "./detail-rule";
+import DetailRule from "./resource-rule";
 import AllRule from "./all-rule";
 import { useNavigate } from "../../../hooks/navigate";
 import {
@@ -40,7 +40,7 @@ import Search from "antd/es/input/Search";
 import { updateCacheInfo } from "../../../api/cache";
 import { startProject, stopProject } from "../../../api/project";
 import { clipboard } from "../../../hooks";
-import { ResourceAPI, RuleAPI } from "../../../api";
+import { RuleAPI } from "../../../api";
 
 const DetailInfo: React.FC<{
   pathname: any;
@@ -194,18 +194,10 @@ const DetailInfo: React.FC<{
     const isLast = currentRoute?.path === items[items.length - 1]?.path;
 
     return isLast ? (
-      <span>
-        {currentRoute.title &&
-          decodeURIComponent(
-            decodeURIComponent(currentRoute.title?.toString())
-          )}
-      </span>
+      <span>{currentRoute.title}</span>
     ) : (
       <Link to={`/${paths.join("/")}?${(currentRoute as any).search}`}>
-        {currentRoute.title &&
-          decodeURIComponent(
-            decodeURIComponent(currentRoute.title?.toString())
-          )}
+        {currentRoute.title}
       </Link>
     );
   };
@@ -298,39 +290,29 @@ const DetailInfo: React.FC<{
     setCheckList(checkList);
   }, []);
 
-  const handleChangeStatus = useCallback(
-    async (project: any, status: boolean) => {
-      let url = project.config?.currentUrl;
+  // const handleChangeStatus = useCallback(
+  //   async (project: any, status: boolean) => {
+  //     setLoading(status);
 
-      if (!url.find((item: any) => item.type === "url")) {
-        url.push({
-          type: "url",
-          url: project?._url,
-        });
-      }
-      setLoading(status);
+  //     const fn = status ? startProject : stopProject;
 
-      const fn = status ? startProject : stopProject;
-      if (status) setCacheStaticButtonLoading(true);
-      fn({
-        name: project?._name,
-        url,
-        isEntiretyCache: project?.config?.staticResourceCache,
-      })
-        .then((res) => {
-          console.log(res);
-        })
-        .finally(() => {
-          setLoading(false);
-          if (!status) {
-            matchedMap?.set(`${project._name}&${project._url}`, new Map());
-          }
-          setCacheStaticButtonLoading(false);
-          setRefresh();
-        });
-    },
-    [matchedMap, setRefresh]
-  );
+  //     fn({
+  //       name: project?._name,
+  //       url: project?._url,
+  //     })
+  //       .then((res) => {
+  //         console.log(res);
+  //       })
+  //       .finally(() => {
+  //         setLoading(false);
+  //         if (!status) {
+  //           matchedMap?.set(`${project._name}&${project._url}`, new Map());
+  //         }
+  //         setRefresh();
+  //       });
+  //   },
+  //   [matchedMap, setRefresh]
+  // );
 
   const handleBack = useCallback(() => {
     setTimeout(() => {
@@ -764,31 +746,21 @@ const DetailInfo: React.FC<{
   const ruleCard = useMemo(
     () =>
       handleCardResourceTypeChange(
-        ruleResourceType,
+        "All",
         "",
         handleCardStatusSelectChange(ruleStatus, "1")
       ),
-    [
-      handleCardResourceTypeChange,
-      handleCardStatusSelectChange,
-      ruleResourceType,
-      ruleStatus,
-    ]
+    [handleCardResourceTypeChange, handleCardStatusSelectChange, ruleStatus]
   );
 
   const cacheCard = useMemo(
     () =>
       handleCardResourceTypeChange(
-        ruleResourceType,
+        "All",
         "",
         handleCardStatusSelectChange(ruleStatus, "2")
       ),
-    [
-      handleCardResourceTypeChange,
-      handleCardStatusSelectChange,
-      ruleResourceType,
-      ruleStatus,
-    ]
+    [handleCardResourceTypeChange, handleCardStatusSelectChange, ruleStatus]
   );
 
   useEffect(() => {
@@ -907,20 +879,6 @@ const DetailInfo: React.FC<{
     setRefreshNumber((oldValue) => oldValue + 1);
   }, [ruleStatus]);
 
-  const [cacheStaticButtonLoading, setCacheStaticButtonLoading] =
-    useState(false);
-
-  const handleUpdateResource = useCallback(
-    async (status: boolean) => {
-      console.log(project, status);
-      await ResourceAPI.updateResourceInfo({
-        projectId: project.id,
-        status,
-      });
-    },
-    [project]
-  );
-
   return (
     <>
       <Breadcrumb
@@ -987,7 +945,7 @@ const DetailInfo: React.FC<{
                       enterButton
                     />
                   </div>
-                  <div className="filter">
+                  {/* <div className="filter">
                     <label
                       htmlFor="status"
                       style={{
@@ -1009,30 +967,7 @@ const DetailInfo: React.FC<{
                       onChange={setRuleStatus}
                       options={cardStatusSelectOptions}
                     />
-                  </div>
-                  <div className="filter">
-                    <label
-                      htmlFor="resourceType"
-                      style={{
-                        marginRight: "10px",
-                      }}
-                    >
-                      Resource Type
-                    </label>
-                    <Select
-                      id="resourceType"
-                      style={{
-                        width: "150px",
-                      }}
-                      // disabled={!!checkList.length}
-                      // showSearch
-                      value={ruleResourceType}
-                      placeholder="Select Status"
-                      optionFilterProp="label"
-                      onChange={setRuleResourceType}
-                      options={resourceTypeSelectOptions}
-                    />
-                  </div>
+                  </div> */}
                 </div>
               </>
             )}
@@ -1047,18 +982,6 @@ const DetailInfo: React.FC<{
                 gap: "15px 30px",
               }}
             >
-              {!location.search.includes("ruleId") && (
-                <div className="switches">
-                  <div>
-                    <span>Cache Static Resources</span>
-                    <Switch
-                      value={project?.config?.staticResourceCache}
-                      disabled={project?._status || cacheStaticButtonLoading}
-                      onChange={(e) => handleUpdateResource(e)}
-                    />
-                  </div>
-                </div>
-              )}
               {location.search.includes("ruleId") && (
                 <Button type="primary" onClick={handleBack}>
                   Back
@@ -1079,7 +1002,7 @@ const DetailInfo: React.FC<{
                   >
                     Delete
                   </Button>
-                  <Button
+                  {/* <Button
                     type="primary"
                     style={{
                       display:
@@ -1092,10 +1015,10 @@ const DetailInfo: React.FC<{
                     onClick={handleMultipleCreateSave}
                   >
                     Multiple Select
-                  </Button>
+                  </Button> */}
                 </>
               )}
-              <Button
+              {/* <Button
                 type="primary"
                 loading={saveLoading}
                 disabled={!project}
@@ -1112,9 +1035,9 @@ const DetailInfo: React.FC<{
                     ? "Create & Save"
                     : "Save"
                   : "Add Rule"}
-              </Button>
+              </Button> */}
 
-              {!location.search.includes("ruleId") && (
+              {/* {!location.search.includes("ruleId") && (
                 <Button
                   type="primary"
                   danger={project?._status ? true : false}
@@ -1125,7 +1048,7 @@ const DetailInfo: React.FC<{
                 >
                   {project?._status ? "Stop" : "Start"}
                 </Button>
-              )}
+              )} */}
             </div>
           </div>
         </div>

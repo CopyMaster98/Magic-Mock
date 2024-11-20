@@ -16,7 +16,7 @@ process.stdin.on("readable", () => {
   let chunk;
   // 读取父进程传入的消息
   while ((chunk = process.stdin.read()) !== null) {
-    ws.send(chunk.toString());
+    if (ws.readyState === WebSocket.OPEN) ws.send(chunk.toString());
   }
 });
 

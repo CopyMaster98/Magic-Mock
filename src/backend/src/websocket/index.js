@@ -37,7 +37,7 @@ const createWebSocket = () => {
       }
     });
 
-    ws.send("connected");
+    if (ws.readyState === WebSocket.OPEN) ws.send("connected");
   });
 
   return map;

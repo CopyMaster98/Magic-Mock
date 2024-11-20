@@ -69,7 +69,7 @@ const deleteRule = (
 ) => {
   const { projectId, ruleId } = data;
 
-  return _delete(`/rule/info/${projectId}/${ruleId}`, config);
+  return _delete(`/rule/info/${projectId}/${ruleId}`, null, config);
 };
 
 export {
