@@ -1,5 +1,57 @@
 # Changelog
 
+## [1.5.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.5.0...v1.5.1) (2024-10-24)
+
+
+### Bug Fixes
+
+* params error ([f5f7e13](https://github.com/CopyMaster98/Magic-Mock/commit/f5f7e13bf7705d034e34c665113c37c4aed7362c))
+
+## [1.5.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.6...v1.5.0) (2024-10-24)
+
+
+### Features
+
+* add all label in cache page ([7ff0581](https://github.com/CopyMaster98/Magic-Mock/commit/7ff05816e430ff6092528e19d625ca1e8eec7e29))
+* add auto analyze fetch api ([970728f](https://github.com/CopyMaster98/Magic-Mock/commit/970728fbade918bfd3546f5a931c06419d792ec8))
+* add recognizable function ([ea46169](https://github.com/CopyMaster98/Magic-Mock/commit/ea46169829e082e475a04fd5c9afab107f5d2bc7))
+
+## [1.4.6](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.5...v1.4.6) (2024-09-03)
+
+
+### Bug Fixes
+
+* change the default display mode of a rule when the resourcetype's value is empty ([23b9947](https://github.com/CopyMaster98/Magic-Mock/commit/23b99477c991adbbf3661a01a6de13b2ae8d856b))
+* change the default display mode of a rule when the resourcetype's value is empty ([e284800](https://github.com/CopyMaster98/Magic-Mock/commit/e284800e3a42273300a5be8d2b7f8f83e571d5aa))
+
+## [1.4.5](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.4...v1.4.5) (2024-09-02)
+
+
+### Bug Fixes
+
+* the dialog of project info has error when edit the info ([88f633f](https://github.com/CopyMaster98/Magic-Mock/commit/88f633fb3e806223d3172d931503a7d9f6b77f2e))
+
+## [1.4.4](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.3...v1.4.4) (2024-08-30)
+
+
+### Bug Fixes
+
+* when not opening the form for the first time, the form default value will lost ([e0f7575](https://github.com/CopyMaster98/Magic-Mock/commit/e0f7575504b65e5767eec8c669b3f15b08010832))
+
+## [1.4.3](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.2...v1.4.3) (2024-08-20)
+
+
+### Bug Fixes
+
+* when create mock from cache the same file name will appear ([f0d4003](https://github.com/CopyMaster98/Magic-Mock/commit/f0d400344f9f2c72fe62a6f5733f6535a0ae8217))
+
+## [1.4.2](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.1...v1.4.2) (2024-08-19)
+
+
+### Bug Fixes
+
+* there is no filtered space before and after the rule pattern ([8741b40](https://github.com/CopyMaster98/Magic-Mock/commit/8741b407282677fc7e95fb1392351e0cbb7ba34b))
+
 ## [1.4.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.4.0...v1.4.1) (2024-08-19)
 
 
