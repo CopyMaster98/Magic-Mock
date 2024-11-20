@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.5.1...v2.0.0) (2024-11-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* add TODO
+
+### Features
+
+* add cache entirety page ([0a40aa2](https://github.com/CopyMaster98/Magic-Mock/commit/0a40aa237eb3fd625f5c29a6a14b41a2246698db))
+* add cache entirety page ([c40dbf6](https://github.com/CopyMaster98/Magic-Mock/commit/c40dbf6a0ca86dddaa6a163c2a82711349722b90))
+* add cache entirety page ([5fdfddd](https://github.com/CopyMaster98/Magic-Mock/commit/5fdfddd931545140ac0e9a929ed11f1f5b184b5c))
+* add cache entirety page ([c8f0ee5](https://github.com/CopyMaster98/Magic-Mock/commit/c8f0ee58d72c1ab008cadf7264fed891111e8133))
+* add Cache Static Resources button ([5705f14](https://github.com/CopyMaster98/Magic-Mock/commit/5705f14ea97e780add8313a0926d3987943e87e2))
+* add local http-server ([3ad2e51](https://github.com/CopyMaster98/Magic-Mock/commit/3ad2e51762ca0442ec6541f3b19bd6e817402355))
+* add local http-server ([ab30d1f](https://github.com/CopyMaster98/Magic-Mock/commit/ab30d1f739751146def8e4d7f9b0a1aa305855e2))
+* add local http-server ([7ac65dd](https://github.com/CopyMaster98/Magic-Mock/commit/7ac65dd2529da043498038f6cffa56107c0c8e60))
+* add local http-server ([2b47d0d](https://github.com/CopyMaster98/Magic-Mock/commit/2b47d0dc4731f8b7194e408d205802cffed8110e))
+* add local http-server ([7434606](https://github.com/CopyMaster98/Magic-Mock/commit/7434606cda66b0de8fdf7a14442088db552e44fc))
+* add resource page ([7fb22af](https://github.com/CopyMaster98/Magic-Mock/commit/7fb22af9a3ec0361a422c356a5cf5ea45cc75002))
+* add resource page ([d0c7913](https://github.com/CopyMaster98/Magic-Mock/commit/d0c791361d354216e803665d745c60649bd81ecf))
+* add TODO ([762eae6](https://github.com/CopyMaster98/Magic-Mock/commit/762eae631780f1458cdffd2b8589150928a953c3))
+* use table to replace card ([652c1d7](https://github.com/CopyMaster98/Magic-Mock/commit/652c1d7c45c95ab049f7c6b6c32e53473545586a))
+
 ## [1.5.1](https://github.com/CopyMaster98/Magic-Mock/compare/v1.5.0...v1.5.1) (2024-10-24)
 
 
