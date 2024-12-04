@@ -765,7 +765,8 @@ async function intercept(data, page) {
         allUrlPatterns.forEach((pattern) => {
           let flag =
             (!pattern.ruleMethod?.length ||
-              pattern.ruleMethod.includes(params.request.method)) &&
+              pattern.ruleMethod.includes(params.request.method) ||
+              pattern.ruleMethod.find((method) => method === "ALL")) &&
             (!pattern.resourceType?.length ||
               pattern.resourceType.includes(params.resourceType));
 
