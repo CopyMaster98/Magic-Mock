@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.0...v2.0.1) (2024-12-04)
+
+
+### Bug Fixes
+
+* can't match the rule when select the all method type ([0e6a3d5](https://github.com/CopyMaster98/Magic-Mock/commit/0e6a3d5ae6cacf99ccd302e9006ee7b7fae8b8f5))
+
 ## [2.0.0](https://github.com/CopyMaster98/Magic-Mock/compare/v1.5.1...v2.0.0) (2024-11-20)
 
 
