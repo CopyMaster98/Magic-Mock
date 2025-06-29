@@ -724,7 +724,7 @@ async function intercept(data, page) {
       await initWatch();
     }
 
-    if (noSelectLocalUrl && resourceUrl) {
+    if (resourceUrl) {
       const watcher = chokidar.watch(resourceProjectName, {
         ignored: /(^|[/\\])\../, // 忽略隐藏文件
         persistent: true, // 持续监听
