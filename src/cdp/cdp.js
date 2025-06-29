@@ -746,7 +746,7 @@ async function intercept(data, page) {
 
         if (currentRule)
           currentRule.value = currentRule.value.filter(
-            (item) => item.aaa7d2e2fd8e7610 !== name
+            (item) => item.id !== name
           );
       });
       await initResourceDataConfig(resourceProjectName);

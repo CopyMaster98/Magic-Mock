@@ -50,7 +50,7 @@ const HomeDetail: React.FC = () => {
         url.push({
           type: "url",
           url: project.url,
-          noSelect: false,
+          noSelect: true,
         });
       }
       setLoading((oldValue: any) => ({
