@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.0.2](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.1...v2.0.2) (2025-06-29)
+
+
+### Bug Fixes
+
+* offline status error & variable value error ([73e369d](https://github.com/CopyMaster98/Magic-Mock/commit/73e369d7b3addbd44d164620f719ffe6c8eb3b1d))
+* offline status error & variable value error ([632c795](https://github.com/CopyMaster98/Magic-Mock/commit/632c7959563b44f46aa9aeacb69011bb7f2a7877))
+
 ## [2.0.1](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.0...v2.0.1) (2024-12-04)
 
 
