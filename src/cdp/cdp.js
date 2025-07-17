@@ -9,6 +9,7 @@ const chokidar = require("chokidar");
 const { folderUtils, commonUtils, hashUtils } = require("../backend/src/utils");
 const { isValidJSON } = require("../backend/src/utils/common");
 const jsdom = require("jsdom");
+const { isEqual } = require("lodash");
 const { JSDOM } = jsdom;
 (async () => {
   const chromePath = findChrome();
@@ -806,8 +807,8 @@ async function intercept(data, page) {
                 )
                   flag = false;
                 else
-                  flag = Object.keys(payload).every(
-                    (key) => payload[key] === requestData[key]
+                  flag = Object.keys(payload).every((key) =>
+                    isEqual(payload[key], requestData[key])
                   );
               }
             }
