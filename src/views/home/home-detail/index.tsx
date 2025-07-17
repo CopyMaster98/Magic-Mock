@@ -244,7 +244,7 @@ const HomeDetail: React.FC = () => {
         return;
       }
 
-      const reg = /^(http|https):\/\/(\S+)$/;
+      const reg = /^(http|https|file):\/\/(\S+)$/;
       if (url.length > 0 && !reg.test(url)) {
         setErrorMessage("Please enter the correct url address!");
         setInputStatus("error");
