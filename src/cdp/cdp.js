@@ -771,8 +771,8 @@ async function intercept(data, page) {
               pattern.resourceType.includes(params.resourceType));
 
           if (flag && pattern.payload) {
-            if (matchedPattern && matchedPattern.payload) {
-              const payload = matchedPattern.payload;
+            if (pattern && pattern.payload) {
+              const payload = pattern.payload;
               const payloadKeysLength = Object.keys(payload).length;
 
               if (params.request.method.toLowerCase() === "get") {
