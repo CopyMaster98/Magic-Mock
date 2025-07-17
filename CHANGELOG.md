@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.3](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.2...v2.0.3) (2025-07-17)
+
+
+### Bug Fixes
+
+* comparing params objects error when the method is post ([8a7c3c7](https://github.com/CopyMaster98/Magic-Mock/commit/8a7c3c764acb7c945b7f9dafecdc54113a330dd7))
+
 ## [2.0.2](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.1...v2.0.2) (2025-06-29)
 
 
