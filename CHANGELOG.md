@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.4](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.3...v2.0.4) (2025-07-17)
+
+
+### Bug Fixes
+
+* no comparison of complex objects in the payload ([6af8c98](https://github.com/CopyMaster98/Magic-Mock/commit/6af8c9896cdbfdf1083bb6fefe51ebf9340fe9af))
+
 ## [2.0.3](https://github.com/CopyMaster98/Magic-Mock/compare/v2.0.2...v2.0.3) (2025-07-17)
 
 
